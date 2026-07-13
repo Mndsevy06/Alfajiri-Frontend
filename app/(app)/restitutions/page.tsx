@@ -256,11 +256,11 @@ function GrandLivreView({ drillCompte, onBack, planComptable }: { drillCompte: C
 
   const ecritures = useMemo(() => {
     if (!compteActif) return [];
-    return ECRITURES.filter((e) => e.lignes.some((l) => l.compte === compteActif.numero || l.auxiliaire === compteActif.numero));
+    return ECRITURES.filter((e) => e.lignes.some((l) => l.compte === compteActif.numero || l.tiers_auxiliaire === compteActif.numero));
   }, [compteActif]);
 
-  const totalDebit = ecritures.reduce((s, e) => s + e.lignes.filter((l) => l.compte === compteActif?.numero || l.auxiliaire === compteActif?.numero).reduce((s2, l) => s2 + l.debit, 0), 0);
-  const totalCredit = ecritures.reduce((s, e) => s + e.lignes.filter((l) => l.compte === compteActif?.numero || l.auxiliaire === compteActif?.numero).reduce((s2, l) => s2 + l.credit, 0), 0);
+  const totalDebit = ecritures.reduce((s, e) => s + e.lignes.filter((l) => l.compte === compteActif?.numero || l.tiers_auxiliaire === compteActif?.numero).reduce((s2, l) => s2 + l.debit, 0), 0);
+  const totalCredit = ecritures.reduce((s, e) => s + e.lignes.filter((l) => l.compte === compteActif?.numero || l.tiers_auxiliaire === compteActif?.numero).reduce((s2, l) => s2 + l.credit, 0), 0);
 
   return (
     <Card>
@@ -328,7 +328,7 @@ function GrandLivreView({ drillCompte, onBack, planComptable }: { drillCompte: C
                   ) : (
                     ecritures.flatMap((e) =>
                       e.lignes
-                        .filter((l) => l.compte === compteActif.numero || l.auxiliaire === compteActif.numero)
+                        .filter((l) => l.compte === compteActif.numero || l.tiers_auxiliaire === compteActif.numero)
                         .map((l, i) => {
                           let runningSolde = 0;
                           return (

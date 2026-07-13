@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node --env-file=.env --max-old-space-size=4096 node_modules/next/dist/bin/next dev",
+    "dev": "node --env-file=.env --max-old-space-size=8192 node_modules/next/dist/bin/next dev",
     "build": "next build",
     "start": "node --env-file=.env node_modules/next/dist/bin/next start",
     "lint": "next lint",
@@ -54,11 +54,14 @@
     "eslint-config-next": "13.5.1",
     "framer-motion": "^11.18.2",
     "input-otp": "^1.2.4",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "lucide-react": "^0.446.0",
     "next": "13.5.1",
     "next-themes": "^0.3.0",
     "postcss": "8.4.30",
     "react": "18.2.0",
+    "react-d3-tree": "^3.6.6",
     "react-day-picker": "^8.10.1",
     "react-dom": "18.2.0",
     "react-hook-form": "^7.53.0",
@@ -70,6 +73,7 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "5.2.2",
     "vaul": "^0.9.9",
+    "xlsx": "^0.18.5",
     "zod": "^3.23.8"
   }
 }

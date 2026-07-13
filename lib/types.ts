@@ -33,7 +33,13 @@ export type CompteComptable = {
   classe: string;
   type: 'general' | 'auxiliaire';
   parent?: string;
+  sens_normal?: 'debit' | 'credit' | 'aucun';
+  mouvementable: boolean;
+  lettrable: boolean;
   lettable: boolean;
+  soumis_tva: boolean;
+  analytique_obligatoire: boolean;
+  requiert_auxiliaire: boolean;
   tiers?: {
     code: string;
     nom: string;
@@ -51,7 +57,8 @@ export type LigneEcriture = {
   libelle: string;
   debit: number;
   credit: number;
-  auxiliaire?: string;
+  centre_cout?: string;
+  tiers_auxiliaire?: string;
   piece?: string;
 };
 

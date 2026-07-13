@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Smartphone,
   CreditCard,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,7 @@ const NAV_ITEMS = [
   { href: '/immobilisations', label: 'Immobilisations', icon: Building2, group: 'Operations' },
   { href: '/etats-financiers', label: 'Etats Financiers OHADA', icon: FileText, group: 'Cloture' },
   { href: '/audit', label: "Journal d'Audit", icon: ScrollText, group: 'Systeme' },
+  { href: '/utilisateurs', label: 'Utilisateurs', icon: Users, group: 'Systeme' },
   { href: '/parametres', label: 'Parametres', icon: Settings, group: 'Systeme' },
 ];
 

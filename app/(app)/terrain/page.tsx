@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Smartphone,
   Camera,
@@ -31,6 +31,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { fetchWithAuth } from '@/lib/api';
 import { formatCurrency } from '@/lib/format';
 
 const NATURES_DEPENSE = [
@@ -41,6 +42,15 @@ const NATURES_DEPENSE = [
   { value: 'douane', label: 'Frais de douane', compte: '64', auxiliaire: '' },
   { value: 'salaires', label: 'Avance salaire', compte: '422', auxiliaire: '' },
   { value: 'entretien', label: 'Entretien materiel', compte: '62', auxiliaire: '' },
+  { value: 'peage', label: 'Péage / Parking', compte: '613', auxiliaire: '' },
+  { value: 'repas', label: 'Restauration / Repas', compte: '65', auxiliaire: '' },
+  { value: 'hebergement', label: 'Hébergement', compte: '65', auxiliaire: '' },
+  { value: 'fournitures', label: 'Fournitures / Petit matériel', compte: '605', auxiliaire: '' },
+  { value: 'taxes', label: 'Taxes et redevances locales', compte: '64', auxiliaire: '' },
+  { value: 'communication', label: 'Communication (Crédit, Internet)', compte: '62', auxiliaire: '' },
+  { value: 'reparation_vehicule', label: 'Réparation véhicule', compte: '615', auxiliaire: '' },
+  { value: 'sante', label: 'Frais médicaux / Pharmacie', compte: '65', auxiliaire: '' },
+  { value: 'divers', label: 'Autres dépenses diverses', compte: '65', auxiliaire: '' },
 ];
 
 export default function TerrainPage() {
@@ -51,12 +61,32 @@ export default function TerrainPage() {
   const [notes, setNotes] = useState('');
   const [historiqueOpen, setHistoriqueOpen] = useState(false);
   const [historique, setHistorique] = useState<
-    { id: string; typeOp: 'depense' | 'recette'; montant: number; nature: string; date: string; photo: boolean }[]
-  >([
-    { id: 't1', typeOp: 'depense', montant: 850, nature: 'Carburant camion', date: '2025-07-08T08:30', photo: true },
-    { id: 't2', typeOp: 'depense', montant: 1200, nature: 'Frais de douane', date: '2025-07-08T07:15', photo: true },
-    { id: 't3', typeOp: 'depense', montant: 45, nature: 'Frais de mission', date: '2025-07-07T18:00', photo: false },
-  ]);
+    { id: string; typeOp: 'depense' | 'recette'; montant: number; nature: string; date: string; photo: boolean; notes?: string }[]
+  >([]);
+
+  useEffect(() => {
+    const fetchOperations = async () => {
+      try {
+        const data = await fetchWithAuth('/terrain/operations/');
+        // Mapping backend fields to frontend state format if needed
+        const mapped = data.map((op: any) => ({
+          id: op.id,
+          typeOp: op.type_op,
+          montant: parseFloat(op.montant),
+          nature: op.nature,
+          date: op.date_creation,
+          photo: op.has_photo,
+          notes: op.notes
+        }));
+        setHistorique(mapped);
+      } catch (error) {
+        console.error("Could not fetch terrain_operations", error);
+        toast.error("Erreur lors du chargement de l'historique");
+      }
+    };
+    fetchOperations();
+  }, []);
+
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,7 +97,7 @@ export default function TerrainPage() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const m = parseFloat(montant);
     if (!m || m <= 0) {
       toast.error('Veuillez saisir un montant valide');
@@ -78,24 +108,43 @@ export default function TerrainPage() {
       return;
     }
     const natureLabel = typeOp === 'depense' ? (NATURES_DEPENSE.find((n) => n.value === nature)?.label || nature) : nature;
-    setHistorique([
-      {
-        id: `t${Date.now()}`,
-        typeOp,
+    
+    try {
+      const payload = {
+        type_op: typeOp,
         montant: m,
         nature: natureLabel,
-        date: new Date().toISOString(),
-        photo: !!photo,
-      },
-      ...historique,
-    ]);
-    toast.success('Saisie enregistrée (brouillard)', {
-      description: `${typeOp === 'recette' ? '+' : '-'}${formatCurrency(m)} - ${natureLabel}`,
-    });
-    setMontant('');
-    setNature('');
-    setPhoto(null);
-    setNotes('');
+        has_photo: !!photo,
+        notes: notes || ""
+      };
+      
+      const savedOp = await fetchWithAuth('/terrain/operations/', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      
+      const newOp = {
+        id: savedOp.id,
+        typeOp: savedOp.type_op,
+        montant: parseFloat(savedOp.montant),
+        nature: savedOp.nature,
+        date: savedOp.date_creation,
+        photo: savedOp.has_photo,
+        notes: savedOp.notes
+      };
+
+      setHistorique([newOp, ...historique]);
+      
+      toast.success('Saisie enregistrée et envoyée (brouillard)', {
+        description: `${typeOp === 'recette' ? '+' : '-'}${formatCurrency(m)} - ${natureLabel}`,
+      });
+      setMontant('');
+      setNature('');
+      setPhoto(null);
+      setNotes('');
+    } catch (error) {
+      toast.error("Erreur lors de l'envoi de l'opération");
+    }
   };
 
   return (

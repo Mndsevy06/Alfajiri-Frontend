@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import {
   Building2,
-  Users,
   Palette,
   Bell,
   Plus,
@@ -50,33 +49,11 @@ import { DOSSIERS } from '@/lib/mock-data';
 import type { Dossier } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
-type User = {
-  id: string;
-  nom: string;
-  email: string;
-  role: string;
-  site: string;
-  actif: boolean;
-  permissions: string[];
-};
 
-const INITIAL_USERS: User[] = [
-  { id: 'u1', nom: 'Sarah Mukendi', email: 's.mukendi@transafrique.cd', role: 'Comptable Senior', site: 'Lubumbashi', actif: true, permissions: ['Comptabilite', 'Restitutions', 'Cloture', 'Parametres'] },
-  { id: 'u2', nom: 'Mwamba Kalonji', email: 'm.kalonji@transafrique.cd', role: 'Comptable', site: 'Lubumbashi', actif: true, permissions: ['Comptabilite', 'Restitutions'] },
-  { id: 'u3', nom: 'Joseph Kabongo', email: 'j.kabongo@transafrique.cd', role: 'Operateur Terrain', site: 'Zambie', actif: true, permissions: ['Saisie Terrain', 'Logistique'] },
-  { id: 'u4', nom: 'Olivier Nkulu', email: 'o.nkulu@transafrique.cd', role: 'Logisticien', site: 'Sabri', actif: true, permissions: ['Logistique', 'Ventes'] },
-  { id: 'u5', nom: 'Christian Bwalya', email: 'c.bwalya@transafrique.zm', role: 'Operateur Terrain', site: 'Zambie', actif: false, permissions: ['Saisie Terrain'] },
-];
-
-const ROLES = ['Comptable Senior', 'Comptable', 'Operateur Terrain', 'Logisticien', 'Administrateur'];
-const MODULES = ['Comptabilite', 'Restitutions', 'Cloture', 'Parametres', 'Saisie Terrain', 'Logistique', 'Ventes', 'Audit'];
 
 export default function ParametresPage() {
   const [dossiers, setDossiers] = useState<Dossier[]>(DOSSIERS);
-  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
   const [editingDossier, setEditingDossier] = useState<Dossier | null>(null);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [showUserDialog, setShowUserDialog] = useState(false);
   const [notifSettings, setNotifSettings] = useState({
     email: true,
     push: true,
@@ -84,16 +61,6 @@ export default function ParametresPage() {
     cloture: false,
   });
 
-  const toggleUserActive = (id: string) => {
-    setUsers(users.map((u) => (u.id === id ? { ...u, actif: !u.actif } : u)));
-    const user = users.find((u) => u.id === id);
-    toast.success(user?.actif ? 'Utilisateur desactive' : 'Utilisateur active');
-  };
-
-  const deleteUser = (id: string) => {
-    setUsers(users.filter((u) => u.id !== id));
-    toast.success('Utilisateur supprime');
-  };
 
   const saveDossier = (dossier: Dossier) => {
     setDossiers(dossiers.map((d) => (d.id === dossier.id ? dossier : d)));
@@ -101,27 +68,7 @@ export default function ParametresPage() {
     toast.success('Dossier mis a jour');
   };
 
-  const saveUser = (user: User) => {
-    if (editingUser) {
-      setUsers(users.map((u) => (u.id === user.id ? user : u)));
-      toast.success('Utilisateur mis a jour');
-    } else {
-      setUsers([...users, { ...user, id: `u${Date.now()}` }]);
-      toast.success('Utilisateur cree');
-    }
-    setEditingUser(null);
-    setShowUserDialog(false);
-  };
 
-  const togglePermission = (user: User, module: string) => {
-    const updated = {
-      ...user,
-      permissions: user.permissions.includes(module)
-        ? user.permissions.filter((p) => p !== module)
-        : [...user.permissions, module],
-    };
-    setUsers(users.map((u) => (u.id === user.id ? updated : u)));
-  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -138,10 +85,7 @@ export default function ParametresPage() {
             <Building2 className="h-4 w-4 mr-2" />
             Dossiers
           </TabsTrigger>
-          <TabsTrigger value="habilitations" className="flex-1 sm:flex-none">
-            <Users className="h-4 w-4 mr-2" />
-            Habilitations
-          </TabsTrigger>
+
           <TabsTrigger value="apparence" className="flex-1 sm:flex-none">
             <Palette className="h-4 w-4 mr-2" />
             Apparence
@@ -216,54 +160,7 @@ export default function ParametresPage() {
           ))}
         </TabsContent>
 
-        <TabsContent value="habilitations" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">{users.length} utilisateurs enregistres</p>
-            <Button size="sm" onClick={() => { setEditingUser(null); setShowUserDialog(true); }}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nouvel utilisateur
-            </Button>
-          </div>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-3">
-                {users.map((u) => (
-                  <div key={u.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors">
-                    <div className="flex items-center gap-3 flex-1">
-                      <div className={cn(
-                        'flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold shrink-0',
-                        u.actif ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-                      )}>
-                        {u.nom.split(' ').map((n) => n[0]).join('').slice(0, 2)}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium truncate">{u.nom}</p>
-                        <p className="text-xs text-muted-foreground truncate">{u.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="secondary">{u.role}</Badge>
-                      <Badge variant="outline">{u.site}</Badge>
-                      {u.permissions.map((p) => (
-                        <Badge key={p} className="bg-primary/5 text-primary text-xs">{p}</Badge>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Switch checked={u.actif} onCheckedChange={() => toggleUserActive(u.id)} />
-                      <Button variant="ghost" size="icon" onClick={() => { setEditingUser(u); setShowUserDialog(true); }}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => deleteUser(u.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="apparence" className="space-y-4">
           <Card>
@@ -588,96 +485,7 @@ export default function ParametresPage() {
         </DialogContent>
       </Dialog>
 
-      {/* User edit/create dialog */}
-      <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
-        <DialogContent className="sm:max-w-lg">
-          {(() => {
-            const baseUser = editingUser || { id: '', nom: '', email: '', role: ROLES[2], site: 'Lubumbashi', actif: true, permissions: [] };
-            const [form, setForm] = useState(baseUser);
-            return (
-              <>
-                <DialogHeader>
-                  <DialogTitle>{editingUser ? 'Modifier utilisateur' : 'Nouvel utilisateur'}</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto scrollbar-thin">
-                  <div className="space-y-2">
-                    <Label>Nom complet</Label>
-                    <Input
-                      value={form.nom}
-                      onChange={(e) => setForm({ ...form, nom: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input
-                      type="email"
-                      value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label>Role</Label>
-                      <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {ROLES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Site</Label>
-                      <Select value={form.site} onValueChange={(v) => setForm({ ...form, site: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Lubumbashi">Lubumbashi</SelectItem>
-                          <SelectItem value="Zambie">Zambie</SelectItem>
-                          <SelectItem value="Sabri">Sabri</SelectItem>
-                          <SelectItem value="Frontiere">Frontiere</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Permissions modules</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {MODULES.map((m) => {
-                        const active = form.permissions.includes(m);
-                        return (
-                          <button
-                            key={m}
-                            className={cn(
-                              'px-3 py-1.5 rounded-lg text-sm font-medium border transition-all',
-                              active
-                                ? 'bg-primary text-primary-foreground border-primary'
-                                : 'border-border text-muted-foreground hover:bg-muted/50'
-                            )}
-                            onClick={() => {
-                              const perms = active
-                                ? form.permissions.filter((p) => p !== m)
-                                : [...form.permissions, m];
-                              setForm({ ...form, permissions: perms });
-                            }}
-                          >
-                            {active && <Check className="h-3 w-3 inline mr-1" />}
-                            {m}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button variant="outline">Annuler</Button>
-                  </DialogClose>
-                  <Button onClick={() => saveUser(form)}>Enregistrer</Button>
-                </DialogFooter>
-              </>
-            );
-          })()}
-        </DialogContent>
-      </Dialog>
+
     </div>
   );
 }
