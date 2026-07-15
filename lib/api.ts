@@ -4,7 +4,7 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
   const token = localStorage.getItem('accessToken');
   
   const headers = new Headers(options.headers);
-  if (!headers.has('Content-Type')) {
+  if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
 
@@ -26,11 +26,11 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
   }
 
   if (!response.ok) {
-    let errorData = {};
+    let errorData: any = {};
     try {
       errorData = await response.json();
     } catch(e) {}
-    throw new Error(JSON.stringify(errorData) || 'Erreur API');
+    throw new Error(errorData.error || errorData.detail || (Object.keys(errorData).length ? JSON.stringify(errorData) : 'Erreur API'));
   }
 
   // Handle 204 No Content

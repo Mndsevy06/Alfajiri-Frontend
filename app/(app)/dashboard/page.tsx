@@ -49,7 +49,7 @@ import {
   CHART_RENTABILITE,
   CHART_EXPLOSION_CHARGES,
   ACTIVITES_RECENTES,
-  CAMIONS,
+  EXPEDITIONS,
 } from '@/lib/mock-data';
 import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -309,7 +309,7 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2 border-border/50 shadow-sm">
           <CardHeader>
             <CardTitle className="text-xl font-bold">Rentabilité par rotation</CardTitle>
-            <CardDescription>Analyse des marges par voyage de camion</CardDescription>
+            <CardDescription>Analyse des marges par expédition</CardDescription>
           </CardHeader>
           <CardContent className="min-h-[320px]">
             <ResponsiveContainer width="100%" height={320}>
@@ -398,7 +398,7 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent className="relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {CAMIONS.slice(0, 6).map((cam, i) => {
+            {EXPEDITIONS.slice(0, 6).map((exp, i) => {
               const statutLabel: Record<string, string> = {
                 chargement: 'En chargement',
                 transit_zambie: 'Transit Zambie',
@@ -419,19 +419,19 @@ export default function DashboardPage() {
               };
               
               // Determine progress bar color based on status
-              const progressColor = cam.statut.includes('douane') ? 'bg-warning' 
-                                : cam.statut.includes('arrive') || cam.statut.includes('decharge') ? 'bg-success'
-                                : 'bg-primary';
+              // NOTE: in dynamic logistique, we don't have a status text, but in mock data we still mock the etape id. 
+              // We'll just assume a generic progress color for dashboard mockup.
+              const progressColor = 'bg-primary';
 
               return (
                 <motion.div 
-                  key={cam.id} 
+                  key={exp.id} 
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.4, delay: i * 0.1 }}
                   className="group rounded-2xl border border-border/60 bg-background/80 p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 backdrop-blur-md relative overflow-hidden"
                 >
-                  <div className="absolute top-0 left-0 w-1 h-full" style={{ backgroundColor: cam.statut.includes('douane') ? 'hsl(var(--warning))' : cam.statut.includes('arrive') ? 'hsl(var(--success))' : 'hsl(var(--primary))', opacity: 0.5 }} />
+                  <div className="absolute top-0 left-0 w-1 h-full" style={{ backgroundColor: 'hsl(var(--primary))', opacity: 0.5 }} />
                   
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
@@ -439,15 +439,15 @@ export default function DashboardPage() {
                         <Truck className="h-6 w-6" />
                       </div>
                       <div>
-                        <p className="text-lg font-bold tracking-tight">{cam.immat}</p>
+                        <p className="text-lg font-bold tracking-tight">{exp.identifiant}</p>
                         <p className="text-sm text-muted-foreground font-medium flex items-center gap-1">
                           <Users className="h-3 w-3" />
-                          {cam.chauffeur}
+                          {exp.responsable}
                         </p>
                       </div>
                     </div>
-                    <Badge variant="outline" className={cn('px-3 py-1 font-semibold', statutColor[cam.statut])}>
-                      {statutLabel[cam.statut]}
+                    <Badge variant="outline" className={cn('px-3 py-1 font-semibold', 'bg-primary/10 text-primary border-primary/20')}>
+                      En cours
                     </Badge>
                   </div>
                   
@@ -457,19 +457,12 @@ export default function DashboardPage() {
                         <Package className="h-4 w-4" />
                         Progression
                       </span>
-                      <span className="text-foreground font-bold">{cam.progression}%</span>
+                      <span className="text-foreground font-bold">{exp.progression}%</span>
                     </div>
-                    <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-secondary">
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${cam.progression}%` }}
-                        transition={{ duration: 1, delay: 0.2 + (i * 0.1), ease: "easeOut" }}
-                        className={cn("h-full rounded-full transition-all duration-500", progressColor)}
-                      />
-                    </div>
+                    <Progress value={exp.progression} className={cn("h-2", progressColor)} />
                     <p className="text-sm font-medium text-foreground/80 flex items-center gap-2 pt-1">
                       <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="truncate">{cam.position}</span>
+                      <span className="truncate">{exp.position}</span>
                     </p>
                   </div>
                 </motion.div>

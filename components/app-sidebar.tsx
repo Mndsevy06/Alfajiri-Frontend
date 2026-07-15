@@ -62,7 +62,7 @@ export function AppSidebar({ open, onToggle }: { open: boolean; onToggle: () => 
       <aside
         className={cn(
           'fixed lg:sticky top-0 z-50 h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 flex flex-col',
-          open ? 'w-72 translate-x-0' : 'w-72 -translate-x-full lg:translate-x-0 lg:w-20'
+          open ? 'w-64 translate-x-0' : 'w-64 -translate-x-full lg:translate-x-0 lg:w-20'
         )}
       >
         <div className="relative flex items-center gap-3 px-5 h-16 border-b border-sidebar-border shrink-0">

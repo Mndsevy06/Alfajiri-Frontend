@@ -28,6 +28,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
@@ -69,13 +70,26 @@ export default function ImmobilisationsPage() {
   const [siteSearch, setSiteSearch] = useState('');
   
   const [form, setForm] = useState({
+    id: undefined as string | undefined,
     code: '',
     libelle: '',
     categorie: 'Materiel de transport',
     valeurAcquisition: '',
     duree: '5',
-    methode: 'lineaire' as 'lineaire' | 'degressive',
+    methode: 'lineaire' as 'lineaire' | 'degressive' | 'exceptionnelle' | 'unites_oeuvre',
     site: 'lubumbashi' as string,
+    dateAcquisition: new Date().toISOString().split('T')[0],
+  });
+
+  const resetForm = () => setForm({
+    id: undefined,
+    code: '',
+    libelle: '',
+    categorie: 'Materiel de transport',
+    valeurAcquisition: '',
+    duree: '5',
+    methode: 'lineaire',
+    site: 'lubumbashi',
     dateAcquisition: new Date().toISOString().split('T')[0],
   });
 
@@ -125,7 +139,7 @@ export default function ImmobilisationsPage() {
     }
     
     try {
-      const newImmo = {
+      const immoData = {
         code: form.code || `IM-${String(immos.length + 1).padStart(3, '0')}`,
         libelle: form.libelle,
         categorie: form.categorie,
@@ -136,18 +150,41 @@ export default function ImmobilisationsPage() {
         site: form.site,
       };
 
-      await fetchWithAuth('/immobilisations/', {
-        method: 'POST',
-        body: JSON.stringify(newImmo),
-      });
+      if (form.id) {
+        await fetchWithAuth(`/immobilisations/${form.id}/`, {
+          method: 'PUT',
+          body: JSON.stringify(immoData),
+        });
+        toast.success('Immobilisation modifiée');
+      } else {
+        await fetchWithAuth('/immobilisations/', {
+          method: 'POST',
+          body: JSON.stringify(immoData),
+        });
+        toast.success('Immobilisation créée');
+      }
 
-      toast.success('Immobilisation créée');
       setDialogOpen(false);
-      setForm({ code: '', libelle: '', categorie: 'Materiel de transport', valeurAcquisition: '', duree: '5', methode: 'lineaire', site: 'lubumbashi', dateAcquisition: new Date().toISOString().split('T')[0] });
+      resetForm();
       fetchImmos();
     } catch (e: any) {
-      toast.error('Erreur lors de la création', { description: e.message });
+      toast.error('Erreur lors de l\'enregistrement', { description: e.message });
     }
+  };
+
+  const handleEdit = (immo: Immobilisation) => {
+    setForm({
+      id: immo.id,
+      code: immo.code,
+      libelle: immo.libelle,
+      categorie: immo.categorie,
+      valeurAcquisition: immo.valeurAcquisition.toString(),
+      duree: immo.duree.toString(),
+      methode: immo.methode as any,
+      site: immo.site,
+      dateAcquisition: typeof immo.dateAcquisition === 'string' ? immo.dateAcquisition.split('T')[0] : new Date(immo.dateAcquisition).toISOString().split('T')[0],
+    });
+    setDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -167,16 +204,18 @@ export default function ImmobilisationsPage() {
       const year = new Date().getFullYear();
       const dotationTotal = immos.reduce((acc, i) => acc + Number(i.dotationAnnuelle), 0);
       
+      const today = new Date().toISOString().split('T')[0];
+      const timestamp = Date.now().toString().slice(-6);
       const ecritureData = {
-        numero: `OD-${year}-00999`,
-        piece: `PC-OD-${year}-00999`,
+        numero: `OD-${year}-DOT-${timestamp}`,
+        piece: `PC-OD-${year}-DOT-${timestamp}`,
         journal: 'OD',
-        date: new Date().toISOString().split('T')[0],
+        date: today,
         libelle: `Dotations aux amortissements de l'exercice ${year}`,
         statut: 'brouillard',
         lignes: [
-          { compte: '68', libelleCompte: 'Dotations aux amortissements', libelle: 'Dotation globale', debit: dotationTotal, credit: 0 },
-          { compte: '28', libelleCompte: 'Amortissements', libelle: 'Dotation globale', debit: 0, credit: dotationTotal }
+          { date: today, compte: '68', libelleCompte: 'Dotations aux amortissements', libelle: 'Dotation globale', debit: dotationTotal, credit: 0 },
+          { date: today, compte: '28', libelleCompte: 'Amortissements', libelle: 'Dotation globale', debit: 0, credit: dotationTotal }
         ]
       };
 
@@ -285,7 +324,7 @@ export default function ImmobilisationsPage() {
             <Calculator className="h-4 w-4 mr-2" />
             Générer dotations
           </Button>
-          <Button size="sm" onClick={() => setDialogOpen(true)}>
+          <Button size="sm" onClick={() => { resetForm(); setDialogOpen(true); }}>
             <Plus className="h-4 w-4 mr-2" />
             Nouvelle immo
           </Button>
@@ -407,11 +446,11 @@ export default function ImmobilisationsPage() {
                         </div>
                       </td>
                       <td className="py-3 px-2">
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleSimulate(i)}>
                             <Calculator className="h-3.5 w-3.5" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toast.info('Édition...')}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(i)}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
                           <Button
@@ -443,7 +482,8 @@ export default function ImmobilisationsPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Nouvelle immobilisation</DialogTitle>
+            <DialogTitle>{form.id ? 'Modifier l\'immobilisation' : 'Nouvelle immobilisation'}</DialogTitle>
+            <DialogDescription className="sr-only">Formulaire de création d'une nouvelle immobilisation.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
@@ -595,7 +635,7 @@ export default function ImmobilisationsPage() {
             <DialogClose asChild>
               <Button variant="outline">Annuler</Button>
             </DialogClose>
-            <Button onClick={handleCreate}>Créer</Button>
+            <Button onClick={handleCreate}>{form.id ? 'Modifier' : 'Créer'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -609,7 +649,7 @@ export default function ImmobilisationsPage() {
                   <Calculator className="h-5 w-5 text-primary" />
                   Plan d'amortissement - {simulating.code}
                 </DialogTitle>
-                <CardDescription>{simulating.libelle} - Méthode {simulating.methode}</CardDescription>
+                <DialogDescription>{simulating.libelle} - Méthode {simulating.methode}</DialogDescription>
               </DialogHeader>
               <div className="space-y-3 py-2">
                 <div className="grid grid-cols-3 gap-3 text-sm">

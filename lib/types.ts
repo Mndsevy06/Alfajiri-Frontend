@@ -84,20 +84,41 @@ export type Journal = {
   dernierNumero: number;
 };
 
-export type Camion = {
+export type CircuitLogistique = {
   id: string;
-  immat: string;
-  chauffeur: string;
+  nom: string;
+  description: string | null;
+  actif: boolean;
+  date_creation: string;
+  etapes?: EtapeCircuit[]; // Optional since it might come via nested serializer
+};
+
+export type EtapeCircuit = {
+  id: string;
+  circuit: string;
+  nom: string;
+  ordre: number;
+  est_finale: boolean;
+  couleur_badge: string;
+};
+
+export type Expedition = {
+  id: string;
+  identifiant: string;
+  responsable: string;
   transporteur: string;
   chargement: number;
-  statut: 'chargement' | 'transit_zambie' | 'douane_zambie' | 'douane_rdc' | 'transit_rdc' | 'arrive_sabri' | 'decharge';
-  dateDepart: string;
-  dateArrivee?: string;
-  position: string;
+  circuit: string;
+  etape_actuelle: string | null;
+  date_depart: string | null;
+  date_arrivee: string | null;
+  position: string | null;
   progression: number;
-  bl: string;
-  factureTransport: number;
-  douaneMontant: number;
+  document_reference: string | null;
+  facture_transport: number;
+  frais_douane: number;
+  etape_actuelle_detail?: EtapeCircuit;
+  circuit_detail?: CircuitLogistique;
 };
 
 export type Tiers = {

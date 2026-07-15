@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Building2, 
@@ -25,89 +25,146 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { fetchWithAuth } from '@/lib/api';
 
 interface PaymentFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
+interface Tier {
+  code: string;
+  nom: string;
+  type: string;
+}
+
 export function PaymentForm({ onSuccess, onCancel }: PaymentFormProps) {
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState('encaissement');
+  const [tiersList, setTiersList] = useState<Tier[]>([]);
+  
+  // Form State
+  const [selectedTier, setSelectedTier] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [amount, setAmount] = useState('');
+  const [method, setMethod] = useState('virement');
+  const [reference, setReference] = useState('');
+  const [memo, setMemo] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const loadTiers = async () => {
+      try {
+        const data = await fetchWithAuth('/plan_comptable/tiers/');
+        setTiersList(data);
+      } catch (error) {
+        console.error('Error loading tiers', error);
+        toast.error('Erreur lors du chargement des tiers');
+      }
+    };
+    loadTiers();
+  }, []);
+
+  const filteredTiers = tiersList.filter(tier => {
+    if (type === 'encaissement') {
+      return tier.type === 'client';
+    } else {
+      return tier.type === 'fournisseur' || tier.type === 'personnel';
+    }
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
-    // Simulation of API Call
-    setTimeout(() => {
+    try {
+      const formData = new FormData();
+      formData.append('type', type);
+      formData.append('date', date);
+      formData.append('tiers', selectedTier);
+      formData.append('montant', amount);
+      formData.append('mode', method);
+      formData.append('reference', reference);
+      formData.append('memo', memo);
+      formData.append('statut', 'en_attente');
+      
+      if (file) {
+        formData.append('justificatif', file);
+      }
+
+      await fetchWithAuth('/paiements/operations/', {
+        method: 'POST',
+        body: formData
+      });
+
       toast.success(
         type === 'encaissement' 
           ? 'Encaissement enregistré avec succès' 
-          : 'Paiement enregistré avec succès',
-        {
-          description: 'La pièce a été journalisée et lettrée.'
-        }
+          : 'Paiement enregistré avec succès'
       );
-      setLoading(false);
+      
       if (onSuccess) onSuccess();
-    }, 1500);
+    } catch (error) {
+      console.error('Error saving payment', error);
+      toast.error('Erreur lors de l\'enregistrement de l\'opération');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="space-y-4">
-      <Tabs defaultValue="encaissement" className="w-full" onValueChange={setType}>
+      <Tabs defaultValue="encaissement" className="w-full" onValueChange={(val) => {
+        setType(val);
+        setSelectedTier(''); // Reset selection on type change
+      }}>
         <TabsList className="grid w-full grid-cols-2 mb-4">
           <TabsTrigger value="encaissement" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             Encaissement Client
           </TabsTrigger>
-          <TabsTrigger value="decaissement" className="data-[state=active]:destructive data-[state=active]:text-destructive-foreground">
+          <TabsTrigger value="decaissement" className="data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground">
             Paiement Fournisseur
           </TabsTrigger>
         </TabsList>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="tiers">{type === 'encaissement' ? 'Client' : 'Fournisseur/Transporteur'}</Label>
-              <Select required>
-                <SelectTrigger className="bg-background/50 backdrop-blur-sm">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="tiers">{type === 'encaissement' ? 'Client' : 'Fournisseur / Personnel'}</Label>
+              <Select required value={selectedTier} onValueChange={setSelectedTier}>
+                <SelectTrigger className="bg-background/50 backdrop-blur-sm h-10">
                   <SelectValue placeholder="Sélectionnez un tiers" />
                 </SelectTrigger>
                 <SelectContent>
-                  {type === 'encaissement' ? (
-                    <>
-                      <SelectItem value="client-1">Société Minière KZI</SelectItem>
-                      <SelectItem value="client-2">Construct RDC</SelectItem>
-                    </>
-                  ) : (
-                    <>
-                      <SelectItem value="fourn-1">Dangote Zambia</SelectItem>
-                      <SelectItem value="fourn-2">Transports Mabuya</SelectItem>
-                      <SelectItem value="fourn-3">Caisse de Site (Sabri)</SelectItem>
-                    </>
+                  {filteredTiers.map(tier => (
+                    <SelectItem key={tier.code} value={tier.code}>
+                      {tier.nom}
+                    </SelectItem>
+                  ))}
+                  {filteredTiers.length === 0 && (
+                    <div className="p-2 text-sm text-muted-foreground text-center">Aucun tiers trouvé</div>
                   )}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="date">Date de l'opération</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="date">Date</Label>
               <div className="relative">
                 <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="date"
                   type="date"
                   required
-                  className="pl-10 bg-background/50 backdrop-blur-sm"
-                  defaultValue={new Date().toISOString().split('T')[0]}
+                  value={date}
+                  onChange={e => setDate(e.target.value)}
+                  className="pl-10 h-10 bg-background/50 backdrop-blur-sm"
                 />
               </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="amount">Montant (USD)</Label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -118,15 +175,17 @@ export function PaymentForm({ onSuccess, onCancel }: PaymentFormProps) {
                   min="0"
                   placeholder="0.00"
                   required
-                  className="pl-10 bg-background/50 backdrop-blur-sm font-medium"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                  className="pl-10 h-10 bg-background/50 backdrop-blur-sm font-medium"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="method">Mode de Paiement</Label>
-              <Select required defaultValue="virement">
-                <SelectTrigger className="bg-background/50 backdrop-blur-sm">
+              <Select required value={method} onValueChange={setMethod}>
+                <SelectTrigger className="bg-background/50 backdrop-blur-sm h-10">
                   <SelectValue placeholder="Mode" />
                 </SelectTrigger>
                 <SelectContent>
@@ -137,58 +196,74 @@ export function PaymentForm({ onSuccess, onCancel }: PaymentFormProps) {
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="reference">Référence (N° Facture / BL)</Label>
-            <div className="relative">
-              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <div className="space-y-1.5">
+              <Label htmlFor="reference">Référence (N° Facture/BL)</Label>
+              <div className="relative">
+                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="reference"
+                  placeholder="Ex: FAC-2025"
+                  required
+                  value={reference}
+                  onChange={e => setReference(e.target.value)}
+                  className="pl-10 h-10 bg-background/50 backdrop-blur-sm"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="memo">Notes (Optionnel)</Label>
               <Input
-                id="reference"
-                placeholder="Ex: FAC-2025-0042"
-                required
-                className="pl-10 bg-background/50 backdrop-blur-sm"
+                id="memo"
+                placeholder="Commentaires..."
+                value={memo}
+                onChange={e => setMemo(e.target.value)}
+                className="h-10 bg-background/50 backdrop-blur-sm"
               />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Justificatif (Obligatoire)</Label>
-            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center hover:bg-muted/50 transition-colors cursor-pointer bg-background/30 backdrop-blur-sm">
-              <UploadCloud className="h-6 w-6 text-muted-foreground mx-auto mb-1" />
-              <p className="text-sm font-medium">Glissez-déposez la preuve</p>
-              <p className="text-xs text-muted-foreground">PDF, JPG ou PNG (Max 5MB)</p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="memo">Mémorandum / Notes</Label>
-            <Textarea
-              id="memo"
-              placeholder="Notes..."
-              className="resize-none h-14 bg-background/50 backdrop-blur-sm"
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4 border-t border-border/50">
-            {onCancel && (
-              <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
-                Annuler
-              </Button>
-            )}
-            <Button type="submit" disabled={loading} className="gap-2 shadow-lg">
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                  Traitement...
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 border-t border-border/50">
+            <div className="w-full sm:w-1/3">
+              <input
+                type="file"
+                ref={fileRef}
+                className="hidden"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={e => setFile(e.target.files?.[0] || null)}
+              />
+              <div 
+                onClick={() => fileRef.current?.click()}
+                className={`border-2 border-dashed rounded-md p-2 flex items-center justify-center gap-2 transition-colors cursor-pointer bg-background/30 backdrop-blur-sm h-10 ${file ? 'border-primary text-primary' : 'border-muted-foreground/25 text-muted-foreground hover:bg-muted/50'}`}
+              >
+                <UploadCloud className="h-4 w-4 shrink-0" />
+                <span className="text-xs font-medium truncate">
+                  {file ? file.name : "Joindre fichier"}
                 </span>
-              ) : (
-                <>
-                  <CreditCard className="h-4 w-4" />
-                  Valider l'Opération
-                </>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+              {onCancel && (
+                <Button type="button" variant="outline" className="h-10" onClick={onCancel} disabled={loading}>
+                  Annuler
+                </Button>
               )}
-            </Button>
+              <Button type="submit" disabled={loading} className="gap-2 h-10 shadow-lg">
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                    Traitement...
+                  </span>
+                ) : (
+                  <>
+                    <CreditCard className="h-4 w-4" />
+                    Valider
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </form>
       </Tabs>
