@@ -36,7 +36,6 @@ export type CompteComptable = {
   sens_normal?: 'debit' | 'credit' | 'aucun';
   mouvementable: boolean;
   lettrable: boolean;
-  lettable: boolean;
   soumis_tva: boolean;
   analytique_obligatoire: boolean;
   requiert_auxiliaire: boolean;

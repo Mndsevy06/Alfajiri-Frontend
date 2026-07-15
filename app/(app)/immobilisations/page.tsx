@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Building2,
   Plus,
@@ -11,6 +11,11 @@ import {
   Pencil,
   TrendingDown,
   Calendar,
+  Loader2,
+  FileIcon,
+  Printer,
+  Check,
+  ChevronsUpDown,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,16 +39,35 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { IMMOBILISATIONS, SITES } from '@/lib/mock-data';
+import { SITES } from '@/lib/mock-data';
 import type { Immobilisation } from '@/lib/types';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { fetchWithAuth } from '@/lib/api';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 export default function ImmobilisationsPage() {
-  const [immos, setImmos] = useState<Immobilisation[]>(IMMOBILISATIONS);
+  const [immos, setImmos] = useState<Immobilisation[]>([]);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [simulating, setSimulating] = useState<Immobilisation | null>(null);
+  const [amortissementPlan, setAmortissementPlan] = useState<any[]>([]);
+  const [isLoadingPlan, setIsLoadingPlan] = useState(false);
+  const [sites, setSites] = useState<{id: string, label: string, short?: string}[]>([]);
+  const [siteOpen, setSiteOpen] = useState(false);
+  const [siteSearch, setSiteSearch] = useState('');
+  
   const [form, setForm] = useState({
     code: '',
     libelle: '',
@@ -55,6 +79,29 @@ export default function ImmobilisationsPage() {
     dateAcquisition: new Date().toISOString().split('T')[0],
   });
 
+  const fetchImmos = async () => {
+    try {
+      const data = await fetchWithAuth('/immobilisations/');
+      setImmos(data);
+    } catch (e) {
+      toast.error('Erreur lors du chargement des immobilisations');
+    }
+  };
+
+  const fetchSites = async () => {
+    try {
+      const data = await fetchWithAuth('/immobilisations/sites/');
+      setSites(data);
+    } catch (e) {
+      // Ignorer l'erreur silencieusement ou utiliser des sites par défaut
+    }
+  };
+
+  useEffect(() => {
+    fetchImmos();
+    fetchSites();
+  }, []);
+
   const filtered = useMemo(() => {
     return immos.filter(
       (i) =>
@@ -64,55 +111,148 @@ export default function ImmobilisationsPage() {
     );
   }, [immos, search]);
 
-  const totalAcquisition = immos.reduce((s, i) => s + i.valeurAcquisition, 0);
-  const totalAmortissement = immos.reduce((s, i) => s + i.cumulAmortissement, 0);
-  const totalVNC = immos.reduce((s, i) => s + i.vnc, 0);
-  const totalDotation = immos.reduce((s, i) => s + i.dotationAnnuelle, 0);
+  const totalAcquisition = immos.reduce((s, i) => s + Number(i.valeurAcquisition), 0);
+  const totalAmortissement = immos.reduce((s, i) => s + Number(i.cumulAmortissement), 0);
+  const totalVNC = immos.reduce((s, i) => s + Number(i.vnc), 0);
+  const totalDotation = immos.reduce((s, i) => s + Number(i.dotationAnnuelle), 0);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     const valeur = parseFloat(form.valeurAcquisition);
     const duree = parseInt(form.duree);
     if (!form.libelle || !valeur || !duree) {
       toast.error('Veuillez renseigner tous les champs obligatoires');
       return;
     }
-    const newImmo: Immobilisation = {
-      id: `i${Date.now()}`,
-      code: form.code || `IM-${String(immos.length + 1).padStart(3, '0')}`,
-      libelle: form.libelle,
-      categorie: form.categorie,
-      dateAcquisition: form.dateAcquisition,
-      valeurAcquisition: valeur,
-      duree,
-      methode: form.methode,
-      cumulAmortissement: 0,
-      vnc: valeur,
-      dotationAnnuelle: valeur / duree,
-      site: form.site as Immobilisation['site'],
-    };
-    setImmos([newImmo, ...immos]);
-    toast.success('Immobilisation creee', { description: newImmo.libelle });
-    setDialogOpen(false);
-    setForm({ code: '', libelle: '', categorie: 'Materiel de transport', valeurAcquisition: '', duree: '5', methode: 'lineaire', site: 'lubumbashi', dateAcquisition: new Date().toISOString().split('T')[0] });
-  };
+    
+    try {
+      const newImmo = {
+        code: form.code || `IM-${String(immos.length + 1).padStart(3, '0')}`,
+        libelle: form.libelle,
+        categorie: form.categorie,
+        dateAcquisition: form.dateAcquisition,
+        valeurAcquisition: valeur,
+        duree,
+        methode: form.methode,
+        site: form.site,
+      };
 
-  const generateDotations = () => {
-    toast.success('Dotations injectees', {
-      description: `${formatCurrency(totalDotation)} dans le journal OD`,
-    });
-  };
+      await fetchWithAuth('/immobilisations/', {
+        method: 'POST',
+        body: JSON.stringify(newImmo),
+      });
 
-  const getAmortissementPlan = (immo: Immobilisation) => {
-    const annuite = immo.valeurAcquisition / immo.duree;
-    const plan = [];
-    let cumul = 0;
-    let vnc = immo.valeurAcquisition;
-    for (let an = 1; an <= immo.duree; an++) {
-      cumul += annuite;
-      vnc -= annuite;
-      plan.push({ an, annuite, cumul, vnc: Math.max(0, vnc) });
+      toast.success('Immobilisation créée');
+      setDialogOpen(false);
+      setForm({ code: '', libelle: '', categorie: 'Materiel de transport', valeurAcquisition: '', duree: '5', methode: 'lineaire', site: 'lubumbashi', dateAcquisition: new Date().toISOString().split('T')[0] });
+      fetchImmos();
+    } catch (e: any) {
+      toast.error('Erreur lors de la création', { description: e.message });
     }
-    return plan;
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await fetchWithAuth(`/immobilisations/${id}/`, {
+        method: 'DELETE',
+      });
+      toast.success('Immobilisation supprimée');
+      fetchImmos();
+    } catch (e) {
+      toast.error('Erreur lors de la suppression');
+    }
+  };
+
+  const generateDotations = async () => {
+    try {
+      const year = new Date().getFullYear();
+      const dotationTotal = immos.reduce((acc, i) => acc + Number(i.dotationAnnuelle), 0);
+      
+      const ecritureData = {
+        numero: `OD-${year}-00999`,
+        piece: `PC-OD-${year}-00999`,
+        journal: 'OD',
+        date: new Date().toISOString().split('T')[0],
+        libelle: `Dotations aux amortissements de l'exercice ${year}`,
+        statut: 'brouillard',
+        lignes: [
+          { compte: '68', libelleCompte: 'Dotations aux amortissements', libelle: 'Dotation globale', debit: dotationTotal, credit: 0 },
+          { compte: '28', libelleCompte: 'Amortissements', libelle: 'Dotation globale', debit: 0, credit: dotationTotal }
+        ]
+      };
+
+      await fetchWithAuth('/saisie/ecritures/', {
+        method: 'POST',
+        body: JSON.stringify(ecritureData)
+      });
+      toast.success('Dotations générées', {
+        description: `${formatCurrency(dotationTotal)} ajoutés au brouillard OD`,
+      });
+    } catch (e: any) {
+      toast.error('Erreur lors de la génération', { description: e.message });
+    }
+  };
+
+  const exportToCSV = () => {
+    const data = immos.map(i => ({
+      Code: i.code,
+      Libellé: i.libelle,
+      Catégorie: i.categorie,
+      Site: i.site,
+      Acquisition: formatDate(i.dateAcquisition),
+      Valeur: Number(i.valeurAcquisition),
+      Cumul: Number(i.cumulAmortissement),
+      VNC: Number(i.vnc),
+      Méthode: i.methode,
+      Durée: i.duree
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Immobilisations");
+    XLSX.writeFile(wb, "Registre_Immobilisations.xlsx");
+    toast.success('Registre exporté en Excel');
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("Registre des Immobilisations", 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`, 14, 22);
+
+    const tableData = immos.map(i => [
+      i.code,
+      i.libelle,
+      i.categorie,
+      formatDate(i.dateAcquisition),
+      formatCurrency(Number(i.valeurAcquisition)),
+      formatCurrency(Number(i.cumulAmortissement)),
+      formatCurrency(Number(i.vnc))
+    ]);
+
+    autoTable(doc, {
+      head: [['Code', 'Libellé', 'Catégorie', 'Acquisition', 'Valeur', 'Cumul', 'VNC']],
+      body: tableData,
+      startY: 28,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [41, 128, 185] },
+    });
+
+    doc.save("Registre_Immobilisations.pdf");
+    toast.success('Registre exporté en PDF');
+  };
+
+  const handleSimulate = async (immo: Immobilisation) => {
+    setSimulating(immo);
+    setIsLoadingPlan(true);
+    setAmortissementPlan([]);
+    try {
+      const data = await fetchWithAuth(`/immobilisations/${immo.id}/amortissement/`);
+      setAmortissementPlan(data);
+    } catch (e) {
+      toast.error('Erreur lors du calcul de l\'amortissement');
+    } finally {
+      setIsLoadingPlan(false);
+    }
   };
 
   return (
@@ -121,17 +261,29 @@ export default function ImmobilisationsPage() {
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Immobilisations</h1>
           <p className="text-muted-foreground mt-1">
-            Registre des actifs - Plans d'amortissement - Generation de dotations
+            Registre des actifs - Plans d'amortissement - Génération de dotations
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => toast.success('Registre exporte')}>
-            <Download className="h-4 w-4 mr-2" />
-            Exporter
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Exporter
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={exportToCSV}>
+                <FileIcon className="h-4 w-4 mr-2" /> Export Excel / CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportToPDF}>
+                <Printer className="h-4 w-4 mr-2" /> Export PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button variant="outline" size="sm" onClick={generateDotations}>
             <Calculator className="h-4 w-4 mr-2" />
-            Generer dotations
+            Générer dotations
           </Button>
           <Button size="sm" onClick={() => setDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -200,7 +352,7 @@ export default function ImmobilisationsPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher par code, libelle ou categorie..."
+              placeholder="Rechercher par code, libellé ou catégorie..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
@@ -216,20 +368,23 @@ export default function ImmobilisationsPage() {
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left py-3 px-2 font-semibold text-muted-foreground">Code</th>
-                  <th className="text-left py-3 px-2 font-semibold text-muted-foreground">Libelle</th>
-                  <th className="text-left py-3 px-2 font-semibold text-muted-foreground">Categorie</th>
+                  <th className="text-left py-3 px-2 font-semibold text-muted-foreground">Libellé</th>
+                  <th className="text-left py-3 px-2 font-semibold text-muted-foreground">Catégorie</th>
                   <th className="text-left py-3 px-2 font-semibold text-muted-foreground">Site</th>
                   <th className="text-left py-3 px-2 font-semibold text-muted-foreground">Acquisition</th>
                   <th className="text-right py-3 px-2 font-semibold text-muted-foreground">Valeur</th>
                   <th className="text-right py-3 px-2 font-semibold text-muted-foreground">Cumul Amort.</th>
                   <th className="text-right py-3 px-2 font-semibold text-muted-foreground">VNC</th>
-                  <th className="text-center py-3 px-2 font-semibold text-muted-foreground">Amorti a</th>
+                  <th className="text-center py-3 px-2 font-semibold text-muted-foreground">Amorti à</th>
                   <th className="py-3 px-2"></th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((i) => {
-                  const amortPct = (i.cumulAmortissement / i.valeurAcquisition) * 100;
+                  const valeurAcq = Number(i.valeurAcquisition);
+                  const cumulAmort = Number(i.cumulAmortissement);
+                  const vnc = Number(i.vnc);
+                  const amortPct = valeurAcq > 0 ? (cumulAmort / valeurAcq) * 100 : 0;
                   const site = SITES.find((s) => s.id === i.site);
                   return (
                     <tr key={i.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors group">
@@ -238,13 +393,13 @@ export default function ImmobilisationsPage() {
                       <td className="py-3 px-2 text-muted-foreground">{i.categorie}</td>
                       <td className="py-3 px-2">
                         <Badge variant="outline" className="text-xs">
-                          {site?.short}
+                          {site?.short || i.site}
                         </Badge>
                       </td>
                       <td className="py-3 px-2 text-muted-foreground">{formatDate(i.dateAcquisition)}</td>
-                      <td className="py-3 px-2 text-right font-mono">{formatCurrency(i.valeurAcquisition)}</td>
-                      <td className="py-3 px-2 text-right font-mono text-muted-foreground">{formatCurrency(i.cumulAmortissement)}</td>
-                      <td className="py-3 px-2 text-right font-mono font-semibold">{formatCurrency(i.vnc)}</td>
+                      <td className="py-3 px-2 text-right font-mono">{formatCurrency(valeurAcq)}</td>
+                      <td className="py-3 px-2 text-right font-mono text-muted-foreground">{formatCurrency(cumulAmort)}</td>
+                      <td className="py-3 px-2 text-right font-mono font-semibold">{formatCurrency(vnc)}</td>
                       <td className="py-3 px-2">
                         <div className="flex items-center gap-2">
                           <Progress value={amortPct} className="h-1.5 w-16" />
@@ -253,20 +408,17 @@ export default function ImmobilisationsPage() {
                       </td>
                       <td className="py-3 px-2">
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSimulating(i)}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleSimulate(i)}>
                             <Calculator className="h-3.5 w-3.5" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toast.info('Edition...')}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toast.info('Édition...')}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 text-destructive"
-                            onClick={() => {
-                              setImmos(immos.filter((x) => x.id !== i.id));
-                              toast.success('Immobilisation supprimee');
-                            }}
+                            onClick={() => handleDelete(i.id)}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
@@ -275,6 +427,13 @@ export default function ImmobilisationsPage() {
                     </tr>
                   );
                 })}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={10} className="py-8 text-center text-muted-foreground">
+                      Aucune immobilisation trouvée.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -288,7 +447,7 @@ export default function ImmobilisationsPage() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Libelle</Label>
+              <Label>Libellé</Label>
               <Input
                 placeholder="ex: Camion Mercedes Actros"
                 value={form.libelle}
@@ -297,28 +456,87 @@ export default function ImmobilisationsPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Categorie</Label>
+                <Label>Catégorie</Label>
                 <Select value={form.categorie} onValueChange={(v) => setForm({ ...form, categorie: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Materiel de transport">Materiel de transport</SelectItem>
-                    <SelectItem value="Batiments">Batiments</SelectItem>
-                    <SelectItem value="Logiciels">Logiciels</SelectItem>
-                    <SelectItem value="Mobilier">Mobilier</SelectItem>
+                    <SelectItem value="Immobilisations incorporelles">Immobilisations incorporelles</SelectItem>
+                    <SelectItem value="Immobilisations corporelles">Immobilisations corporelles</SelectItem>
+                    <SelectItem value="Immobilisations financières">Immobilisations financières</SelectItem>
+                    <SelectItem value="Terrains">Terrains</SelectItem>
+                    <SelectItem value="Bâtiments">Bâtiments</SelectItem>
                     <SelectItem value="Installations techniques">Installations techniques</SelectItem>
+                    <SelectItem value="Matériel de transport">Matériel de transport</SelectItem>
+                    <SelectItem value="Mobilier et matériel de bureau">Mobilier et matériel de bureau</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 flex flex-col">
                 <Label>Site</Label>
-                <Select value={form.site} onValueChange={(v) => setForm({ ...form, site: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {SITES.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={siteOpen} onOpenChange={setSiteOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={siteOpen}
+                      className="justify-between"
+                    >
+                      {form.site
+                        ? sites.find((s) => s.label === form.site)?.label || form.site
+                        : "Sélectionner ou saisir un site..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px] p-0" align="start">
+                    <Command>
+                      <CommandInput 
+                        placeholder="Rechercher ou saisir..." 
+                        value={siteSearch}
+                        onValueChange={setSiteSearch}
+                      />
+                      <CommandList>
+                        <CommandEmpty>
+                          {siteSearch ? (
+                            <Button 
+                              variant="ghost" 
+                              className="w-full justify-start text-sm font-normal py-2 px-2"
+                              onClick={() => {
+                                setForm({ ...form, site: siteSearch });
+                                setSiteOpen(false);
+                                setSiteSearch('');
+                              }}
+                            >
+                              Créer le site "{siteSearch}"
+                            </Button>
+                          ) : (
+                            <span className="py-2 px-2 text-sm text-muted-foreground">Aucun site trouvé.</span>
+                          )}
+                        </CommandEmpty>
+                        <CommandGroup>
+                          {sites.map((s) => (
+                            <CommandItem
+                              key={s.id}
+                              value={s.label}
+                              onSelect={() => {
+                                setForm({ ...form, site: s.label });
+                                setSiteOpen(false);
+                                setSiteSearch('');
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  form.site === s.label ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {s.label}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -332,7 +550,7 @@ export default function ImmobilisationsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Duree (annees)</Label>
+                <Label>Durée (années)</Label>
                 <Input
                   type="number"
                   value={form.duree}
@@ -350,12 +568,14 @@ export default function ImmobilisationsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Methode</Label>
-                <Select value={form.methode} onValueChange={(v) => setForm({ ...form, methode: v as 'lineaire' | 'degressive' })}>
+                <Label>Méthode</Label>
+                <Select value={form.methode} onValueChange={(v) => setForm({ ...form, methode: v as any })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="lineaire">Lineaire</SelectItem>
-                    <SelectItem value="degressif">Degressif</SelectItem>
+                    <SelectItem value="lineaire">Linéaire</SelectItem>
+                    <SelectItem value="degressive">Dégressive</SelectItem>
+                    <SelectItem value="exceptionnelle">Exceptionnelle</SelectItem>
+                    <SelectItem value="unites_oeuvre">Unités d'œuvre</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -363,7 +583,7 @@ export default function ImmobilisationsPage() {
             {form.valeurAcquisition && form.duree && (
               <div className="p-3 rounded-lg bg-muted text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Dotation annuelle</span>
+                  <span className="text-muted-foreground">Dotation annuelle approx.</span>
                   <span className="font-mono font-semibold">
                     {formatCurrency(parseFloat(form.valeurAcquisition) / parseInt(form.duree))}
                   </span>
@@ -375,7 +595,7 @@ export default function ImmobilisationsPage() {
             <DialogClose asChild>
               <Button variant="outline">Annuler</Button>
             </DialogClose>
-            <Button onClick={handleCreate}>Creer</Button>
+            <Button onClick={handleCreate}>Créer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -389,45 +609,54 @@ export default function ImmobilisationsPage() {
                   <Calculator className="h-5 w-5 text-primary" />
                   Plan d'amortissement - {simulating.code}
                 </DialogTitle>
-                <CardDescription>{simulating.libelle} - Methode {simulating.methode}</CardDescription>
+                <CardDescription>{simulating.libelle} - Méthode {simulating.methode}</CardDescription>
               </DialogHeader>
               <div className="space-y-3 py-2">
                 <div className="grid grid-cols-3 gap-3 text-sm">
                   <div className="p-3 rounded-lg bg-muted">
                     <p className="text-xs text-muted-foreground">Valeur</p>
-                    <p className="font-mono font-semibold">{formatCurrency(simulating.valeurAcquisition)}</p>
+                    <p className="font-mono font-semibold">{formatCurrency(Number(simulating.valeurAcquisition))}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-muted">
-                    <p className="text-xs text-muted-foreground">Duree</p>
+                    <p className="text-xs text-muted-foreground">Durée</p>
                     <p className="font-mono font-semibold">{simulating.duree} ans</p>
                   </div>
                   <div className="p-3 rounded-lg bg-muted">
-                    <p className="text-xs text-muted-foreground">Dotation/an</p>
-                    <p className="font-mono font-semibold">{formatCurrency(simulating.dotationAnnuelle)}</p>
+                    <p className="text-xs text-muted-foreground">Méthode</p>
+                    <p className="font-mono font-semibold capitalize">{simulating.methode}</p>
                   </div>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left py-2 px-2 font-semibold text-muted-foreground">Annee</th>
-                        <th className="text-right py-2 px-2 font-semibold text-muted-foreground">Dotation</th>
-                        <th className="text-right py-2 px-2 font-semibold text-muted-foreground">Cumul</th>
-                        <th className="text-right py-2 px-2 font-semibold text-muted-foreground">VNC</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {getAmortissementPlan(simulating).map((row) => (
-                        <tr key={row.an} className="border-b border-border/50">
-                          <td className="py-2 px-2 font-medium">An {row.an}</td>
-                          <td className="py-2 px-2 text-right font-mono">{formatCurrency(row.annuite)}</td>
-                          <td className="py-2 px-2 text-right font-mono text-muted-foreground">{formatCurrency(row.cumul)}</td>
-                          <td className="py-2 px-2 text-right font-mono font-semibold">{formatCurrency(row.vnc)}</td>
+                
+                {isLoadingPlan ? (
+                  <div className="py-8 flex justify-center items-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
+                    <table className="w-full text-sm">
+                      <thead className="sticky top-0 bg-background">
+                        <tr className="border-b border-border">
+                          <th className="text-left py-2 px-2 font-semibold text-muted-foreground">Année</th>
+                          <th className="text-right py-2 px-2 font-semibold text-muted-foreground">Base</th>
+                          <th className="text-right py-2 px-2 font-semibold text-muted-foreground">Dotation</th>
+                          <th className="text-right py-2 px-2 font-semibold text-muted-foreground">Cumul</th>
+                          <th className="text-right py-2 px-2 font-semibold text-muted-foreground">VNC</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {amortissementPlan.map((row) => (
+                          <tr key={row.annee} className="border-b border-border/50">
+                            <td className="py-2 px-2 font-medium">An {row.annee}</td>
+                            <td className="py-2 px-2 text-right font-mono text-muted-foreground">{formatCurrency(row.baseAmortissable)}</td>
+                            <td className="py-2 px-2 text-right font-mono">{formatCurrency(row.dotation)}</td>
+                            <td className="py-2 px-2 text-right font-mono text-muted-foreground">{formatCurrency(row.cumul)}</td>
+                            <td className="py-2 px-2 text-right font-mono font-semibold">{formatCurrency(row.vnc)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </>
           )}

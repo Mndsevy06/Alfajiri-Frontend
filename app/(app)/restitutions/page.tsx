@@ -36,14 +36,32 @@ type View = 'balance' | 'grand-livre' | 'journaux';
 export default function RestitutionsPage() {
   const [view, setView] = useState<View>('balance');
   const [periode, setPeriode] = useState('2025-07');
-  const [drillCompte, setDrillCompte] = useState<CompteComptable | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [drillCompte, setDrillCompte] = useState<any | null>(null);
   const [planComptable, setPlanComptable] = useState<CompteComptable[]>([]);
+  const [balance, setBalance] = useState<any[]>([]);
+  const [grandLivre, setGrandLivre] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchWithAuth('/plan_comptable/comptes/')
       .then(setPlanComptable)
       .catch(() => toast.error('Erreur lors du chargement du plan comptable'));
   }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      fetchWithAuth('/etats_financiers/balance/'),
+      fetchWithAuth('/etats_financiers/grand-livre/')
+    ])
+      .then(([balanceData, grandLivreData]) => {
+        setBalance(balanceData);
+        setGrandLivre(grandLivreData);
+      })
+      .catch(() => toast.error('Erreur lors du chargement des données'))
+      .finally(() => setLoading(false));
+  }, [periode]);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -126,29 +144,42 @@ export default function RestitutionsPage() {
               <Label>Recherche rapide</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Filtrer par compte..." className="pl-10" />
+                <Input 
+                  placeholder="Filtrer par compte ou libellé..." 
+                  className="pl-10" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {view === 'balance' && <BalanceView onDrillDown={setDrillCompte} planComptable={planComptable} />}
-      {view === 'grand-livre' && <GrandLivreView drillCompte={drillCompte} onBack={() => setDrillCompte(null)} planComptable={planComptable} />}
-      {view === 'journaux' && <JournauxView />}
+      {view === 'balance' && <BalanceView onDrillDown={(c) => { setDrillCompte(c); setView('grand-livre'); }} balance={balance} searchQuery={searchQuery} />}
+      {view === 'grand-livre' && <GrandLivreView drillCompte={drillCompte} onBack={() => { setDrillCompte(null); setView('balance'); }} grandLivre={grandLivre} planComptable={planComptable} searchQuery={searchQuery} />}
+      {view === 'journaux' && <JournauxView searchQuery={searchQuery} />}
     </div>
   );
 }
 
-function BalanceView({ onDrillDown, planComptable }: { onDrillDown: (c: CompteComptable) => void, planComptable: CompteComptable[] }) {
+function BalanceView({ onDrillDown, balance, searchQuery }: { onDrillDown: (c: any) => void, balance: any[], searchQuery: string }) {
   const [filterClass, setFilterClass] = useState('all');
 
   const comptes = useMemo(() => {
-    return planComptable.filter((c) => c.type === 'general' && (filterClass === 'all' || c.classe === filterClass));
-  }, [filterClass]);
+    return balance.filter((c) => {
+      const matchClass = filterClass === 'all' || c.compte.startsWith(filterClass);
+      const matchSearch = !searchQuery || 
+        c.compte.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        c.libelle.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchClass && matchSearch;
+    });
+  }, [filterClass, balance, searchQuery]);
 
-  const totalDebit = comptes.reduce((s, c) => s + c.soldeDebit, 0);
-  const totalCredit = comptes.reduce((s, c) => s + c.soldeCredit, 0);
+  const totalDebit = comptes.reduce((s, c) => s + parseFloat(c.solde_debit), 0);
+  const totalCredit = comptes.reduce((s, c) => s + parseFloat(c.solde_credit), 0);
+  const totalMvtDebit = comptes.reduce((s, c) => s + parseFloat(c.debit), 0);
+  const totalMvtCredit = comptes.reduce((s, c) => s + parseFloat(c.credit), 0);
 
   return (
     <Card>
@@ -205,24 +236,25 @@ function BalanceView({ onDrillDown, planComptable }: { onDrillDown: (c: CompteCo
             </thead>
             <tbody>
               {comptes.map((c) => {
-                const mvtDebit = c.soldeDebit * 0.4;
-                const mvtCredit = c.soldeCredit * 0.35;
-                const finalD = c.soldeDebit - mvtCredit;
-                const finalC = c.soldeCredit - mvtDebit;
+                const debit = parseFloat(c.debit);
+                const credit = parseFloat(c.credit);
+                const soldeD = parseFloat(c.solde_debit);
+                const soldeC = parseFloat(c.solde_credit);
+                
                 return (
                   <tr
-                    key={c.numero}
+                    key={c.compte}
                     className="border-b border-border/50 hover:bg-muted/30 transition-colors group cursor-pointer"
                     onClick={() => onDrillDown(c)}
                   >
-                    <td className="py-2.5 px-2 font-mono font-medium">{c.numero}</td>
+                    <td className="py-2.5 px-2 font-mono font-medium">{c.compte}</td>
                     <td className="py-2.5 px-2">{c.libelle}</td>
-                    <td className="py-2.5 px-2 text-right font-mono">{c.soldeDebit ? formatCurrency(c.soldeDebit) : '-'}</td>
-                    <td className="py-2.5 px-2 text-right font-mono">{c.soldeCredit ? formatCurrency(c.soldeCredit) : '-'}</td>
-                    <td className="py-2.5 px-2 text-right font-mono text-muted-foreground">{mvtDebit ? formatCurrency(mvtDebit) : '-'}</td>
-                    <td className="py-2.5 px-2 text-right font-mono text-muted-foreground">{mvtCredit ? formatCurrency(mvtCredit) : '-'}</td>
-                    <td className="py-2.5 px-2 text-right font-mono font-semibold">{finalD > 0 ? formatCurrency(finalD) : '-'}</td>
-                    <td className="py-2.5 px-2 text-right font-mono font-semibold">{finalC > 0 ? formatCurrency(finalC) : '-'}</td>
+                    <td className="py-2.5 px-2 text-right font-mono text-muted-foreground">-</td>
+                    <td className="py-2.5 px-2 text-right font-mono text-muted-foreground">-</td>
+                    <td className="py-2.5 px-2 text-right font-mono">{debit > 0 ? formatCurrency(debit) : '-'}</td>
+                    <td className="py-2.5 px-2 text-right font-mono">{credit > 0 ? formatCurrency(credit) : '-'}</td>
+                    <td className="py-2.5 px-2 text-right font-mono font-semibold">{soldeD > 0 ? formatCurrency(soldeD) : '-'}</td>
+                    <td className="py-2.5 px-2 text-right font-mono font-semibold">{soldeC > 0 ? formatCurrency(soldeC) : '-'}</td>
                     <td className="py-2.5 px-2">
                       <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                     </td>
@@ -233,12 +265,12 @@ function BalanceView({ onDrillDown, planComptable }: { onDrillDown: (c: CompteCo
             <tfoot>
               <tr className="border-t-2 border-border font-bold">
                 <td className="py-3 px-2" colSpan={2}>TOTAUX</td>
+                <td className="py-3 px-2 text-right font-mono">-</td>
+                <td className="py-3 px-2 text-right font-mono">-</td>
+                <td className="py-3 px-2 text-right font-mono">{formatCurrency(totalMvtDebit)}</td>
+                <td className="py-3 px-2 text-right font-mono">{formatCurrency(totalMvtCredit)}</td>
                 <td className="py-3 px-2 text-right font-mono">{formatCurrency(totalDebit)}</td>
                 <td className="py-3 px-2 text-right font-mono">{formatCurrency(totalCredit)}</td>
-                <td className="py-3 px-2 text-right font-mono">{formatCurrency(totalDebit * 0.4)}</td>
-                <td className="py-3 px-2 text-right font-mono">{formatCurrency(totalCredit * 0.35)}</td>
-                <td className="py-3 px-2 text-right font-mono">{formatCurrency(totalDebit * 0.6)}</td>
-                <td className="py-3 px-2 text-right font-mono">{formatCurrency(totalCredit * 0.65)}</td>
                 <td></td>
               </tr>
             </tfoot>
@@ -249,47 +281,44 @@ function BalanceView({ onDrillDown, planComptable }: { onDrillDown: (c: CompteCo
   );
 }
 
-function GrandLivreView({ drillCompte, onBack, planComptable }: { drillCompte: CompteComptable | null; onBack: () => void; planComptable: CompteComptable[] }) {
+function GrandLivreView({ drillCompte, onBack, grandLivre, planComptable, searchQuery }: { drillCompte: any | null; onBack: () => void; grandLivre: any[]; planComptable: CompteComptable[]; searchQuery: string }) {
   const [selectedCompte, setSelectedCompte] = useState<string>('');
 
-  const compteActif = drillCompte || planComptable.find((c) => c.numero === selectedCompte);
+  const compteId = drillCompte ? drillCompte.compte : selectedCompte;
+  const compteData = grandLivre.find(c => c.compte === compteId);
 
-  const ecritures = useMemo(() => {
-    if (!compteActif) return [];
-    return ECRITURES.filter((e) => e.lignes.some((l) => l.compte === compteActif.numero || l.tiers_auxiliaire === compteActif.numero));
-  }, [compteActif]);
-
-  const totalDebit = ecritures.reduce((s, e) => s + e.lignes.filter((l) => l.compte === compteActif?.numero || l.tiers_auxiliaire === compteActif?.numero).reduce((s2, l) => s2 + l.debit, 0), 0);
-  const totalCredit = ecritures.reduce((s, e) => s + e.lignes.filter((l) => l.compte === compteActif?.numero || l.tiers_auxiliaire === compteActif?.numero).reduce((s2, l) => s2 + l.credit, 0), 0);
+  const ecritures = compteData ? compteData.ecritures : [];
+  const totalDebit = compteData ? parseFloat(compteData.total_debit) : 0;
+  const totalCredit = compteData ? parseFloat(compteData.total_credit) : 0;
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {compteActif && (
+            {compteData && (
               <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
             <div>
               <CardTitle>
-                {compteActif ? `Grand Livre - ${compteActif.numero}` : 'Grand Livre general'}
+                {compteData ? `Grand Livre - ${compteData.compte}` : 'Grand Livre general'}
               </CardTitle>
               <CardDescription>
-                {compteActif ? compteActif.libelle : 'Selectionnez un compte pour voir le detail'}
+                {compteData ? compteData.libelle : 'Selectionnez un compte pour voir le detail'}
               </CardDescription>
             </div>
           </div>
-          {!compteActif && (
+          {!compteData && (
             <Select value={selectedCompte} onValueChange={setSelectedCompte}>
               <SelectTrigger className="w-64">
                 <SelectValue placeholder="Choisir un compte..." />
               </SelectTrigger>
               <SelectContent>
-                {planComptable.filter((c) => c.soldeDebit > 0 || c.soldeCredit > 0).map((c) => (
-                  <SelectItem key={c.numero} value={c.numero}>
-                    {c.numero} - {c.libelle}
+                {grandLivre.filter(c => !searchQuery || c.compte.toLowerCase().includes(searchQuery.toLowerCase()) || c.libelle.toLowerCase().includes(searchQuery.toLowerCase())).map((c) => (
+                  <SelectItem key={c.compte} value={c.compte}>
+                    {c.compte} - {c.libelle}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -298,7 +327,7 @@ function GrandLivreView({ drillCompte, onBack, planComptable }: { drillCompte: C
         </div>
       </CardHeader>
       <CardContent>
-        {!compteActif ? (
+        {!compteData ? (
           <div className="text-center py-12 text-muted-foreground">
             <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
             <p>Cliquez sur un compte dans la Balance ou selectionnez-en un ci-dessus</p>
@@ -326,34 +355,31 @@ function GrandLivreView({ drillCompte, onBack, planComptable }: { drillCompte: C
                       </td>
                     </tr>
                   ) : (
-                    ecritures.flatMap((e) =>
-                      e.lignes
-                        .filter((l) => l.compte === compteActif.numero || l.tiers_auxiliaire === compteActif.numero)
-                        .map((l, i) => {
-                          let runningSolde = 0;
-                          return (
-                            <tr key={`${e.id}-${i}`} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                              <td className="py-2.5 px-2">{formatDate(l.date)}</td>
-                              <td className="py-2.5 px-2">
-                                <Badge variant="outline" className="text-xs font-mono">{e.journal}</Badge>
-                              </td>
-                              <td className="py-2.5 px-2 font-mono text-xs">{e.numero}</td>
-                              <td className="py-2.5 px-2">{l.libelle}</td>
-                              <td className="py-2.5 px-2 text-right font-mono">{l.debit ? formatCurrency(l.debit) : '-'}</td>
-                              <td className="py-2.5 px-2 text-right font-mono">{l.credit ? formatCurrency(l.credit) : '-'}</td>
-                              <td className="py-2.5 px-2 text-right font-mono font-semibold">
-                                {formatCurrency((runningSolde += l.debit - l.credit))}
-                              </td>
-                            </tr>
-                          );
-                        })
-                    )
+                    ecritures.map((l: any, i: number) => {
+                      const debit = parseFloat(l.debit);
+                      const credit = parseFloat(l.credit);
+                      return (
+                        <tr key={`${compteId}-${i}`} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                          <td className="py-2.5 px-2">{formatDate(l.date)}</td>
+                          <td className="py-2.5 px-2">
+                            <Badge variant="outline" className="text-xs font-mono">{l.journal}</Badge>
+                          </td>
+                          <td className="py-2.5 px-2 font-mono text-xs">{l.piece}</td>
+                          <td className="py-2.5 px-2">{l.libelle}</td>
+                          <td className="py-2.5 px-2 text-right font-mono">{debit > 0 ? formatCurrency(debit) : '-'}</td>
+                          <td className="py-2.5 px-2 text-right font-mono">{credit > 0 ? formatCurrency(credit) : '-'}</td>
+                          <td className="py-2.5 px-2 text-right font-mono font-semibold">
+                            -
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
                 {ecritures.length > 0 && (
                   <tfoot>
                     <tr className="border-t-2 border-border font-bold">
-                      <td colSpan={4} className="py-3 px-2">SOLDE FINAL</td>
+                      <td colSpan={4} className="py-3 px-2">TOTAL</td>
                       <td className="py-3 px-2 text-right font-mono">{formatCurrency(totalDebit)}</td>
                       <td className="py-3 px-2 text-right font-mono">{formatCurrency(totalCredit)}</td>
                       <td className="py-3 px-2 text-right font-mono">{formatCurrency(totalDebit - totalCredit)}</td>
@@ -369,30 +395,53 @@ function GrandLivreView({ drillCompte, onBack, planComptable }: { drillCompte: C
   );
 }
 
-function JournauxView() {
-  const ECRITUES_LIBELLES: Record<string, string> = {
-    ACH: 'Journal des Achats',
-    VTE: 'Journal des Ventes',
-    CAI: 'Caisse Zambie',
-    BQ: 'Banque Rawbank USD',
-    OD: 'Operations Diverses',
-  };
+function JournauxView({ searchQuery }: { searchQuery: string }) {
+  const [journaux, setJournaux] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    fetchWithAuth('/etats_financiers/journaux/')
+      .then(data => setJournaux(data))
+      .catch(() => toast.error('Erreur lors du chargement des journaux'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <div className="text-center p-8 text-muted-foreground">Chargement des journaux...</div>;
+  }
+
+  if (journaux.length === 0) {
+    return (
+      <div className="text-center p-12 border rounded-xl border-dashed">
+        <p className="text-muted-foreground">Aucune écriture validée trouvée pour la période.</p>
+      </div>
+    );
+  }
+
+  const filteredJournaux = journaux.filter(j => 
+    !searchQuery || 
+    j.ecriture__journal__code.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    j.ecriture__journal__libelle.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {['ACH', 'VTE', 'CAI', 'BQ', 'OD'].map((code) => {
-        const ecritures = ECRITURES.filter((e) => e.journal === code);
-        const total = ecritures.reduce((s, e) => s + e.lignes.reduce((s2, l) => s2 + l.debit, 0), 0);
-        const libelle = ECRITUES_LIBELLES[code] || code;
+      {filteredJournaux.map((j) => {
+        const code = j.ecriture__journal__code;
+        const libelle = j.ecriture__journal__libelle;
+        const total = parseFloat(j.total_mouvement);
+        const count = j.nombre_ecritures;
+        
         return (
-          <Card key={code} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => toast.info(`Centralisation ${code} - ${ecritures.length} ecritures`)}>
+          <Card key={code} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => toast.info(`Centralisation ${code} - ${count} ecritures`)}>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <Badge variant="outline" className="font-mono text-base">{code}</Badge>
-                <Badge variant="secondary">{ecritures.length} ecritures</Badge>
+                <Badge variant="secondary">{count} écritures</Badge>
               </div>
               <CardTitle className="text-lg mt-2">{libelle}</CardTitle>
-              <CardDescription>Periode: Juillet 2025</CardDescription>
+              <CardDescription>Période en cours</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">

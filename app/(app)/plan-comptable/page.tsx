@@ -128,7 +128,7 @@ export default function PlanComptablePage() {
     numero: '',
     libelle: '',
     parent: '',
-    lettable: false,
+    lettrable: false,
     type: 'auxiliaire' as 'general' | 'auxiliaire',
   });
 
@@ -199,7 +199,7 @@ export default function PlanComptablePage() {
 
   const openCreate = () => {
     setEditingCompte(null);
-    setForm({ numero: '', libelle: '', parent: '', lettable: false, type: 'auxiliaire' });
+    setForm({ numero: '', libelle: '', parent: '', lettrable: false, type: 'auxiliaire' });
     setDialogOpen(true);
   };
 
@@ -209,7 +209,7 @@ export default function PlanComptablePage() {
       numero: compte.numero,
       libelle: compte.libelle,
       parent: compte.parent || '',
-      lettable: compte.lettable,
+      lettrable: compte.lettrable,
       type: compte.type,
     });
     setDialogOpen(true);
@@ -291,7 +291,7 @@ export default function PlanComptablePage() {
         'Classe': c.classe,
         'Nature': c.type === 'general' ? 'Général' : 'Auxiliaire',
         'Compte Parent': c.parent || '-',
-        'Lettable': c.lettable ? 'Oui' : 'Non',
+        'Lettrable': c.lettrable ? 'Oui' : 'Non',
         'Tiers Rattaché': c.tiers?.type || '-',
         'Solde Débit': c.soldeDebit || 0,
         'Solde Crédit': c.soldeCredit || 0
@@ -428,9 +428,9 @@ export default function PlanComptablePage() {
                 <Users className="h-2.5 w-2.5 mr-1.5" /> <span className="capitalize">{node.tiers.type}</span>
               </div>
             )}
-            {node.lettable && (
+            {node.lettrable && (
               <div className="flex items-center text-[10px] text-emerald-600 dark:text-emerald-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mr-1.5"></span> Lettable
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mr-1.5"></span> Lettrable
               </div>
             )}
             {node.parent && (
@@ -841,13 +841,13 @@ export default function PlanComptablePage() {
             </div>
             <div className="flex items-center justify-between rounded-lg border border-border p-3">
               <div>
-                <Label htmlFor="lettable" className="cursor-pointer">Compte lettable</Label>
+                <Label htmlFor="lettrable" className="cursor-pointer">Compte lettrable</Label>
                 <p className="text-xs text-muted-foreground mt-0.5">Autorise le lettrage des ecritures</p>
               </div>
               <Switch
-                id="lettable"
-                checked={form.lettable}
-                onCheckedChange={(v) => setForm({ ...form, lettable: v })}
+                id="lettrable"
+                checked={form.lettrable}
+                onCheckedChange={(v) => setForm({ ...form, lettrable: v })}
               />
             </div>
           </div>

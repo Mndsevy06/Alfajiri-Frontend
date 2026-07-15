@@ -143,6 +143,7 @@ function SaisieView() {
   const [PLAN_COMPTABLE, setPlanComptable] = useState<CompteType[]>([]);
   const [TIERS, setTiers] = useState<any[]>([]);
   const [savedBrouillards, setSavedBrouillards] = useState<Ecriture[]>([]);
+  const [editingBrouillonId, setEditingBrouillonId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -223,13 +224,18 @@ function SaisieView() {
   const [journal, setJournal] = useState<JournalCode>('ACH');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [libelle, setLibelle] = useState('');
+  const [numeroEcriture, setNumeroEcriture] = useState('');
   const [numeroPiece, setNumeroPiece] = useState('');
 
   useEffect(() => {
-    const randomSuffix = Math.random().toString(36).substring(2, 7).toUpperCase();
-    const year = new Date(date || new Date()).getFullYear();
-    setNumeroPiece(`${journal}-${year}-${randomSuffix}`);
-  }, [journal, date]);
+    const journalInfo = JOURNAUX.find(j => j.code === journal);
+    if (journalInfo) {
+      const year = new Date(date || new Date()).getFullYear();
+      const seq = String(journalInfo.dernierNumero + 1).padStart(5, '0');
+      setNumeroEcriture(`${journal}-${year}-${seq}`);
+      setNumeroPiece(`PC-${journal}-${year}-${seq}`);
+    }
+  }, [journal, date, JOURNAUX]);
   
   // Lignes d'écriture (étendue localement pour gérer le fichier)
   const [lignes, setLignes] = useState<(LigneEcriture & { fichier?: File | null })[]>([]);
@@ -378,11 +384,35 @@ function SaisieView() {
     setLignes(lignes.filter((l) => l.id !== id));
   };
 
+  const handleEditBrouillon = (brouillon: Ecriture) => {
+    setJournal(brouillon.journal as JournalCode);
+    setDate(brouillon.date);
+    setLibelle(brouillon.libelle);
+    setNumeroEcriture(brouillon.numero);
+    setNumeroPiece(brouillon.piece || `PC-${brouillon.numero}`);
+    
+    const loadedLignes = brouillon.lignes.map((l: any) => ({
+      ...l,
+      id: l.id || Math.random().toString()
+    }));
+    setLignes(loadedLignes);
+    setEditingBrouillonId(brouillon.id);
+    setOpenBrouillons(false);
+  };
+
   const handleSave = async (valider: boolean) => {
     if (!hasLignes) {
       toast.error('Aucune ligne à enregistrer');
       return;
     }
+    
+    // Check if any line has an empty compte
+    const hasEmptyCompte = lignes.some(l => !l.compte || l.compte.trim() === '');
+    if (hasEmptyCompte) {
+      toast.error('Veuillez sélectionner un compte pour chaque ligne de l\'écriture.');
+      return;
+    }
+
     if (valider && !equilibre) {
       toast.error('Validation impossible', {
         description: `Écart: ${formatCurrency(Math.abs(totalDebit - totalCredit))}`,
@@ -399,8 +429,8 @@ function SaisieView() {
     
     try {
       const ecritureData = {
-        numero: num,
-        piece: numeroPiece,
+        numero: numeroEcriture || num,
+        piece: numeroPiece || `PC-${num}`,
         journal: journal,
         date: date,
         libelle: libelle,
@@ -415,8 +445,8 @@ function SaisieView() {
         }))
       };
 
-      await fetchWithAuth('/saisie/ecritures/', {
-        method: 'POST',
+      await fetchWithAuth(editingBrouillonId ? `/saisie/ecritures/${editingBrouillonId}/` : '/saisie/ecritures/', {
+        method: editingBrouillonId ? 'PUT' : 'POST',
         body: JSON.stringify(ecritureData)
       });
 
@@ -424,6 +454,9 @@ function SaisieView() {
         // Refresh brouillards
         const eData = await fetchWithAuth('/saisie/ecritures/?statut=brouillard');
         setSavedBrouillards(eData);
+      } else if (editingBrouillonId) {
+        // Si on vient de valider un brouillon existant, on met à jour la liste
+        setSavedBrouillards(savedBrouillards.filter(b => b.id !== editingBrouillonId));
       }
 
       toast.success(valider ? 'Écriture validée définitivement' : 'Brouillard enregistré', {
@@ -431,6 +464,13 @@ function SaisieView() {
       });
       setLignes([]);
       setLibelle('');
+      setEditingBrouillonId(null);
+      
+      // Rafraîchir les journaux pour avoir le nouveau dernierNumero
+      const jData = await fetchWithAuth('/plan_comptable/journaux/');
+      if (jData && jData.length > 0) {
+        setJournaux(jData);
+      }
     } catch (e: any) {
       toast.error("Erreur lors de l'enregistrement", { description: e.message });
     }
@@ -801,16 +841,17 @@ function SaisieView() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>N° Pièce (Auto-généré)</Label>
-                  <Input 
-                    value={numeroPiece} 
-                    disabled 
-                    className="bg-muted/50 font-mono text-muted-foreground" 
-                  />
-                </div>
-                <div className="space-y-2">
                   <Label>Libellé de l'écriture</Label>
                   <Input placeholder="Ex: Facture d'achat..." value={libelle} onChange={(e) => setLibelle(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>N° de l'écriture</Label>
+                  <Input 
+                    value={numeroEcriture} 
+                    readOnly
+                    disabled
+                    className="font-mono bg-muted cursor-not-allowed opacity-100 text-muted-foreground" 
+                  />
                 </div>
               </div>
               <div className="flex justify-end">
@@ -1086,7 +1127,7 @@ function SaisieView() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-bold text-sm bg-muted/50 px-2 py-1 rounded-md">{formatCurrency(total)}</span>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => handleEditBrouillon(e)}>
                           <PencilLine className="h-4 w-4" />
                         </Button>
                         <Button
@@ -1123,10 +1164,11 @@ function SaisieView() {
             <TableHeader className="bg-muted/30">
               <TableRow className="hover:bg-transparent">
                 <TableHead className="text-center w-[15%]">Date</TableHead>
+                <TableHead className="text-center w-[15%]">N° Pièce</TableHead>
                 <TableHead className="text-center w-[15%]">N° Compte</TableHead>
-                <TableHead className="text-center w-[30%]">Libellé</TableHead>
-                <TableHead className="text-center w-[15%]">Débit</TableHead>
-                <TableHead className="text-center w-[15%]">Crédit</TableHead>
+                <TableHead className="text-center w-[25%]">Libellé</TableHead>
+                <TableHead className="text-center w-[10%]">Débit</TableHead>
+                <TableHead className="text-center w-[10%]">Crédit</TableHead>
                 <TableHead className="text-center w-[5%]">PJ</TableHead>
                 <TableHead className="w-[5%]"></TableHead>
               </TableRow>
@@ -1136,6 +1178,7 @@ function SaisieView() {
                 paginatedLignes.map((ligne) => (
                   <TableRow key={ligne.id} className="group transition-colors hover:bg-muted/20">
                     <TableCell className="text-center font-mono text-xs text-muted-foreground">{ligne.date}</TableCell>
+                    <TableCell className="text-center font-mono text-xs text-muted-foreground">{numeroPiece}</TableCell>
                     <TableCell className="text-center">
                       <Badge variant="secondary" className="font-mono bg-background shadow-sm border-border/50">{ligne.compte}</Badge>
                     </TableCell>
@@ -1183,7 +1226,7 @@ function SaisieView() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
                     Aucune ligne dans ce journal. Cliquez sur "Nouvelle Ligne" pour commencer.
                   </TableCell>
                 </TableRow>
