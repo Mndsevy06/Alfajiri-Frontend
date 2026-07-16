@@ -9,6 +9,11 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui'],
+        display: ['var(--font-display)', 'sans-serif'],
+        mono: ['var(--font-mono)', 'monospace'],
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':
@@ -74,6 +79,16 @@ const config: Config = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
+        'bg-primary': 'var(--bg-primary)',
+        'bg-secondary': 'var(--bg-secondary)',
+        'bg-tertiary': 'var(--bg-tertiary)',
+        'text-primary': 'var(--text-primary)',
+        'text-secondary': 'var(--text-secondary)',
+        'border-default': 'var(--border-default)',
+        'rdc-blue': '#007FFF',
+        'rdc-blue-deep': '#005BBB',
+        'rdc-red': '#CE1021',
+        'rdc-yellow': '#F7D618',
       },
       keyframes: {
         'accordion-down': {
@@ -92,12 +107,33 @@ const config: Config = {
           from: { opacity: '0', transform: 'translateY(10px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
+        springBounce: {
+          '0%, 100%': { transform: 'scale(1)' },
+          '40%': { transform: 'scale(1.35)' },
+          '70%': { transform: 'scale(0.9)' },
+        },
+        fadeUp: {
+          '0%': { opacity: '0', transform: 'translateY(12px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-700px 0' },
+          '100%': { backgroundPosition: '700px 0' },
+        },
+        'gradient-x': {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'fade-in': 'fade-in 0.4s ease-out',
         'slide-up': 'slide-up 0.4s ease-out',
+        'spring-bounce': 'springBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        'fade-up': 'fadeUp 0.3s ease-out',
+        'shimmer': 'shimmer 1.6s linear infinite',
+        'gradient-x': 'gradient-x 5s ease infinite',
       },
     },
   },

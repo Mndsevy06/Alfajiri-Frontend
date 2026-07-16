@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
+    --background: 210 25% 94%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
@@ -12,11 +12,11 @@
     --popover-foreground: 222 47% 11%;
     --primary: 221 83% 53%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
+    --secondary: 210 25% 90%;
     --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96%;
+    --muted: 210 25% 90%;
     --muted-foreground: 215 16% 47%;
-    --accent: 210 40% 94%;
+    --accent: 210 25% 88%;
     --accent-foreground: 222 47% 11%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
@@ -37,22 +37,33 @@
     --sidebar-foreground: 222 47% 11%;
     --sidebar-accent: 210 40% 94%;
     --sidebar-border: 214 32% 91%;
+
+    /* Young DRC Light Colors */
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #F8FAFC;
+    --bg-tertiary: #F1F5F9;
+    --bg-elevated: #FFFFFF;
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --border-default: #E2E8F0;
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(0, 0, 0, 0.06);
   }
 
   .dark {
-    --background: 0 0% 4%;
+    --background: 0 0% 2%;
     --foreground: 0 0% 98%;
-    --card: 0 0% 7%;
+    --card: 0 0% 10%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 7%;
+    --popover: 0 0% 10%;
     --popover-foreground: 0 0% 98%;
     --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 12%;
+    --secondary: 0 0% 15%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 12%;
+    --muted: 0 0% 15%;
     --muted-foreground: 0 0% 65%;
-    --accent: 0 0% 12%;
+    --accent: 0 0% 15%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
@@ -72,6 +83,17 @@
     --sidebar-foreground: 0 0% 98%;
     --sidebar-accent: 0 0% 12%;
     --sidebar-border: 0 0% 16%;
+
+    /* Young DRC Dark Colors */
+    --bg-primary: #09090B;
+    --bg-secondary: #18181B;
+    --bg-tertiary: #27272A;
+    --bg-elevated: #18181B;
+    --text-primary: #FAFAFA;
+    --text-secondary: #A1A1AA;
+    --border-default: #27272A;
+    --glass-bg: rgba(24, 24, 27, 0.92);
+    --glass-border: rgba(255, 255, 255, 0.08);
   }
 }
 
@@ -143,6 +165,32 @@
   }
   .animate-scale-in {
     animation: scaleIn 0.2s ease-out;
+  }
+
+  /* Young DRC Utilities */
+  .glass-card {
+    @apply backdrop-blur-xl border bg-[var(--glass-bg)] border-[var(--glass-border)] shadow-xl;
+  }
+  .glow-border {
+    @apply border border-transparent transition-all duration-300;
+    border-color: rgba(0, 127, 255, 0.1);
+  }
+  .glow-border:hover {
+    border-color: #007FFF;
+    box-shadow: 0 0 15px rgba(0, 127, 255, 0.3);
+  }
+  .neon-text-blue {
+    text-shadow: 0 0 10px rgba(0, 127, 255, 0.5);
+  }
+  .rdc-gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#007FFF] via-[#F7D618] to-[#005BBB];
+    background-size: 200% 200%;
+    animation: gradient-x 5s ease infinite;
+  }
+  .shimmer-bg {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 700px 100%;
+    animation: shimmer 1.6s linear infinite;
   }
 }
 

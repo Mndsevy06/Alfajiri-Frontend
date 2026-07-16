@@ -57,6 +57,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 export default function ImmobilisationsPage() {
   const [immos, setImmos] = useState<Immobilisation[]>([]);
@@ -332,56 +340,51 @@ export default function ImmobilisationsPage() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Valeur d'acquisition</p>
-                <p className="text-xl font-bold font-mono">{formatCurrency(totalAcquisition)}</p>
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Building2 className="h-5 w-5" />
-              </div>
+        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Valeur d'acquisition</CardTitle>
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Building2 className="h-4 w-4" />
             </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" title={formatCurrency(totalAcquisition)}>{formatCurrency(totalAcquisition)}</div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Cumul amortissements</p>
-                <p className="text-xl font-bold font-mono">{formatCurrency(totalAmortissement)}</p>
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10 text-warning">
-                <TrendingDown className="h-5 w-5" />
-              </div>
+
+        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Cumul amortissements</CardTitle>
+            <div className="p-2 rounded-lg bg-warning/10 text-warning">
+              <TrendingDown className="h-4 w-4" />
             </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" title={formatCurrency(totalAmortissement)}>{formatCurrency(totalAmortissement)}</div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">VNC totale</p>
-                <p className="text-xl font-bold font-mono">{formatCurrency(totalVNC)}</p>
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-chart-2/10 text-chart-2">
-                <Calculator className="h-5 w-5" />
-              </div>
+
+        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">VNC totale</CardTitle>
+            <div className="p-2 rounded-lg bg-chart-2/10 text-chart-2">
+              <Calculator className="h-4 w-4" />
             </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" title={formatCurrency(totalVNC)}>{formatCurrency(totalVNC)}</div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Dotation annuelle</p>
-                <p className="text-xl font-bold font-mono">{formatCurrency(totalDotation)}</p>
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-chart-4/10 text-chart-4">
-                <Calendar className="h-5 w-5" />
-              </div>
+
+        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Dotation annuelle</CardTitle>
+            <div className="p-2 rounded-lg bg-chart-4/10 text-chart-4">
+              <Calendar className="h-4 w-4" />
             </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" title={formatCurrency(totalDotation)}>{formatCurrency(totalDotation)}</div>
           </CardContent>
         </Card>
       </div>
@@ -402,23 +405,22 @@ export default function ImmobilisationsPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-2 font-semibold text-muted-foreground">Code</th>
-                  <th className="text-left py-3 px-2 font-semibold text-muted-foreground">Libellé</th>
-                  <th className="text-left py-3 px-2 font-semibold text-muted-foreground">Catégorie</th>
-                  <th className="text-left py-3 px-2 font-semibold text-muted-foreground">Site</th>
-                  <th className="text-left py-3 px-2 font-semibold text-muted-foreground">Acquisition</th>
-                  <th className="text-right py-3 px-2 font-semibold text-muted-foreground">Valeur</th>
-                  <th className="text-right py-3 px-2 font-semibold text-muted-foreground">Cumul Amort.</th>
-                  <th className="text-right py-3 px-2 font-semibold text-muted-foreground">VNC</th>
-                  <th className="text-center py-3 px-2 font-semibold text-muted-foreground">Amorti à</th>
-                  <th className="py-3 px-2"></th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Libellé</TableHead>
+                  <TableHead>Catégorie</TableHead>
+                  <TableHead>Site</TableHead>
+                  <TableHead>Acquisition</TableHead>
+                  <TableHead className="text-right">Valeur</TableHead>
+                  <TableHead className="text-right">Cumul Amort.</TableHead>
+                  <TableHead className="text-right">VNC</TableHead>
+                  <TableHead className="text-center">Amorti à</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {filtered.map((i) => {
                   const valeurAcq = Number(i.valeurAcquisition);
                   const cumulAmort = Number(i.cumulAmortissement);
@@ -426,26 +428,26 @@ export default function ImmobilisationsPage() {
                   const amortPct = valeurAcq > 0 ? (cumulAmort / valeurAcq) * 100 : 0;
                   const site = SITES.find((s) => s.id === i.site);
                   return (
-                    <tr key={i.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors group">
-                      <td className="py-3 px-2 font-mono font-medium">{i.code}</td>
-                      <td className="py-3 px-2">{i.libelle}</td>
-                      <td className="py-3 px-2 text-muted-foreground">{i.categorie}</td>
-                      <td className="py-3 px-2">
+                    <TableRow key={i.id} className="group">
+                      <TableCell className="font-mono font-medium">{i.code}</TableCell>
+                      <TableCell>{i.libelle}</TableCell>
+                      <TableCell className="text-muted-foreground">{i.categorie}</TableCell>
+                      <TableCell>
                         <Badge variant="outline" className="text-xs">
                           {site?.short || i.site}
                         </Badge>
-                      </td>
-                      <td className="py-3 px-2 text-muted-foreground">{formatDate(i.dateAcquisition)}</td>
-                      <td className="py-3 px-2 text-right font-mono">{formatCurrency(valeurAcq)}</td>
-                      <td className="py-3 px-2 text-right font-mono text-muted-foreground">{formatCurrency(cumulAmort)}</td>
-                      <td className="py-3 px-2 text-right font-mono font-semibold">{formatCurrency(vnc)}</td>
-                      <td className="py-3 px-2">
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{formatDate(i.dateAcquisition)}</TableCell>
+                      <TableCell className="text-right font-mono">{formatCurrency(valeurAcq)}</TableCell>
+                      <TableCell className="text-right font-mono text-muted-foreground">{formatCurrency(cumulAmort)}</TableCell>
+                      <TableCell className="text-right font-mono font-semibold">{formatCurrency(vnc)}</TableCell>
+                      <TableCell>
                         <div className="flex items-center gap-2">
                           <Progress value={amortPct} className="h-1.5 w-16" />
                           <span className="text-xs text-muted-foreground">{Math.round(amortPct)}%</span>
                         </div>
-                      </td>
-                      <td className="py-3 px-2">
+                      </TableCell>
+                      <TableCell>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleSimulate(i)}>
                             <Calculator className="h-3.5 w-3.5" />
@@ -462,20 +464,19 @@ export default function ImmobilisationsPage() {
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
                 {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={10} className="py-8 text-center text-muted-foreground">
+                  <TableRow>
+                    <TableCell colSpan={10} className="py-8 text-center text-muted-foreground">
                       Aucune immobilisation trouvée.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
         </CardContent>
       </Card>
 
@@ -672,29 +673,29 @@ export default function ImmobilisationsPage() {
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   </div>
                 ) : (
-                  <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
-                    <table className="w-full text-sm">
-                      <thead className="sticky top-0 bg-background">
-                        <tr className="border-b border-border">
-                          <th className="text-left py-2 px-2 font-semibold text-muted-foreground">Année</th>
-                          <th className="text-right py-2 px-2 font-semibold text-muted-foreground">Base</th>
-                          <th className="text-right py-2 px-2 font-semibold text-muted-foreground">Dotation</th>
-                          <th className="text-right py-2 px-2 font-semibold text-muted-foreground">Cumul</th>
-                          <th className="text-right py-2 px-2 font-semibold text-muted-foreground">VNC</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                  <div className="max-h-[300px]">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-muted/50 z-10">
+                        <TableRow>
+                          <TableHead>Année</TableHead>
+                          <TableHead className="text-right">Base</TableHead>
+                          <TableHead className="text-right">Dotation</TableHead>
+                          <TableHead className="text-right">Cumul</TableHead>
+                          <TableHead className="text-right">VNC</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {amortissementPlan.map((row) => (
-                          <tr key={row.annee} className="border-b border-border/50">
-                            <td className="py-2 px-2 font-medium">An {row.annee}</td>
-                            <td className="py-2 px-2 text-right font-mono text-muted-foreground">{formatCurrency(row.baseAmortissable)}</td>
-                            <td className="py-2 px-2 text-right font-mono">{formatCurrency(row.dotation)}</td>
-                            <td className="py-2 px-2 text-right font-mono text-muted-foreground">{formatCurrency(row.cumul)}</td>
-                            <td className="py-2 px-2 text-right font-mono font-semibold">{formatCurrency(row.vnc)}</td>
-                          </tr>
+                          <TableRow key={row.annee}>
+                            <TableCell className="font-medium">An {row.annee}</TableCell>
+                            <TableCell className="text-right font-mono text-muted-foreground">{formatCurrency(row.baseAmortissable)}</TableCell>
+                            <TableCell className="text-right font-mono">{formatCurrency(row.dotation)}</TableCell>
+                            <TableCell className="text-right font-mono text-muted-foreground">{formatCurrency(row.cumul)}</TableCell>
+                            <TableCell className="text-right font-mono font-semibold">{formatCurrency(row.vnc)}</TableCell>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   </div>
                 )}
               </div>

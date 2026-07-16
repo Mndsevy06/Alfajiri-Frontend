@@ -11,7 +11,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <EntiteProvider>
-      <div className="flex min-h-screen bg-background">
+      <div className="flex min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
         <AppSidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
         <div className="flex-1 flex flex-col min-w-0">
           <AppHeader onMenuClick={() => setSidebarOpen(true)} />

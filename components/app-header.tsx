@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Menu,
@@ -30,8 +30,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { DOSSIERS, NOTIFICATIONS, UTILISATEUR_COURANT } from '@/lib/mock-data';
+import { DOSSIERS, NOTIFICATIONS } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
+import { fetchWithAuth } from '@/lib/api';
+import { ProfileEditModal } from '@/components/profile-edit-modal';
 
 import { useEntite } from '@/lib/entite-context';
 
@@ -40,6 +42,22 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
   const { entites, activeEntite, setActiveEntite, isLoading } = useEntite();
   const [notifs, setNotifs] = useState(NOTIFICATIONS);
   const unreadCount = notifs.filter((n) => !n.lu).length;
+
+  const [currentUserData, setCurrentUserData] = useState<any>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+  const fetchUser = async () => {
+    try {
+      const user = await fetchWithAuth('/users/me/');
+      setCurrentUserData(user);
+    } catch (e) {
+      console.error("Failed to fetch user profile", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchUser();
+  }, []);
 
   const markAllRead = () => setNotifs(notifs.map((n) => ({ ...n, lu: true })));
 
@@ -53,6 +71,15 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
     }
   };
 
+  const getAvatarUrl = (user: any) => {
+    if (user?.photo_profil) {
+      return user.photo_profil.startsWith('http') 
+        ? user.photo_profil 
+        : `http://127.0.0.1:8000${user.photo_profil.startsWith('/') ? '' : '/'}${user.photo_profil}`;
+    }
+    return user?.avatar || '';
+  };
+
   return (
     <header className="sticky top-0 z-30 h-16 bg-background/80 backdrop-blur-md border-b border-border flex items-center px-4 lg:px-6 gap-3">
       <Button variant="ghost" size="icon" onClick={onMenuClick} className="lg:hidden">
@@ -61,12 +88,8 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="gap-2 max-w-[200px] lg:max-w-none">
-            <Building2 className="h-4 w-4 shrink-0 text-primary" />
-            <span className="truncate hidden sm:inline">
-              {isLoading ? 'Chargement...' : activeEntite ? activeEntite.sigle || activeEntite.raisonSociale : 'Aucune entité'}
-            </span>
-            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+          <Button variant="ghost" size="icon" title="Dossiers / Sites">
+            <Building2 className="h-5 w-5 text-primary" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-80">
@@ -96,25 +119,18 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <div className="hidden md:flex items-center flex-1 max-w-md">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Rechercher un compte, une ecriture, un tiers..."
-            className="w-full h-10 pl-10 pr-4 rounded-lg bg-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-          />
-        </div>
-      </div>
+      <Button variant="ghost" size="icon" title="Nouvelle entité" asChild>
+        <Link href="/onboarding">
+          <Plus className="h-5 w-5 text-primary" />
+        </Link>
+      </Button>
+
+      <div className="flex-1" />
 
       <div className="ml-auto flex items-center gap-1 sm:gap-2">
-        <Button variant="outline" size="sm" className="hidden sm:flex gap-2 h-9 border-primary/20 hover:bg-primary/5" asChild>
-          <Link href="/onboarding">
-            <Plus className="h-4 w-4 text-primary" />
-            <span className="font-medium">Nouvelle entité</span>
-          </Link>
+        <Button variant="ghost" size="icon">
+          <Search className="h-5 w-5" />
         </Button>
-        <ThemeToggle />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -164,12 +180,12 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 rounded-lg p-1 pr-2 hover:bg-muted transition-colors">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={UTILISATEUR_COURANT.avatar} alt={UTILISATEUR_COURANT.nom} />
-                <AvatarFallback>SM</AvatarFallback>
+                <AvatarImage src={getAvatarUrl(currentUserData)} alt={currentUserData?.nom} />
+                <AvatarFallback>{currentUserData?.nom ? currentUserData.nom.substring(0,2).toUpperCase() : 'U'}</AvatarFallback>
               </Avatar>
               <div className="hidden sm:block text-left">
-                <p className="text-sm font-medium leading-none">{UTILISATEUR_COURANT.nom}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{UTILISATEUR_COURANT.role}</p>
+                <p className="text-sm font-medium leading-none">{currentUserData?.nom}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{currentUserData?.role}</p>
               </div>
               <ChevronDown className="h-4 w-4 text-muted-foreground hidden sm:block" />
             </button>
@@ -177,17 +193,21 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
               <div>
-                <p className="text-sm font-medium">{UTILISATEUR_COURANT.nom}</p>
-                <p className="text-xs text-muted-foreground font-normal">{UTILISATEUR_COURANT.email}</p>
+                <p className="text-sm font-medium">{currentUserData?.nom}</p>
+                <p className="text-xs text-muted-foreground font-normal">{currentUserData?.email}</p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setIsProfileModalOpen(true)}>
               <User className="h-4 w-4 mr-2" /> Mon profil
             </DropdownMenuItem>
             <DropdownMenuItem>
               <Settings className="h-4 w-4 mr-2" /> Parametres
             </DropdownMenuItem>
+            <div className="px-2 py-1.5 flex justify-between items-center">
+              <span className="text-sm font-medium">Thème</span>
+              <ThemeToggle className="h-8 w-8" />
+            </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem 
               className="text-destructive cursor-pointer" 
@@ -202,6 +222,13 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <ProfileEditModal 
+        isOpen={isProfileModalOpen} 
+        onClose={() => setIsProfileModalOpen(false)} 
+        currentUser={currentUserData} 
+        onProfileUpdated={fetchUser} 
+      />
     </header>
   );
 }

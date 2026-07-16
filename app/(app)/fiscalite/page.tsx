@@ -49,32 +49,25 @@ export default function FiscalitePage() {
   const [activeTab, setActiveTab] = useState<'declarations' | 'retenues'>('declarations');
   
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Gestion Fiscale</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Déclarations TVA, acomptes provisionnels et retenues à la source.
-          </p>
-        </div>
-        
-        <div className="flex items-center p-1 bg-muted/50 rounded-lg border border-border">
+    <div className="space-y-2">
+      <div className="flex justify-end items-center gap-4 -mt-4">
+        <div className="flex items-center p-0.5 bg-muted/50 rounded-md border border-border">
           <Button 
             variant={activeTab === 'declarations' ? 'default' : 'ghost'} 
             size="sm" 
-            className="rounded-md px-4 shadow-none"
+            className="rounded h-7 text-xs px-2 shadow-none"
             onClick={() => setActiveTab('declarations')}
           >
-            <FileSignature className="w-4 h-4 mr-2" />
+            <FileSignature className="w-3.5 h-3.5 mr-1.5" />
             Déclarations
           </Button>
           <Button 
             variant={activeTab === 'retenues' ? 'default' : 'ghost'} 
             size="sm" 
-            className="rounded-md px-4 shadow-none"
+            className="rounded h-7 text-xs px-2 shadow-none"
             onClick={() => setActiveTab('retenues')}
           >
-            <ReceiptText className="w-4 h-4 mr-2" />
+            <ReceiptText className="w-3.5 h-3.5 mr-1.5" />
             Retenues à la source
           </Button>
         </div>
@@ -175,42 +168,34 @@ function DeclarationsView() {
 
   const KPIS = [
     {
-      title: 'TVA Nette à Payer (En cours)',
+      title: 'TVA Nette',
       value: tvaTotale.toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
-      change: 'Calcul basé sur les déclarations non payées',
-      icon: Landmark,
-      color: 'text-primary',
-      bg: 'bg-primary/10'
+      iconClass: 'bg-primary/10 text-primary',
+      icon: Landmark
     },
     {
-      title: 'Acomptes IS Versés',
+      title: 'Acomptes IS',
       value: acomptesTotaux.toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
-      change: 'Cumul des acomptes payés',
-      icon: ReceiptText,
-      color: 'text-emerald-500',
-      bg: 'bg-emerald-500/10'
+      iconClass: 'bg-emerald-500/10 text-emerald-500',
+      icon: ReceiptText
     },
     {
-      title: 'Prochaine Échéance',
+      title: 'Échéance',
       value: '15 du mois',
-      change: 'Déclaration TVA habituelle',
-      icon: Calendar,
-      color: 'text-amber-500',
-      bg: 'bg-amber-500/10'
+      iconClass: 'bg-amber-500/10 text-amber-500',
+      icon: Calendar
     },
     {
       title: 'Pénalités',
       value: '0.00 $',
-      change: 'Aucun retard détecté',
-      icon: CheckCircle2,
-      color: 'text-emerald-500',
-      bg: 'bg-emerald-500/10'
+      iconClass: 'bg-emerald-500/10 text-emerald-500',
+      icon: CheckCircle2
     },
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="space-y-1">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {KPIS.map((kpi, i) => (
           <motion.div
             key={kpi.title}
@@ -218,39 +203,36 @@ function DeclarationsView() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
           >
-            <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm">
+            <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {kpi.title}
                 </CardTitle>
-                <div className={`p-2 rounded-lg ${kpi.bg} ${kpi.color}`}>
+                <div className={`p-2 rounded-lg ${kpi.iconClass}`}>
                   <kpi.icon className="h-4 w-4" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{kpi.value}</div>
-                <p className={`text-xs mt-1 font-medium ${kpi.color}`}>
-                  {kpi.change}
-                </p>
+                <div className="text-2xl font-bold" title={kpi.value}>{kpi.value}</div>
               </CardContent>
             </Card>
           </motion.div>
         ))}
       </div>
 
-      <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row justify-between gap-4">
-          <div className="flex items-center gap-2 relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <div className="space-y-1.5">
+        <div className="flex justify-end gap-2">
+          <div className="relative group">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input 
-              placeholder="Rechercher une déclaration..." 
+              placeholder="Rechercher..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 w-[250px] bg-background/50" 
+              className="pl-8 h-8 w-8 text-xs bg-transparent border-border transition-all duration-300 focus:w-[150px] hover:w-[150px] focus:bg-background/50 rounded-full cursor-pointer focus:cursor-text" 
             />
           </div>
-          <Button size="sm" onClick={() => setIsDialogOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" /> Générer Déclaration
+          <Button variant="default" size="icon" className="h-8 w-8 rounded-full" onClick={() => setIsDialogOpen(true)} title="Générer Déclaration">
+            <Plus className="w-4 h-4" />
           </Button>
         </div>
 
@@ -472,19 +454,19 @@ function RetenuesView() {
   );
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+    <div className="space-y-1.5">
+      <div className="flex justify-end items-center gap-2">
+        <div className="relative group">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input 
-            placeholder="Rechercher une retenue..." 
+            placeholder="Rechercher..." 
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="pl-8 w-[250px] bg-background/50" 
+            className="pl-8 h-8 w-8 text-xs bg-transparent border-border transition-all duration-300 focus:w-[150px] hover:w-[150px] focus:bg-background/50 rounded-full cursor-pointer focus:cursor-text" 
           />
         </div>
-        <Button size="sm" onClick={() => setIsDialogOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" /> Saisir Retenue
+        <Button variant="default" size="icon" className="h-8 w-8 rounded-full" onClick={() => setIsDialogOpen(true)} title="Saisir Retenue">
+          <Plus className="w-4 h-4" />
         </Button>
       </div>
 

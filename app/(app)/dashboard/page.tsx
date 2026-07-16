@@ -41,6 +41,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { GlassCard, Button as NeonButton } from '@/components/ui/Layout';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -122,18 +123,18 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-3 relative z-10">
-          <Button variant="outline" size="sm" className="h-10 px-4 rounded-xl shadow-sm border-primary/20 hover:bg-primary/5 transition-all" asChild>
-            <Link href="/restitutions">
-              <FileBarChart className="h-4 w-4 mr-2 text-primary" />
+          <Link href="/restitutions">
+            <NeonButton variant="outline" className="h-10 px-4 rounded-xl shadow-sm transition-all">
+              <FileBarChart className="h-4 w-4 mr-2" />
               Générer une balance
-            </Link>
-          </Button>
-          <Button size="sm" className="h-10 px-4 rounded-xl shadow-md bg-gradient-to-r from-primary to-primary/80 hover:brightness-110 transition-all" asChild>
-            <Link href="/saisie">
+            </NeonButton>
+          </Link>
+          <Link href="/saisie">
+            <NeonButton variant="primary" className="h-10 px-4 rounded-xl shadow-md transition-all">
               <PencilLine className="h-4 w-4 mr-2" />
               Nouvelle saisie
-            </Link>
-          </Button>
+            </NeonButton>
+          </Link>
         </div>
       </div>
 
@@ -149,39 +150,36 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: i * 0.1, ease: "easeOut" }}
             >
-              <Card className="relative overflow-hidden group border-border/50 bg-background/50 backdrop-blur-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:hover:shadow-[0_8px_30px_rgba(255,255,255,0.02)] transition-all duration-300">
+              <GlassCard className="relative overflow-hidden group p-0" variant="default">
                 <div
                   className="absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-opacity duration-500"
                   style={{ backgroundColor: kpi.color }}
                 />
-                <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-transparent to-transparent group-hover:via-current transition-all duration-500 opacity-20" style={{ color: kpi.color }} />
                 
-                <CardContent className="p-4 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4 min-w-0">
+                <div className="p-5 flex flex-col justify-between h-full gap-4">
+                  <div className="flex items-center justify-between">
                     <div
                       className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-sm transform group-hover:scale-110 transition-transform duration-300"
-                      style={{ backgroundColor: `${kpi.color}15`, color: kpi.color, border: `1px solid ${kpi.color}30` }}
+                      style={{ backgroundColor: `${kpi.color}20`, color: kpi.color }}
                     >
                       <Icon className="h-6 w-6" />
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold tracking-wide uppercase text-muted-foreground/80 truncate">{kpi.label}</p>
-                      <div className="text-xl font-black tracking-tighter truncate">
-                        {formatCurrency(kpi.value)}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0">
                     <Badge variant="secondary" className={cn(
-                        'flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded-md border-0',
-                        positive ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'
+                        'flex items-center gap-0.5 text-xs font-bold px-2 py-1 rounded-md border-0',
+                        positive ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'
                       )}>
                       {positive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                       {Math.abs(kpi.evolution)}%
                     </Badge>
                   </div>
-                </CardContent>
-              </Card>
+                  <div>
+                    <p className="text-xs font-semibold tracking-wide uppercase text-muted-foreground mb-1">{kpi.label}</p>
+                    <div className={cn("text-2xl font-black tracking-tighter", i === 0 && "rdc-gradient-text")}>
+                      {formatCurrency(kpi.value)}
+                    </div>
+                  </div>
+                </div>
+              </GlassCard>
             </motion.div>
           );
         })}
@@ -189,17 +187,17 @@ export default function DashboardPage() {
 
       {/* Main Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 border-border/50 shadow-sm overflow-hidden flex flex-col">
-          <CardHeader className="pb-0">
+        <GlassCard className="lg:col-span-2 shadow-sm overflow-hidden flex flex-col p-6">
+          <div className="pb-0 mb-4">
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle className="text-xl font-bold">Flux de trésorerie</CardTitle>
-                <CardDescription className="text-sm mt-1">Évolution des entrées et sorties (YTD)</CardDescription>
+                <h3 className="text-xl font-bold">Flux de trésorerie</h3>
+                <p className="text-sm mt-1 text-muted-foreground">Évolution des entrées et sorties (YTD)</p>
               </div>
               <Badge variant="outline" className="bg-background/50 backdrop-blur">Exercice 2025</Badge>
             </div>
-          </CardHeader>
-          <CardContent className="pt-6 flex-1 min-h-[350px]">
+          </div>
+          <div className="flex-1 min-h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={CHART_CASHFLOW} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
                 <defs>
@@ -252,15 +250,15 @@ export default function DashboardPage() {
                 />
               </AreaChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
+          </div>
+        </GlassCard>
 
-        <Card className="border-border/50 shadow-sm overflow-hidden flex flex-col">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold">Répartition des charges</CardTitle>
-            <CardDescription>Vue détaillée par poste de dépense</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1 flex flex-col justify-center min-h-[350px]">
+        <GlassCard className="shadow-sm overflow-hidden flex flex-col p-6">
+          <div className="mb-4">
+            <h3 className="text-xl font-bold">Répartition des charges</h3>
+            <p className="text-sm text-muted-foreground mt-1">Vue détaillée par poste de dépense</p>
+          </div>
+          <div className="flex-1 flex flex-col justify-center min-h-[350px]">
             <div className="h-[240px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -300,18 +298,18 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </GlassCard>
       </div>
 
       {/* Secondary Charts & Activities Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 border-border/50 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold">Rentabilité par rotation</CardTitle>
-            <CardDescription>Analyse des marges par expédition</CardDescription>
-          </CardHeader>
-          <CardContent className="min-h-[320px]">
+        <GlassCard className="lg:col-span-2 shadow-sm p-6">
+          <div className="mb-4">
+            <h3 className="text-xl font-bold">Rentabilité par rotation</h3>
+            <p className="text-sm text-muted-foreground mt-1">Analyse des marges par expédition</p>
+          </div>
+          <div className="min-h-[320px]">
             <ResponsiveContainer width="100%" height={320}>
               <ComposedChart data={CHART_RENTABILITE} margin={{ left: -10, right: 10, top: 20 }}>
                 <CartesianGrid strokeDasharray="4 4" stroke="hsl(var(--border))" vertical={false} opacity={0.5} />
@@ -324,15 +322,15 @@ export default function DashboardPage() {
                 <Line type="monotone" dataKey="marge" name="Marge nette" stroke="hsl(var(--chart-2))" strokeWidth={3} dot={{ r: 4, strokeWidth: 2, fill: 'hsl(var(--background))' }} activeDot={{ r: 6, strokeWidth: 0, fill: 'hsl(var(--chart-2))' }} />
               </ComposedChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
+          </div>
+        </GlassCard>
 
-        <Card className="border-border/50 shadow-sm flex flex-col">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold">Journal d'activités</CardTitle>
-            <CardDescription>Actions récentes sur la plateforme</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1">
+        <GlassCard className="shadow-sm flex flex-col p-6">
+          <div className="mb-4">
+            <h3 className="text-xl font-bold">Journal d'activités</h3>
+            <p className="text-sm text-muted-foreground mt-1">Actions récentes sur la plateforme</p>
+          </div>
+          <div className="flex-1">
             <div className="space-y-4 max-h-[320px] overflow-y-auto scrollbar-thin pr-2">
               {ACTIVITES_RECENTES.map((act, i) => {
                 const Icon = activiteIcon[act.type] || Info;
@@ -369,34 +367,28 @@ export default function DashboardPage() {
                 );
               })}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </GlassCard>
       </div>
 
       {/* Logistics Tracking Card */}
-      <Card className="border-border/50 shadow-md bg-gradient-to-br from-background to-muted/20 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none transform translate-x-1/3 -translate-y-1/3" />
-        <CardHeader className="relative z-10 pb-6">
+      <GlassCard variant="blue" className="relative overflow-hidden p-8" glow={false}>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none transform translate-x-1/3 -translate-y-1/3" />
+        <div className="relative z-10 pb-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <CardTitle className="text-2xl font-bold">Centre de Contrôle Logistique</CardTitle>
-                <span className="relative flex h-3 w-3 ml-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-success"></span>
-                </span>
-              </div>
-              <CardDescription className="text-base">Suivi GPS en temps réel des rotations en cours</CardDescription>
+              <h3 className="text-2xl font-bold">Centre de Contrôle Logistique</h3>
+              <p className="text-base text-current/80 mt-1">Suivi GPS en temps réel des rotations en cours</p>
             </div>
-            <Button variant="secondary" className="gap-2 font-semibold shadow-sm hover:bg-secondary/80 transition-colors" asChild>
-              <Link href="/logistique">
+            <Link href="/logistique">
+              <NeonButton variant="neon-yellow" className="gap-2 font-semibold shadow-sm transition-colors">
                 <MapPin className="h-4 w-4 text-primary" />
                 Ouvrir la carte
-              </Link>
-            </Button>
+              </NeonButton>
+            </Link>
           </div>
-        </CardHeader>
-        <CardContent className="relative z-10">
+        </div>
+        <div className="relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
             {EXPEDITIONS.slice(0, 6).map((exp, i) => {
               const statutLabel: Record<string, string> = {
@@ -469,8 +461,8 @@ export default function DashboardPage() {
               );
             })}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </GlassCard>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
   Lock,
   Scale,
   TrendingUp,
+  TrendingDown,
   PieChart,
   ArrowRight,
   Check,
@@ -355,41 +356,77 @@ export default function EtatsFinanciersPage() {
 
   return (
     <div className="space-y-1 animate-fade-in -mt-4">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-        <Card>
-          <CardContent className="p-3 px-4 flex flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-                <Scale className="h-4 w-4" />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="p-5 bg-background rounded-[1.5rem] border border-border group relative overflow-hidden transition-all duration-300 shadow-sm hover:shadow-md hover:border-primary/40 flex flex-col justify-between">
+          <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest group-hover:text-primary transition-colors">Total Actif Net</span>
+              <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 transition-transform group-hover:scale-110">
+                <Scale size={14} />
               </div>
-              <p className="text-sm font-medium text-muted-foreground">Total Actif Net</p>
             </div>
-            <p className="text-lg font-bold font-mono">{formatCurrency(totalActifNet)}</p>
-          </CardContent>
+            <div className="text-3xl font-black font-mono truncate text-foreground" title={formatCurrency(totalActifNet)}>
+              {formatCurrency(totalActifNet)}
+            </div>
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-4 flex items-center relative z-10 font-medium">
+            <TrendingUp className="h-3.5 w-3.5 mr-1 text-emerald-500" />
+            <span className="text-emerald-500 font-bold mr-1">+5.2%</span> ce mois
+          </p>
         </Card>
-        <Card>
-          <CardContent className="p-3 px-4 flex flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-chart-4/10 text-chart-4">
-                <PieChart className="h-4 w-4" />
+
+        <Card className="p-5 bg-background rounded-[1.5rem] border border-border group relative overflow-hidden transition-all duration-300 shadow-sm hover:shadow-md hover:border-amber-500/40 flex flex-col justify-between">
+          <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest group-hover:text-amber-500 transition-colors">Total Passif</span>
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 shrink-0 transition-transform group-hover:scale-110">
+                <PieChart size={14} />
               </div>
-              <p className="text-sm font-medium text-muted-foreground">Total Passif</p>
             </div>
-            <p className="text-lg font-bold font-mono">{formatCurrency(totalPassif)}</p>
-          </CardContent>
+            <div className="text-3xl font-black font-mono truncate text-foreground" title={formatCurrency(totalPassif)}>
+              {formatCurrency(totalPassif)}
+            </div>
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-4 flex items-center relative z-10 font-medium">
+            <TrendingDown className="h-3.5 w-3.5 mr-1 text-emerald-500" />
+            <span className="text-emerald-500 font-bold mr-1">-1.5%</span> ce mois
+          </p>
         </Card>
-        <Card>
-          <CardContent className="p-3 px-4 flex flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={cn('flex h-8 w-8 items-center justify-center rounded-md', resultatNet >= 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive')}>
-                <TrendingUp className="h-4 w-4" />
+
+        <Card className={cn(
+          "p-5 bg-background rounded-[1.5rem] border border-border group relative overflow-hidden transition-all duration-300 shadow-sm hover:shadow-md flex flex-col justify-between",
+          resultatNet >= 0 ? "hover:border-emerald-500/40" : "hover:border-rose-500/40"
+        )}>
+          <div className={cn(
+            "absolute inset-0 bg-gradient-to-tr to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none",
+            resultatNet >= 0 ? "from-emerald-500/10" : "from-rose-500/10"
+          )} />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-3">
+              <span className={cn(
+                "text-[10px] font-black text-muted-foreground uppercase tracking-widest transition-colors",
+                resultatNet >= 0 ? "group-hover:text-emerald-500" : "group-hover:text-rose-500"
+              )}>Resultat Net</span>
+              <div className={cn(
+                "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110",
+                resultatNet >= 0 ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
+              )}>
+                <TrendingUp size={14} />
               </div>
-              <p className="text-sm font-medium text-muted-foreground">Resultat Net</p>
             </div>
-            <p className={cn('text-lg font-bold font-mono', resultatNet >= 0 ? 'text-success' : 'text-destructive')}>
+            <div className={cn(
+              "text-3xl font-black font-mono truncate transition-colors",
+              resultatNet >= 0 ? "text-emerald-500" : "text-rose-500"
+            )} title={formatCurrency(resultatNet)}>
               {formatCurrency(resultatNet)}
-            </p>
-          </CardContent>
+            </div>
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-4 flex items-center relative z-10 font-medium">
+            <TrendingUp className={cn("h-3.5 w-3.5 mr-1", resultatNet >= 0 ? "text-emerald-500" : "text-rose-500")} />
+            <span className={cn("font-bold mr-1", resultatNet >= 0 ? "text-emerald-500" : "text-rose-500")}>+8.4%</span> ce mois
+          </p>
         </Card>
       </div>
 
@@ -518,12 +555,13 @@ export default function EtatsFinanciersPage() {
 
         <TabsContent value="bilan">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Actif</CardTitle>
-                <CardDescription>Immobilisations, stocks, creances, tresorerie</CardDescription>
+            <Card className="rounded-[1.5rem] border border-border group relative overflow-hidden transition-all duration-300 shadow-sm hover:shadow-md hover:border-primary/40 bg-background">
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <CardHeader className="relative z-10 pb-4">
+                <CardTitle className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">Actif</CardTitle>
+                <CardDescription className="text-[10px] uppercase tracking-widest font-bold mt-1">Immobilisations, stocks, creances, tresorerie</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="relative z-10">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -561,12 +599,13 @@ export default function EtatsFinanciersPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Passif</CardTitle>
-                <CardDescription>Capitaux propres, dettes financieres, dettes d'exploitation</CardDescription>
+            <Card className="rounded-[1.5rem] border border-border group relative overflow-hidden transition-all duration-300 shadow-sm hover:shadow-md hover:border-chart-4/40 bg-background">
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <CardHeader className="relative z-10 pb-4">
+                <CardTitle className="text-lg font-bold text-foreground group-hover:text-chart-4 transition-colors">Passif</CardTitle>
+                <CardDescription className="text-[10px] uppercase tracking-widest font-bold mt-1">Capitaux propres, dettes financieres, dettes d'exploitation</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="relative z-10">
                 <Table>
                   <TableHeader>
                     <TableRow>

@@ -26,6 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { fetchWithAuth } from '@/lib/api';
+import { Logo } from '@/components/logo';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Tableau de bord', icon: LayoutDashboard, group: 'Pilotage', requiredPermission: 'dashboard_read' },
@@ -88,12 +89,12 @@ export function AppSidebar({ open, onToggle }: { open: boolean; onToggle: () => 
       <aside
         className={cn(
           'fixed lg:sticky top-0 z-50 h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 flex flex-col',
-          open ? 'w-64 translate-x-0' : 'w-64 -translate-x-full lg:translate-x-0 lg:w-20'
+          open ? 'w-56 translate-x-0' : 'w-56 -translate-x-full lg:translate-x-0 lg:w-20'
         )}
       >
         <div className="relative flex items-center gap-3 px-5 h-16 border-b border-sidebar-border shrink-0">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shrink-0">
-            <Building2 className="h-5 w-5" />
+            <Logo className="h-6 w-6" />
           </div>
           {open && (
             <div className="overflow-hidden">
@@ -114,12 +115,7 @@ export function AppSidebar({ open, onToggle }: { open: boolean; onToggle: () => 
 
         <nav className="flex-1 overflow-y-auto scrollbar-thin py-4 px-3">
           {Object.entries(groups).map(([group, items]) => (
-            <div key={group} className="mb-6">
-              {open && (
-                <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  {group}
-                </p>
-              )}
+            <div key={group} className="mb-2">
               <div className="space-y-1">
                 {items.map((item) => {
                   const active = pathname === item.href || pathname.startsWith(item.href + '/');

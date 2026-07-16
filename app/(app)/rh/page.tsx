@@ -409,34 +409,26 @@ function PaieView() {
     {
       title: 'Masse Salariale Brute',
       value: totalBrut.toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
-      change: 'Total des rémunérations brutes',
-      icon: Users,
-      color: 'text-primary',
-      bg: 'bg-primary/10'
+      cardClass: 'border-l-primary bg-primary/5',
+      textClass: 'text-primary'
     },
     {
-      title: 'Cotisations Sociales (Employé)',
+      title: 'Cotisations Sociales',
       value: totalSocial.toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
-      change: 'Retenues CNSS/INSS',
-      icon: Building2,
-      color: 'text-amber-500',
-      bg: 'bg-amber-500/10'
+      cardClass: 'border-l-amber-500 bg-amber-500/5',
+      textClass: 'text-amber-500'
     },
     {
       title: 'Retenues Fiscales',
       value: totalImpots.toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
-      change: 'Impôts sur le revenu (IRPP)',
-      icon: Landmark,
-      color: 'text-rose-500',
-      bg: 'bg-rose-500/10'
+      cardClass: 'border-l-rose-500 bg-rose-500/5',
+      textClass: 'text-rose-500'
     },
     {
       title: 'Net à Payer',
       value: totalNet.toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
-      change: 'Montant versé aux employés',
-      icon: Wallet,
-      color: 'text-emerald-500',
-      bg: 'bg-emerald-500/10'
+      cardClass: 'border-l-emerald-500 bg-emerald-500/5',
+      textClass: 'text-emerald-500'
     },
   ];
 
@@ -448,7 +440,7 @@ function PaieView() {
   return (
     <div className="space-y-6">
       {/* KPIs */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {KPIS.map((kpi, i) => (
           <motion.div
             key={kpi.title}
@@ -456,21 +448,11 @@ function PaieView() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
           >
-            <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {kpi.title}
-                </CardTitle>
-                <div className={`p-2 rounded-lg ${kpi.bg} ${kpi.color}`}>
-                  <kpi.icon className="h-4 w-4" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{kpi.value}</div>
-                <p className={`text-xs mt-1 font-medium ${kpi.color}`}>
-                  {kpi.change}
-                </p>
-              </CardContent>
+            <Card className={`p-4 border-y-0 border-r-0 border-l-4 shadow-sm rounded-xl ${kpi.cardClass}`}>
+              <div className={`text-2xl font-black font-mono truncate ${kpi.textClass}`} title={kpi.value}>
+                {kpi.value}
+              </div>
+              <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1">{kpi.title}</div>
             </Card>
           </motion.div>
         ))}

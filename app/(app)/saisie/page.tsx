@@ -484,60 +484,57 @@ function SaisieView() {
     <div className="space-y-2">
       
       {/* Statistiques Section */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Card className="border-border/50 shadow-sm bg-gradient-to-br from-background to-muted/20">
-          <CardContent className="p-2.5 flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <TrendingUp className="h-4 w-4" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Débits</CardTitle>
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <TrendingDown className="h-4 w-4" />
             </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground font-medium">Total Débits</p>
-              <p className="text-base font-semibold tracking-tight">{formatCurrency(totalDebit)}</p>
-            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" title={formatCurrency(totalDebit)}>{formatCurrency(totalDebit)}</div>
           </CardContent>
         </Card>
         
-        <Card className="border-border/50 shadow-sm bg-gradient-to-br from-background to-muted/20">
-          <CardContent className="p-2.5 flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-chart-5/10 text-chart-5 flex items-center justify-center shrink-0">
-              <TrendingDown className="h-4 w-4" />
+        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Crédits</CardTitle>
+            <div className="p-2 rounded-lg bg-chart-5/10 text-chart-5">
+              <TrendingUp className="h-4 w-4" />
             </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground font-medium">Total Crédits</p>
-              <p className="text-base font-semibold tracking-tight">{formatCurrency(totalCredit)}</p>
-            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" title={formatCurrency(totalCredit)}>{formatCurrency(totalCredit)}</div>
           </CardContent>
         </Card>
 
-        <Card className="border-border/50 shadow-sm bg-gradient-to-br from-background to-muted/20">
-          <CardContent className="p-2.5 flex items-center gap-3">
-            <div className={cn(
-              "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
-              equilibre && hasLignes ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
-            )}>
+        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Équilibre</CardTitle>
+            <div className={cn("p-2 rounded-lg", equilibre && hasLignes ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500")}>
               <Scale className="h-4 w-4" />
             </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground font-medium">Équilibre</p>
-              <p className={cn(
-                "text-base font-semibold tracking-tight",
-                equilibre && hasLignes ? "text-success" : "text-destructive"
-              )}>
-                {formatCurrency(Math.abs(totalDebit - totalCredit))}
-              </p>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" title={formatCurrency(Math.abs(totalDebit - totalCredit))}>
+              {formatCurrency(Math.abs(totalDebit - totalCredit))}
             </div>
+            <p className={cn("text-xs mt-1 font-medium", equilibre && hasLignes ? "text-emerald-500" : "text-rose-500")}>
+              {equilibre && hasLignes ? "Écriture équilibrée" : "Écriture déséquilibrée"}
+            </p>
           </CardContent>
         </Card>
 
-        <Card className="border-border/50 shadow-sm bg-gradient-to-br from-background to-muted/20">
-          <CardContent className="p-2.5 flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-warning/10 text-warning flex items-center justify-center shrink-0">
+        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Brouillons en attente</CardTitle>
+            <div className="p-2 rounded-lg bg-warning/10 text-warning">
               <Archive className="h-4 w-4" />
             </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground font-medium">Brouillons en attente</p>
-              <p className="text-base font-semibold tracking-tight">{savedBrouillards.length}</p>
-            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" title={savedBrouillards.length.toString()}>{savedBrouillards.length}</div>
           </CardContent>
         </Card>
       </div>
@@ -1558,53 +1555,25 @@ function ValideView() {
   return (
     <div className="space-y-2">
       {/* Statistiques Section */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Card className="border-border/50 shadow-sm bg-gradient-to-br from-background to-muted/20">
-          <CardContent className="p-2.5 flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <Layers className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground font-medium">Total Pièces</p>
-              <p className="text-base font-semibold tracking-tight">{totalPieces}</p>
-            </div>
-          </CardContent>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="p-4 border-y-0 border-r-0 border-l-4 border-l-primary bg-primary/5 shadow-sm rounded-xl">
+          <div className="text-2xl font-black text-primary font-mono truncate" title={totalPieces.toString()}>{totalPieces}</div>
+          <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1">Total Pièces</div>
         </Card>
         
-        <Card className="border-border/50 shadow-sm bg-gradient-to-br from-background to-muted/20">
-          <CardContent className="p-2.5 flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-chart-5/10 text-chart-5 flex items-center justify-center shrink-0">
-              <TrendingUp className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground font-medium">Débits Validés</p>
-              <p className="text-base font-semibold tracking-tight">{formatCurrency(totalDebit)}</p>
-            </div>
-          </CardContent>
+        <Card className="p-4 border-y-0 border-r-0 border-l-4 border-l-chart-5 bg-chart-5/5 shadow-sm rounded-xl">
+          <div className="text-2xl font-black text-chart-5 font-mono truncate" title={formatCurrency(totalDebit)}>{formatCurrency(totalDebit)}</div>
+          <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1">Débits Validés</div>
         </Card>
 
-        <Card className="border-border/50 shadow-sm bg-gradient-to-br from-background to-muted/20">
-          <CardContent className="p-2.5 flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
-              <TrendingDown className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground font-medium">Crédits Validés</p>
-              <p className="text-base font-semibold tracking-tight">{formatCurrency(totalCredit)}</p>
-            </div>
-          </CardContent>
+        <Card className="p-4 border-y-0 border-r-0 border-l-4 border-l-destructive bg-destructive/5 shadow-sm rounded-xl">
+          <div className="text-2xl font-black text-destructive font-mono truncate" title={formatCurrency(totalCredit)}>{formatCurrency(totalCredit)}</div>
+          <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1">Crédits Validés</div>
         </Card>
 
-        <Card className="border-border/50 shadow-sm bg-gradient-to-br from-background to-muted/20">
-          <CardContent className="p-2.5 flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-success/10 text-success flex items-center justify-center shrink-0">
-              <Calendar className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground font-medium">Période</p>
-              <p className="text-base font-semibold tracking-tight">Ce mois</p>
-            </div>
-          </CardContent>
+        <Card className="p-4 border-y-0 border-r-0 border-l-4 border-l-success bg-success/5 shadow-sm rounded-xl">
+          <div className="text-2xl font-black text-success font-mono truncate" title="Ce mois">Ce mois</div>
+          <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1">Période</div>
         </Card>
       </div>
 
