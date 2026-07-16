@@ -12,6 +12,12 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
     headers.set('Authorization', `Bearer ${token}`);
   }
 
+  // Inject Active Entity ID if present
+  const entiteId = localStorage.getItem('activeEntiteId');
+  if (entiteId) {
+    headers.set('X-Entite-ID', entiteId);
+  }
+
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,

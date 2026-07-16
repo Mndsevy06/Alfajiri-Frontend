@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -20,31 +20,57 @@ import {
   Smartphone,
   CreditCard,
   Users,
+  Wallet,
+  FileSignature,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { fetchWithAuth } from '@/lib/api';
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Tableau de bord', icon: LayoutDashboard, group: 'Pilotage' },
-  { href: '/plan-comptable', label: 'Plan Comptable', icon: BookOpen, group: 'Comptabilite' },
-  { href: '/saisie', label: 'Saisie Comptable', icon: PencilLine, group: 'Comptabilite' },
-  { href: '/restitutions', label: 'Restitutions', icon: BarChart3, group: 'Comptabilite' },
-  { href: '/rapprochement', label: 'Rapprochement Bancaire', icon: Landmark, group: 'Comptabilite' },
-  { href: '/terrain', label: 'Saisie Terrain', icon: Smartphone, group: 'Operations' },
-  { href: '/ventes', label: 'Ventes & Facturation', icon: Receipt, group: 'Operations' },
-  { href: '/logistique', label: 'Suivi Logistique', icon: Truck, group: 'Operations' },
-  { href: '/paiements', label: 'Gestion des Paiements', icon: CreditCard, group: 'Operations' },
-  { href: '/immobilisations', label: 'Immobilisations', icon: Building2, group: 'Operations' },
-  { href: '/etats-financiers', label: 'Etats Financiers OHADA', icon: FileText, group: 'Cloture' },
-  { href: '/audit', label: "Journal d'Audit", icon: ScrollText, group: 'Systeme' },
-  { href: '/utilisateurs', label: 'Utilisateurs', icon: Users, group: 'Systeme' },
-  { href: '/parametres', label: 'Parametres', icon: Settings, group: 'Systeme' },
+  { href: '/dashboard', label: 'Tableau de bord', icon: LayoutDashboard, group: 'Pilotage', requiredPermission: 'dashboard_read' },
+  { href: '/plan-comptable', label: 'Plan Comptable', icon: BookOpen, group: 'Comptabilite', requiredPermission: 'compta_read' },
+  { href: '/saisie', label: 'Saisie Comptable', icon: PencilLine, group: 'Comptabilite', requiredPermission: 'saisie_create' },
+  { href: '/restitutions', label: 'Restitutions', icon: BarChart3, group: 'Comptabilite', requiredPermission: 'restitutions_read' },
+  { href: '/rapprochement', label: 'Rapprochement Bancaire', icon: Landmark, group: 'Comptabilite', requiredPermission: 'rapprochement_read' },
+  { href: '/terrain', label: 'Saisie Terrain', icon: Smartphone, group: 'Operations', requiredPermission: 'terrain_read' },
+  { href: '/ventes', label: 'Ventes & Facturation', icon: Receipt, group: 'Operations', requiredPermission: 'ventes_read' },
+  { href: '/logistique', label: 'Suivi Logistique', icon: Truck, group: 'Operations', requiredPermission: 'logistique_read' },
+  { href: '/paiements', label: 'Gestion des Paiements', icon: CreditCard, group: 'Operations', requiredPermission: 'paiements_read' },
+  { href: '/immobilisations', label: 'Immobilisations', icon: Building2, group: 'Operations', requiredPermission: 'immo_read' },
+  { href: '/rh', label: 'Ressources Humaines', icon: Users, group: 'Ressources Humaines', requiredPermission: 'rh_read' },
+  { href: '/fiscalite', label: 'Gestion Fiscale', icon: FileSignature, group: 'Fiscalite & Legal', requiredPermission: 'fisc_read' },
+  { href: '/etats-financiers', label: 'Etats Financiers OHADA', icon: FileText, group: 'Cloture', requiredPermission: 'etats_financiers_read' },
+  { href: '/utilisateurs', label: 'Utilisateurs', icon: Users, group: 'Systeme', requiredPermission: 'users_read' },
+  { href: '/parametres', label: 'Parametres', icon: Settings, group: 'Systeme', requiredPermission: 'settings_write' },
 ];
 
 export function AppSidebar({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   const pathname = usePathname();
+  const [userPermissions, setUserPermissions] = useState<Record<string, boolean> | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
-  const groups = NAV_ITEMS.reduce((acc, item) => {
+  useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        const data = await fetchWithAuth('/users/me/');
+        setUserPermissions(data.permissions || {});
+        setUserRole(data.role || null);
+      } catch (error) {
+        console.error('Failed to fetch user permissions');
+      }
+    };
+    fetchMe();
+  }, []);
+
+  const visibleNavItems = NAV_ITEMS.filter(item => {
+    if (userRole === 'Super Admin') return true;
+    if (!item.requiredPermission) return true;
+    if (userPermissions && userPermissions[item.requiredPermission]) return true;
+    return false;
+  });
+
+  const groups = visibleNavItems.reduce((acc, item) => {
     if (!acc[item.group]) acc[item.group] = [];
     acc[item.group].push(item);
     return acc;

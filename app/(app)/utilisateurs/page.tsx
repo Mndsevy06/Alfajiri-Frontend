@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
   MoreHorizontal,
@@ -10,7 +11,18 @@ import {
   Trash2,
   Search,
   Lock,
+  Users,
+  ShieldCheck,
+  BookOpen,
+  FileSignature,
+  Settings,
+  Save,
+  Briefcase,
+  LayoutDashboard,
+  FileText,
+  ScrollText
 } from 'lucide-react';
+import { AuditView } from './audit-view';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,12 +69,289 @@ type User = {
   role: string;
   site: string;
   is_active: boolean;
-  password?: string; // Utilisé pour le formulaire uniquement
+  password?: string;
 };
 
 const ROLES = ['Agent', 'Comptable', 'Chef Comptable', 'Directeur', 'Auditeur', 'Super Admin'];
 
 export default function UtilisateursPage() {
+  const [activeTab, setActiveTab] = useState<'users' | 'permissions' | 'audit'>('users');
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Sécurité & Accès</h1>
+          <p className="text-muted-foreground mt-1">
+            Gérez les utilisateurs et configurez finement la matrice des permissions.
+          </p>
+        </div>
+        
+        <div className="flex items-center p-1 bg-muted/50 rounded-lg border border-border">
+          <Button 
+            variant={activeTab === 'users' ? 'default' : 'ghost'} 
+            size="sm" 
+            className="rounded-md px-4 shadow-none"
+            onClick={() => setActiveTab('users')}
+          >
+            <Users className="w-4 h-4 mr-2" />
+            Utilisateurs
+          </Button>
+          <Button 
+            variant={activeTab === 'permissions' ? 'default' : 'ghost'} 
+            size="sm" 
+            className="rounded-md px-4 shadow-none"
+            onClick={() => setActiveTab('permissions')}
+          >
+            <ShieldCheck className="w-4 h-4 mr-2" />
+            Matrice de Permissions
+          </Button>
+          <Button 
+            variant={activeTab === 'audit' ? 'default' : 'ghost'} 
+            size="sm" 
+            className="rounded-md px-4 shadow-none"
+            onClick={() => setActiveTab('audit')}
+          >
+            <ScrollText className="w-4 h-4 mr-2" />
+            Journal d'Audit
+          </Button>
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
+        >
+          {activeTab === 'users' ? <UsersView /> : activeTab === 'permissions' ? <PermissionsMatrix /> : <AuditView />}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PERMISSIONS MATRIX COMPONENT (POWERFUL FRONTEND MOCK)
+// ---------------------------------------------------------------------------
+const CustomToggle = ({ checked, onChange, disabled }: { checked: boolean, onChange: (val: boolean) => void, disabled?: boolean }) => (
+  <button
+    type="button"
+    role="switch"
+    aria-checked={checked}
+    disabled={disabled}
+    onClick={() => !disabled && onChange(!checked)}
+    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${checked ? 'bg-primary' : 'bg-muted'}`}
+  >
+    <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${checked ? 'translate-x-4' : 'translate-x-0'}`} />
+  </button>
+);
+
+function PermissionsMatrix() {
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const PERMISSIONS_DATA = [
+    {
+      module: 'Pilotage',
+      icon: LayoutDashboard,
+      actions: [
+        { id: 'dashboard_read', name: 'Consulter le Tableau de bord' },
+      ]
+    },
+    {
+      module: 'Comptabilité',
+      icon: BookOpen,
+      actions: [
+        { id: 'compta_read', name: 'Consulter le Plan Comptable' },
+        { id: 'compta_write', name: 'Modifier le Plan Comptable' },
+        { id: 'saisie_create', name: 'Créer une Écriture' },
+        { id: 'saisie_validate', name: 'Valider une Écriture (Brouillon -> Définitif)' },
+        { id: 'restitutions_read', name: 'Consulter les Restitutions' },
+        { id: 'rapprochement_read', name: 'Consulter le Rapprochement Bancaire' },
+        { id: 'rapprochement_write', name: 'Effectuer un Rapprochement Bancaire' },
+      ]
+    },
+    {
+      module: 'Opérations',
+      icon: Briefcase,
+      actions: [
+        { id: 'terrain_read', name: 'Consulter la Saisie Terrain' },
+        { id: 'ventes_read', name: 'Consulter les Ventes & Facturation' },
+        { id: 'logistique_read', name: 'Consulter le Suivi Logistique' },
+        { id: 'paiements_read', name: 'Consulter la Gestion des Paiements' },
+        { id: 'immo_read', name: 'Consulter les Immobilisations' },
+      ]
+    },
+    {
+      module: 'Ressources Humaines',
+      icon: Users,
+      actions: [
+        { id: 'rh_read', name: 'Consulter la liste des Employés' },
+        { id: 'rh_write', name: 'Créer/Modifier un Employé' },
+        { id: 'paie_create', name: 'Générer un Bulletin de Paie' },
+        { id: 'paie_validate', name: 'Valider la Paie' },
+      ]
+    },
+    {
+      module: 'Gestion Fiscale',
+      icon: FileSignature,
+      actions: [
+        { id: 'fisc_read', name: 'Consulter les Déclarations' },
+        { id: 'fisc_write', name: 'Générer une Déclaration' },
+        { id: 'retenue_write', name: 'Saisir une Retenue à la Source' },
+      ]
+    },
+    {
+      module: 'Clôture',
+      icon: FileText,
+      actions: [
+        { id: 'etats_financiers_read', name: 'Consulter les États Financiers OHADA' },
+      ]
+    },
+    {
+      module: 'Paramètres Système',
+      icon: Settings,
+      actions: [
+        { id: 'users_read', name: 'Consulter les Utilisateurs' },
+        { id: 'users_write', name: 'Gérer les Utilisateurs & Rôles' },
+        { id: 'settings_write', name: 'Modifier les Paramètres Généraux' },
+        { id: 'audit_read', name: "Consulter le Journal d'Audit" },
+      ]
+    }
+  ];
+
+  const defaultMatrix: Record<string, Record<string, boolean>> = {
+    'Super Admin': { 'dashboard_read': true, 'compta_read': true, 'compta_write': true, 'saisie_create': true, 'saisie_validate': true, 'restitutions_read': true, 'rapprochement_read': true, 'rapprochement_write': true, 'rh_read': true, 'rh_write': true, 'paie_create': true, 'paie_validate': true, 'fisc_read': true, 'fisc_write': true, 'retenue_write': true, 'users_read': true, 'users_write': true, 'settings_write': true, 'terrain_read': true, 'ventes_read': true, 'logistique_read': true, 'paiements_read': true, 'immo_read': true, 'etats_financiers_read': true, 'audit_read': true },
+    'Chef Comptable': { 'dashboard_read': true, 'compta_read': true, 'compta_write': true, 'saisie_create': true, 'saisie_validate': true, 'restitutions_read': true, 'rapprochement_read': true, 'rapprochement_write': true, 'rh_read': true, 'rh_write': false, 'paie_create': false, 'paie_validate': false, 'fisc_read': true, 'fisc_write': true, 'retenue_write': true, 'users_read': true, 'users_write': false, 'settings_write': false, 'terrain_read': true, 'ventes_read': true, 'logistique_read': true, 'paiements_read': true, 'immo_read': true, 'etats_financiers_read': true, 'audit_read': true },
+    'Comptable': { 'dashboard_read': true, 'compta_read': true, 'compta_write': false, 'saisie_create': true, 'saisie_validate': false, 'restitutions_read': true, 'rapprochement_read': true, 'rapprochement_write': false, 'rh_read': true, 'rh_write': false, 'paie_create': false, 'paie_validate': false, 'fisc_read': true, 'fisc_write': false, 'retenue_write': false, 'users_read': false, 'users_write': false, 'settings_write': false, 'terrain_read': true, 'ventes_read': true, 'logistique_read': true, 'paiements_read': true, 'immo_read': true, 'etats_financiers_read': true, 'audit_read': false },
+    'Auditeur': { 'dashboard_read': true, 'compta_read': true, 'compta_write': false, 'saisie_create': false, 'saisie_validate': false, 'restitutions_read': true, 'rapprochement_read': true, 'rapprochement_write': false, 'rh_read': true, 'rh_write': false, 'paie_create': false, 'paie_validate': false, 'fisc_read': true, 'fisc_write': false, 'retenue_write': false, 'users_read': true, 'users_write': false, 'settings_write': false, 'terrain_read': true, 'ventes_read': true, 'logistique_read': true, 'paiements_read': true, 'immo_read': true, 'etats_financiers_read': true, 'audit_read': true },
+    'Agent': { 'dashboard_read': true, 'compta_read': false, 'compta_write': false, 'saisie_create': true, 'saisie_validate': false, 'restitutions_read': false, 'rapprochement_read': false, 'rapprochement_write': false, 'rh_read': false, 'rh_write': false, 'paie_create': false, 'paie_validate': false, 'fisc_read': false, 'fisc_write': false, 'retenue_write': false, 'users_read': false, 'users_write': false, 'settings_write': false, 'terrain_read': true, 'ventes_read': true, 'logistique_read': true, 'paiements_read': true, 'immo_read': false, 'etats_financiers_read': false, 'audit_read': false },
+    'Directeur': { 'dashboard_read': true, 'compta_read': true, 'compta_write': false, 'saisie_create': false, 'saisie_validate': true, 'restitutions_read': true, 'rapprochement_read': true, 'rapprochement_write': false, 'rh_read': true, 'rh_write': false, 'paie_create': false, 'paie_validate': true, 'fisc_read': true, 'fisc_write': false, 'retenue_write': false, 'users_read': true, 'users_write': false, 'settings_write': false, 'terrain_read': true, 'ventes_read': true, 'logistique_read': true, 'paiements_read': true, 'immo_read': true, 'etats_financiers_read': true, 'audit_read': true },
+  };
+
+  const [matrix, setMatrix] = useState<Record<string, Record<string, boolean>>>(defaultMatrix);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchPermissions();
+  }, []);
+
+  const fetchPermissions = async () => {
+    try {
+      const data = await fetchWithAuth('/users/permissions/');
+      if (data && data.length > 0) {
+        const fetchedMatrix: Record<string, Record<string, boolean>> = {};
+        data.forEach((item: any) => {
+          fetchedMatrix[item.role] = item.permissions;
+        });
+        // Fusionner avec le défaut pour les rôles qui n'ont pas encore été configurés
+        setMatrix({ ...defaultMatrix, ...fetchedMatrix });
+      }
+    } catch (error) {
+      toast.error('Erreur lors du chargement des permissions');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleToggle = (role: string, actionId: string, checked: boolean) => {
+    setMatrix(prev => ({
+      ...prev,
+      [role]: {
+        ...(prev[role] || {}),
+        [actionId]: checked
+      }
+    }));
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await fetchWithAuth('/users/permissions/bulk_update/', {
+        method: 'POST',
+        body: JSON.stringify(matrix)
+      });
+      toast.success('Matrice des permissions mise à jour avec succès');
+    } catch (error) {
+      toast.error('Erreur lors de la sauvegarde');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Card className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
+      <CardHeader className="flex flex-row items-center justify-between pb-4">
+        <div>
+          <CardTitle>Configuration des Rôles</CardTitle>
+          <CardDescription>
+            Définissez précisément quelles actions sont autorisées pour chaque rôle. 
+            Les modifications prendront effet lors de la prochaine connexion de l'utilisateur.
+          </CardDescription>
+        </div>
+        <Button onClick={handleSave} disabled={isSaving} className="shadow-lg hover:shadow-primary/20 transition-all">
+          <Save className="w-4 h-4 mr-2" />
+          {isSaving ? 'Enregistrement...' : 'Sauvegarder'}
+        </Button>
+      </CardHeader>
+      <CardContent className="p-0 overflow-x-auto scrollbar-thin">
+        <Table className="min-w-[1000px]">
+          <TableHeader>
+            <TableRow className="bg-muted/50 border-white/5">
+              <TableHead className="w-[300px] font-bold text-foreground">Ressource / Action</TableHead>
+              {ROLES.map(role => (
+                <TableHead key={role} className="text-center font-bold">
+                  <div className="flex flex-col items-center justify-center gap-1">
+                    <Badge variant={role === 'Super Admin' ? 'default' : 'outline'} className={role === 'Super Admin' ? 'bg-primary/20 text-primary border-none' : 'border-white/10'}>
+                      {role}
+                    </Badge>
+                  </div>
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {PERMISSIONS_DATA.map((module, mIdx) => (
+              <React.Fragment key={module.module}>
+                <TableRow className="bg-muted/30 hover:bg-muted/30 border-t-2 border-border">
+                  <TableCell colSpan={ROLES.length + 1} className="py-2">
+                    <div className="flex items-center gap-2 font-bold text-primary">
+                      <module.icon className="w-4 h-4" />
+                      {module.module}
+                    </div>
+                  </TableCell>
+                </TableRow>
+                {module.actions.map((action) => (
+                  <TableRow key={action.id} className="hover:bg-white/5 transition-colors border-white/5">
+                    <TableCell className="pl-8 text-sm font-medium text-muted-foreground">
+                      {action.name}
+                    </TableCell>
+                    {ROLES.map(role => (
+                      <TableCell key={`${role}-${action.id}`} className="text-center">
+                        <CustomToggle 
+                          checked={matrix[role]?.[action.id] || false}
+                          onChange={(val) => handleToggle(role, action.id, val)}
+                          disabled={role === 'Super Admin'} // Super Admin always has all permissions
+                        />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </React.Fragment>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// USERS VIEW COMPONENT (ORIGINAL)
+// ---------------------------------------------------------------------------
+function UsersView() {
   const [users, setUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -213,44 +502,30 @@ export default function UtilisateursPage() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Gestion des Utilisateurs</h1>
-          <p className="text-muted-foreground mt-1">
-            Gérez les accès, les rôles et les informations des utilisateurs en base de données.
-          </p>
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Rechercher un utilisateur..."
+            className="pl-8 bg-background/50"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-        <Button onClick={handleCreate} className="w-full sm:w-auto">
+        <Button onClick={handleCreate} className="w-full sm:w-auto shadow-lg hover:shadow-primary/20 transition-all">
           <Plus className="h-4 w-4 mr-2" />
           Ajouter un utilisateur
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Liste des utilisateurs</CardTitle>
-              <CardDescription>Tous les collaborateurs ayant accès au système.</CardDescription>
-            </div>
-            <div className="relative w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Rechercher..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
+      <Card className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
+        <CardContent className="p-0">
+          <div className="rounded-md border-0">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="hover:bg-transparent border-white/5">
                   <TableHead>Utilisateur</TableHead>
                   <TableHead>Rôle</TableHead>
                   <TableHead>Site</TableHead>
@@ -261,36 +536,36 @@ export default function UtilisateursPage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                       Chargement des données...
                     </TableCell>
                   </TableRow>
                 ) : filteredUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                       Aucun utilisateur trouvé.
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
+                    <TableRow key={user.id} className="hover:bg-white/5 border-white/5 transition-colors">
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold shrink-0 ${user.is_active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                          <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold shrink-0 ${user.is_active ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
                             {(user.nom || user.email).split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-medium">{user.nom || 'Sans nom'}</p>
+                            <p className="font-bold">{user.nom || 'Sans nom'}</p>
                             <p className="text-xs text-muted-foreground">{user.email}</p>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="font-normal">
+                        <Badge variant="outline" className="font-medium border-white/10 bg-white/5">
                           {user.role}
                         </Badge>
                       </TableCell>
-                      <TableCell>{user.site || '-'}</TableCell>
+                      <TableCell className="text-muted-foreground">{user.site || '-'}</TableCell>
                       <TableCell>
                         <button 
                           onClick={() => user.email !== 'a@gmail.com' && toggleActive(user)} 
@@ -298,9 +573,9 @@ export default function UtilisateursPage() {
                           disabled={user.email === 'a@gmail.com'}
                         >
                           {user.is_active ? (
-                            <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-0">Actif</Badge>
+                            <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-emerald-500/20">Actif</Badge>
                           ) : (
-                            <Badge variant="secondary">Inactif</Badge>
+                            <Badge variant="secondary" className="hover:bg-muted">Inactif</Badge>
                           )}
                         </button>
                       </TableCell>
@@ -312,29 +587,29 @@ export default function UtilisateursPage() {
                         ) : (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
+                              <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-white/10 text-muted-foreground hover:text-foreground">
                                 <span className="sr-only">Ouvrir le menu</span>
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" className="w-[200px] bg-background/95 backdrop-blur-xl border-white/10">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                              <DropdownMenuItem onClick={() => openEditDialog(user)} className="cursor-pointer">
                                 <Pencil className="mr-2 h-4 w-4" />
-                                Modifier
+                                Modifier informations
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => openPasswordDialog(user)}>
+                              <DropdownMenuItem onClick={() => openRoleDialog(user)} className="cursor-pointer">
+                                <ShieldAlert className="mr-2 h-4 w-4" />
+                                Changer le rôle
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openPasswordDialog(user)} className="cursor-pointer">
                                 <Key className="mr-2 h-4 w-4" />
                                 Réinitialiser mot de passe
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => openRoleDialog(user)}>
-                                <ShieldAlert className="mr-2 h-4 w-4" />
-                                Changer rôles
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-destructive focus:text-destructive">
+                              <DropdownMenuSeparator className="bg-white/10" />
+                              <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-destructive focus:text-destructive cursor-pointer">
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Supprimer
+                                Supprimer l'accès
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -349,9 +624,8 @@ export default function UtilisateursPage() {
         </CardContent>
       </Card>
 
-      {/* Shared Dialog for Edit / Change Role / Password */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="w-[95vw] sm:max-w-[500px] rounded-xl border-white/10 bg-background/95 backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle>
               {dialogMode === 'edit' && (form.id ? 'Modifier l\'utilisateur' : 'Ajouter un utilisateur')}
@@ -371,7 +645,7 @@ export default function UtilisateursPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Email de connexion</Label>
                   <Input 
                     id="email" 
                     type="email" 
@@ -392,7 +666,7 @@ export default function UtilisateursPage() {
                   </div>
                 )}
                 <div className="grid gap-2">
-                  <Label htmlFor="site">Site</Label>
+                  <Label htmlFor="site">Site d'affectation</Label>
                   <Select value={form.site || ''} onValueChange={(v) => setForm({...form, site: v})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionner un site" />
@@ -445,7 +719,7 @@ export default function UtilisateursPage() {
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline" disabled={isSaving}>Annuler</Button>
+              <Button variant="ghost" disabled={isSaving}>Annuler</Button>
             </DialogClose>
             <Button onClick={handleSave} disabled={isSaving}>
               {isSaving ? 'Enregistrement...' : 'Enregistrer'}

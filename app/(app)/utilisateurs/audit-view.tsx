@@ -49,7 +49,7 @@ const ACTION_STYLE: Record<string, string> = {
   IMPRESSION: 'bg-chart-4/10 text-chart-4',
 };
 
-export default function AuditPage() {
+export function AuditView() {
   const [entries, setEntries] = useState<AuditEntry[]>(AUDIT_ENTRIES);
   const [search, setSearch] = useState('');
   const [filterAction, setFilterAction] = useState('all');

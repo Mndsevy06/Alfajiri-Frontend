@@ -33,9 +33,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DOSSIERS, NOTIFICATIONS, UTILISATEUR_COURANT } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 
+import { useEntite } from '@/lib/entite-context';
+
 export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
   const router = useRouter();
-  const [dossier, setDossier] = useState(DOSSIERS[0]);
+  const { entites, activeEntite, setActiveEntite, isLoading } = useEntite();
   const [notifs, setNotifs] = useState(NOTIFICATIONS);
   const unreadCount = notifs.filter((n) => !n.lu).length;
 
@@ -61,17 +63,24 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="gap-2 max-w-[200px] lg:max-w-none">
             <Building2 className="h-4 w-4 shrink-0 text-primary" />
-            <span className="truncate hidden sm:inline">{dossier.sigle}</span>
+            <span className="truncate hidden sm:inline">
+              {isLoading ? 'Chargement...' : activeEntite ? activeEntite.sigle || activeEntite.raisonSociale : 'Aucune entité'}
+            </span>
             <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-80">
           <DropdownMenuLabel>Dossiers / Sites</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {DOSSIERS.map((d) => (
+          {entites.length === 0 && (
+            <div className="py-4 text-center text-sm text-muted-foreground">
+              Aucune entité configurée
+            </div>
+          )}
+          {entites.map((d) => (
             <DropdownMenuItem
               key={d.id}
-              onClick={() => setDossier(d)}
+              onClick={() => setActiveEntite(d)}
               className="flex items-start gap-3 py-3"
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
@@ -81,7 +90,7 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
                 <p className="text-sm font-medium truncate">{d.raisonSociale}</p>
                 <p className="text-xs text-muted-foreground">Exercice {d.exerciceEnCours} - {d.devise}</p>
               </div>
-              {dossier.id === d.id && <Check className="h-4 w-4 text-primary shrink-0" />}
+              {activeEntite && activeEntite.id === d.id && <Check className="h-4 w-4 text-primary shrink-0" />}
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>

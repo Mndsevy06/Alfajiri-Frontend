@@ -70,7 +70,7 @@ export function PaymentForm({ onSuccess, onCancel }: PaymentFormProps) {
     if (type === 'encaissement') {
       return tier.type === 'client';
     } else {
-      return tier.type === 'fournisseur' || tier.type === 'personnel';
+      return tier.type === 'fournisseur';
     }
   });
 
@@ -131,7 +131,7 @@ export function PaymentForm({ onSuccess, onCancel }: PaymentFormProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="tiers">{type === 'encaissement' ? 'Client' : 'Fournisseur / Personnel'}</Label>
+              <Label htmlFor="tiers">{type === 'encaissement' ? 'Client' : 'Fournisseur'}</Label>
               <Select required value={selectedTier} onValueChange={setSelectedTier}>
                 <SelectTrigger className="bg-background/50 backdrop-blur-sm h-10">
                   <SelectValue placeholder="Sélectionnez un tiers" />
