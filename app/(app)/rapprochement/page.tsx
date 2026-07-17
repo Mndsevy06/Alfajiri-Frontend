@@ -192,14 +192,8 @@ export default function RapprochementPage() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Rapprochement Bancaire</h1>
-          <p className="text-muted-foreground mt-1">
-            Lettrage relevé bancaire vs comptabilité - Banque Compte 521
-          </p>
-        </div>
+    <div className="space-y-3 animate-fade-in -mt-4">
+      <div className="flex justify-end gap-2 mb-2">
         <div className="flex items-center gap-2">
           <input 
             type="file" 
@@ -208,16 +202,16 @@ export default function RapprochementPage() {
             className="hidden" 
             accept=".csv"
           />
-          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={loading}>
-            <Upload className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm" className="h-8 text-xs px-3 shadow-none" onClick={() => fileInputRef.current?.click()} disabled={loading}>
+            <Upload className="h-3.5 w-3.5 mr-1.5" />
             Importer CSV
           </Button>
-          <Button variant="outline" size="sm" onClick={handleAutoReconcile} disabled={loading}>
-            <Sparkles className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm" className="h-8 text-xs px-3 shadow-none" onClick={handleAutoReconcile} disabled={loading}>
+            <Sparkles className="h-3.5 w-3.5 mr-1.5" />
             Lettrage auto
           </Button>
-          <Button size="sm" onClick={() => loadData()} disabled={loading} variant="secondary">
-            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+          <Button variant="secondary" size="sm" className="h-8 w-8 p-0 shadow-none" onClick={() => loadData()} disabled={loading}>
+            <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
           </Button>
         </div>
       </div>

@@ -77,9 +77,9 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-background">
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-x-hidden overflow-y-auto bg-background py-12 px-4 sm:p-8">
       {/* Dynamic Background for Glassmorphism */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px] mix-blend-normal animate-pulse [animation-duration:10s]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-chart-2/20 blur-[120px] mix-blend-normal" />
       </div>
@@ -92,7 +92,7 @@ export default function OnboardingPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="w-full max-w-md bg-background/40 p-5 sm:p-7 rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-white/30 dark:border-white/10 backdrop-blur-3xl z-10 mx-4 relative overflow-hidden"
+        className="w-full max-w-md bg-background/40 p-5 sm:p-7 rounded-3xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-white/30 dark:border-white/10 backdrop-blur-3xl z-10 relative overflow-hidden my-auto mx-auto"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-white/0 dark:from-white/10 dark:to-white/0 pointer-events-none" />
         <div className="relative z-10">

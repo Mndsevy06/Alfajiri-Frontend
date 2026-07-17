@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { fetchWithAuth } from '@/lib/api';
 import type { Expedition, CircuitLogistique, EtapeCircuit } from '@/lib/types';
@@ -145,91 +146,74 @@ export default function LogistiquePage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)] overflow-hidden">
-      {/* 1. TOP HEADER & FILTERS (Glassmorphism & Bento) */}
-      <div className="shrink-0 space-y-4 pb-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-3xl lg:text-4xl font-extrabold tracking-tight">
-              Centre de Contrôle <span className="text-primary">Logistique</span>
-            </h1>
-            <p className="text-muted-foreground mt-1 text-sm md:text-base font-medium">
-              Suivi visuel Kanban des expéditions actives.
-            </p>
+      {/* 1. TOP HEADER & FILTERS */}
+      <div className="shrink-0 space-y-2 pb-2">
+        {/* Actions & Filters */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
+          <div className="flex items-center gap-2 flex-1">
+            <Select value={selectedCircuitId} onValueChange={(val) => { setSelectedCircuitId(val); setFilterEtape('all'); }}>
+              <SelectTrigger className="w-[180px] bg-background/50 h-8 text-xs border-border shadow-none">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {circuits.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8 h-8 w-[200px] text-xs bg-background/50 shadow-none border-border"
+              />
+            </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <Link href="/logistique/configuration">
-              <Button variant="secondary" className="shrink-0 rounded-full bg-secondary/50 hover:bg-secondary/80 backdrop-blur-md">
-                <Settings className="h-4 w-4 mr-2" />
+              <Button variant="outline" size="sm" className="h-8 text-xs px-3 shadow-none">
+                <Settings className="h-3.5 w-3.5 mr-1.5" />
                 Configurer
               </Button>
             </Link>
-            <Button variant="outline" onClick={fetchData} disabled={isLoading} className="shrink-0 group rounded-full border-primary/20 hover:bg-primary/5">
-              <RefreshCw className={cn("h-4 w-4 mr-2 group-hover:rotate-180 transition-transform duration-500", isLoading && "animate-spin")} />
+            <Button variant="outline" size="sm" onClick={fetchData} disabled={isLoading} className="h-8 text-xs px-3 shadow-none group">
+              <RefreshCw className={cn("h-3.5 w-3.5 mr-1.5 group-hover:rotate-180 transition-transform duration-500", isLoading && "animate-spin")} />
               Actualiser
             </Button>
           </div>
         </div>
 
-        {/* Bento Box Filters & KPIs */}
-        <div className="flex flex-col xl:flex-row gap-4">
-          {/* Main Filters Bento */}
-          <div className="flex-1 bg-card/60 backdrop-blur-xl border border-border/50 rounded-3xl p-4 shadow-sm flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 block ml-1">Circuit Actif</label>
-              <Select value={selectedCircuitId} onValueChange={(val) => { setSelectedCircuitId(val); setFilterEtape('all'); }}>
-                <SelectTrigger className="w-full bg-background/50 border-0 rounded-xl font-medium focus:ring-0 shadow-sm h-12">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {circuits.map((c) => (
-                    <SelectItem key={c.id} value={c.id} className="rounded-lg">{c.nom}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex-1">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 block ml-1">Recherche Rapide</label>
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Rechercher..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-11 bg-background/50 border-0 rounded-xl h-12 shadow-sm focus-visible:ring-1"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* KPI Bento Slider */}
-          <div className="flex gap-3 overflow-x-auto pb-2 snap-x hide-scrollbar items-center">
-            {counts.map((s, idx) => (
-              <motion.div
-                key={s.id}
-                className="min-w-[150px] snap-start h-full"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: idx * 0.05 }}
+        {/* KPI Compact Cards */}
+        <div className="flex gap-2 overflow-x-auto pb-1 snap-x hide-scrollbar items-center">
+          {counts.map((s, idx) => (
+            <motion.div
+              key={s.id}
+              className="min-w-[140px] snap-start"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: idx * 0.05 }}
+            >
+              <Card 
+                onClick={() => setFilterEtape(filterEtape === s.id ? 'all' : s.id)}
+                className={cn(
+                  "cursor-pointer transition-shadow hover:shadow-md",
+                  filterEtape === s.id ? "bg-primary/5 border-primary/40" : "bg-background/40 backdrop-blur-sm border-white/10 shadow-sm"
+                )}
               >
-                <div 
-                  onClick={() => setFilterEtape(filterEtape === s.id ? 'all' : s.id)}
-                  className={cn(
-                    "h-full p-4 rounded-3xl border cursor-pointer transition-all duration-300 relative overflow-hidden group",
-                    filterEtape === s.id ? "bg-primary/10 border-primary" : "bg-card/40 border-border/50 hover:bg-card/80 backdrop-blur-md"
-                  )}
-                >
-                  <div className={cn("absolute top-0 right-0 w-16 h-16 rounded-full blur-2xl opacity-20 -mr-8 -mt-8 transition-opacity group-hover:opacity-40", s.couleur_badge.split(' ')[0])} />
-                  <div className="flex justify-between items-start mb-2">
-                    <div className={cn('h-8 w-8 rounded-xl flex items-center justify-center', s.couleur_badge)}>
-                      <Truck className="h-4 w-4" />
-                    </div>
-                    <span className="text-3xl font-extrabold tracking-tighter">{s.count}</span>
+                <CardContent className="p-2.5 flex items-center justify-between gap-2">
+                  <div className="flex flex-col overflow-hidden">
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate" title={s.nom}>{s.nom}</span>
+                    <span className="text-base font-bold leading-none mt-1">{s.count}</span>
                   </div>
-                  <p className="text-xs font-semibold text-muted-foreground line-clamp-1">{s.nom}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                  <div className={cn("p-1.5 rounded-md flex-shrink-0", s.couleur_badge)}>
+                    <Truck className="h-3.5 w-3.5" />
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
         </div>
       </div>
 

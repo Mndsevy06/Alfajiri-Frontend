@@ -20,7 +20,10 @@ import {
   Briefcase,
   LayoutDashboard,
   FileText,
-  ScrollText
+  ScrollText,
+  Filter,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 import { AuditView } from './audit-view';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -43,6 +46,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -61,6 +69,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { fetchWithAuth } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
 type User = {
   id: string;
@@ -78,41 +87,34 @@ export default function UtilisateursPage() {
   const [activeTab, setActiveTab] = useState<'users' | 'permissions' | 'audit'>('users');
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Sécurité & Accès</h1>
-          <p className="text-muted-foreground mt-1">
-            Gérez les utilisateurs et configurez finement la matrice des permissions.
-          </p>
-        </div>
-        
+    <div className="space-y-3 animate-fade-in">
+      <div className="flex justify-end mb-2">
         <div className="flex items-center p-1 bg-muted/50 rounded-lg border border-border">
           <Button 
             variant={activeTab === 'users' ? 'default' : 'ghost'} 
             size="sm" 
-            className="rounded-md px-4 shadow-none"
+            className="rounded-md px-3 h-8 text-xs shadow-none"
             onClick={() => setActiveTab('users')}
           >
-            <Users className="w-4 h-4 mr-2" />
+            <Users className="w-3.5 h-3.5 mr-1.5" />
             Utilisateurs
           </Button>
           <Button 
             variant={activeTab === 'permissions' ? 'default' : 'ghost'} 
             size="sm" 
-            className="rounded-md px-4 shadow-none"
+            className="rounded-md px-3 h-8 text-xs shadow-none"
             onClick={() => setActiveTab('permissions')}
           >
-            <ShieldCheck className="w-4 h-4 mr-2" />
+            <ShieldCheck className="w-3.5 h-3.5 mr-1.5" />
             Matrice de Permissions
           </Button>
           <Button 
             variant={activeTab === 'audit' ? 'default' : 'ghost'} 
             size="sm" 
-            className="rounded-md px-4 shadow-none"
+            className="rounded-md px-3 h-8 text-xs shadow-none"
             onClick={() => setActiveTab('audit')}
           >
-            <ScrollText className="w-4 h-4 mr-2" />
+            <ScrollText className="w-3.5 h-3.5 mr-1.5" />
             Journal d'Audit
           </Button>
         </div>
@@ -354,6 +356,8 @@ function PermissionsMatrix() {
 function UsersView() {
   const [users, setUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -384,10 +388,22 @@ function UsersView() {
     const nom = u.nom || '';
     const email = u.email || '';
     const role = u.role || '';
-    return nom.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    
+    const matchesSearch = nom.toLowerCase().includes(searchQuery.toLowerCase()) || 
            email.toLowerCase().includes(searchQuery.toLowerCase()) ||
            role.toLowerCase().includes(searchQuery.toLowerCase());
+           
+    const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+    const matchesStatus = statusFilter === 'all' || 
+                          (statusFilter === 'active' && u.is_active) || 
+                          (statusFilter === 'inactive' && !u.is_active);
+                          
+    return matchesSearch && matchesRole && matchesStatus;
   });
+
+  const totalUsers = users.length;
+  const activeUsers = users.filter(u => u.is_active).length;
+  const inactiveUsers = users.filter(u => !u.is_active).length;
 
   const openEditDialog = (user: User) => {
     setForm(user);
@@ -502,22 +518,130 @@ function UsersView() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Rechercher un utilisateur..."
-            className="pl-8 bg-background/50"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+    <div className="space-y-3">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-2.5 flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Total Utilisateurs</span>
+              <span className="text-base font-bold leading-none mt-1">{totalUsers}</span>
+            </div>
+            <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+              <Users className="h-3.5 w-3.5" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-2.5 flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Actifs</span>
+              <span className="text-base font-bold leading-none mt-1">{activeUsers}</span>
+            </div>
+            <div className="p-1.5 rounded-md bg-emerald-500/10 text-emerald-500">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-2.5 flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Inactifs</span>
+              <span className="text-base font-bold leading-none mt-1">{inactiveUsers}</span>
+            </div>
+            <div className="p-1.5 rounded-md bg-destructive/10 text-destructive">
+              <XCircle className="h-3.5 w-3.5" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1">
+        <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
+          <span>Gestion des accès et permissions</span>
         </div>
-        <Button onClick={handleCreate} className="w-full sm:w-auto shadow-lg hover:shadow-primary/20 transition-all">
-          <Plus className="h-4 w-4 mr-2" />
-          Ajouter un utilisateur
-        </Button>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="icon" className={cn("h-8 w-8 rounded-lg shadow-sm hover:bg-accent group", searchQuery && "bg-accent")} title="Rechercher">
+                <Search className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-2" align="end">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input 
+                  placeholder="Rechercher un utilisateur..." 
+                  className="pl-8 h-9 text-xs" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  autoFocus
+                />
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="icon" className={cn("h-8 w-8 rounded-lg shadow-sm hover:bg-accent group", (roleFilter !== 'all' || statusFilter !== 'all') && "bg-accent")} title="Filtrer">
+                <Filter className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                {(roleFilter !== 'all' || statusFilter !== 'all') && (
+                  <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-primary-foreground">
+                    {(roleFilter !== 'all' ? 1 : 0) + (statusFilter !== 'all' ? 1 : 0)}
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-4" align="end">
+              <div className="space-y-4">
+                <h4 className="font-medium text-sm leading-none">Filtrer les utilisateurs</h4>
+                
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Rôle</Label>
+                  <Select value={roleFilter} onValueChange={setRoleFilter}>
+                    <SelectTrigger className="h-8 text-xs border-white/10 bg-white/5">
+                      <SelectValue placeholder="Tous les rôles" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous les rôles</SelectItem>
+                      {ROLES.map(r => (
+                        <SelectItem key={r} value={r}>{r}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Statut</Label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="h-8 text-xs border-white/10 bg-white/5">
+                      <SelectValue placeholder="Tous les statuts" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous les statuts</SelectItem>
+                      <SelectItem value="active">Actif</SelectItem>
+                      <SelectItem value="inactive">Inactif</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {(roleFilter !== 'all' || statusFilter !== 'all') && (
+                  <Button variant="ghost" size="sm" className="w-full h-8 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => { setRoleFilter('all'); setStatusFilter('all'); }}>
+                    Réinitialiser les filtres
+                  </Button>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <Button onClick={handleCreate} className="h-8 rounded-lg px-3 text-xs font-semibold shadow-sm hover:shadow-primary/20 transition-all">
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            <span className="hidden sm:inline">Ajouter</span>
+          </Button>
+        </div>
       </div>
 
       <Card className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">

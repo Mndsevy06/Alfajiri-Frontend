@@ -195,7 +195,7 @@ function DeclarationsView() {
 
   return (
     <div className="space-y-1">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         {KPIS.map((kpi, i) => (
           <motion.div
             key={kpi.title}
@@ -204,16 +204,14 @@ function DeclarationsView() {
             transition={{ delay: i * 0.1 }}
           >
             <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {kpi.title}
-                </CardTitle>
-                <div className={`p-2 rounded-lg ${kpi.iconClass}`}>
-                  <kpi.icon className="h-4 w-4" />
+              <CardContent className="p-2.5 flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{kpi.title}</span>
+                  <span className="text-base font-bold leading-none mt-1" title={kpi.value}>{kpi.value}</span>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold" title={kpi.value}>{kpi.value}</div>
+                <div className={`p-1.5 rounded-md ${kpi.iconClass}`}>
+                  <kpi.icon className="h-3.5 w-3.5" />
+                </div>
               </CardContent>
             </Card>
           </motion.div>
@@ -231,8 +229,9 @@ function DeclarationsView() {
               className="pl-8 h-8 w-8 text-xs bg-transparent border-border transition-all duration-300 focus:w-[150px] hover:w-[150px] focus:bg-background/50 rounded-full cursor-pointer focus:cursor-text" 
             />
           </div>
-          <Button variant="default" size="icon" className="h-8 w-8 rounded-full" onClick={() => setIsDialogOpen(true)} title="Générer Déclaration">
-            <Plus className="w-4 h-4" />
+          <Button variant="default" size="sm" className="h-8 text-xs px-3 shadow-none" onClick={() => setIsDialogOpen(true)} title="Générer Déclaration">
+            <Plus className="w-3.5 h-3.5 mr-1.5" />
+            Générer
           </Button>
         </div>
 

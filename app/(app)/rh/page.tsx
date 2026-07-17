@@ -50,33 +50,26 @@ export default function RHPage() {
   const [activeTab, setActiveTab] = useState<'employes' | 'paie'>('employes');
   
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Ressources Humaines</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gestion du personnel et de la paie.
-          </p>
-        </div>
-        
+    <div className="space-y-1 animate-fade-in -mt-4">
+      <div className="flex justify-end items-center gap-4">
         {/* Tab Switcher */}
-        <div className="flex items-center p-1 bg-muted/50 rounded-lg border border-border">
+        <div className="flex items-center p-0.5 bg-muted/50 rounded-md border border-border">
           <Button 
             variant={activeTab === 'employes' ? 'default' : 'ghost'} 
             size="sm" 
-            className="rounded-md px-4 shadow-none"
+            className="rounded h-7 text-xs px-2 shadow-none"
             onClick={() => setActiveTab('employes')}
           >
-            <Users className="w-4 h-4 mr-2" />
+            <Users className="w-3.5 h-3.5 mr-1.5" />
             Employés
           </Button>
           <Button 
             variant={activeTab === 'paie' ? 'default' : 'ghost'} 
             size="sm" 
-            className="rounded-md px-4 shadow-none"
+            className="rounded h-7 text-xs px-2 shadow-none"
             onClick={() => setActiveTab('paie')}
           >
-            <Wallet className="w-4 h-4 mr-2" />
+            <Wallet className="w-3.5 h-3.5 mr-1.5" />
             Gestion de la Paie
           </Button>
         </div>
@@ -184,19 +177,66 @@ function EmployesView() {
   const filtered = employes.filter(e => e.nom.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+    <div className="space-y-1.5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-2.5 flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Total Employés</span>
+              <span className="text-base font-bold leading-none mt-1">{employes.length}</span>
+            </div>
+            <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+              <Users className="h-3.5 w-3.5" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-2.5 flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Masse Salariale Est.</span>
+              <span className="text-base font-bold leading-none mt-1">$45,200</span>
+            </div>
+            <div className="p-1.5 rounded-md bg-emerald-500/10 text-emerald-500">
+              <Wallet className="h-3.5 w-3.5" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-2.5 flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Nouveaux Recrutements</span>
+              <span className="text-base font-bold leading-none mt-1">3</span>
+            </div>
+            <div className="p-1.5 rounded-md bg-amber-500/10 text-amber-500">
+              <Plus className="h-3.5 w-3.5" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-2.5 flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Départs</span>
+              <span className="text-base font-bold leading-none mt-1">0</span>
+            </div>
+            <div className="p-1.5 rounded-md bg-rose-500/10 text-rose-500">
+              <Building2 className="h-3.5 w-3.5" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex justify-end items-center gap-2">
+        <div className="relative group">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             placeholder="Rechercher un employé..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8 w-[250px] bg-background/50"
+            className="pl-8 h-8 w-8 text-xs bg-transparent border-border transition-all duration-300 focus:w-[200px] hover:w-[200px] focus:bg-background/50 rounded-full cursor-pointer focus:cursor-text"
           />
         </div>
-        <Button size="sm" onClick={() => setIsNewEmployeOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" /> Nouvel Employé
+        <Button size="sm" className="h-8 text-xs px-3 shadow-none" onClick={() => setIsNewEmployeOpen(true)}>
+          <Plus className="w-3.5 h-3.5 mr-1.5" /> Nouvel Employé
         </Button>
       </div>
 
@@ -409,26 +449,26 @@ function PaieView() {
     {
       title: 'Masse Salariale Brute',
       value: totalBrut.toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
-      cardClass: 'border-l-primary bg-primary/5',
-      textClass: 'text-primary'
+      iconClass: 'bg-primary/10 text-primary',
+      icon: Wallet
     },
     {
       title: 'Cotisations Sociales',
       value: totalSocial.toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
-      cardClass: 'border-l-amber-500 bg-amber-500/5',
-      textClass: 'text-amber-500'
+      iconClass: 'bg-amber-500/10 text-amber-500',
+      icon: Users
     },
     {
       title: 'Retenues Fiscales',
       value: totalImpots.toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
-      cardClass: 'border-l-rose-500 bg-rose-500/5',
-      textClass: 'text-rose-500'
+      iconClass: 'bg-rose-500/10 text-rose-500',
+      icon: Landmark
     },
     {
       title: 'Net à Payer',
       value: totalNet.toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
-      cardClass: 'border-l-emerald-500 bg-emerald-500/5',
-      textClass: 'text-emerald-500'
+      iconClass: 'bg-emerald-500/10 text-emerald-500',
+      icon: Calculator
     },
   ];
 
@@ -438,9 +478,9 @@ function PaieView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-1.5">
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         {KPIS.map((kpi, i) => (
           <motion.div
             key={kpi.title}
@@ -448,11 +488,16 @@ function PaieView() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
           >
-            <Card className={`p-4 border-y-0 border-r-0 border-l-4 shadow-sm rounded-xl ${kpi.cardClass}`}>
-              <div className={`text-2xl font-black font-mono truncate ${kpi.textClass}`} title={kpi.value}>
-                {kpi.value}
-              </div>
-              <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1">{kpi.title}</div>
+            <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-2.5 flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{kpi.title}</span>
+                  <span className="text-base font-bold leading-none mt-1" title={kpi.value}>{kpi.value}</span>
+                </div>
+                <div className={`p-1.5 rounded-md ${kpi.iconClass}`}>
+                  <kpi.icon className="h-3.5 w-3.5" />
+                </div>
+              </CardContent>
             </Card>
           </motion.div>
         ))}

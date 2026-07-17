@@ -65,88 +65,78 @@ export default function RestitutionsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Restitutions financieres</h1>
-          <p className="text-muted-foreground mt-1">
-            Balance - Grand Livre - Journaux de centralisation
-          </p>
-        </div>
+    <div className="space-y-3 animate-fade-in -mt-4">
+      <div className="flex justify-end gap-2 mb-2">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => toast.success('Export PDF genere')}>
-            <Download className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm" className="h-8 text-xs px-3 shadow-none" onClick={() => toast.success('Export PDF genere')}>
+            <Download className="h-3.5 w-3.5 mr-1.5" />
             PDF
           </Button>
-          <Button variant="outline" size="sm" onClick={() => toast.success('Export Excel genere')}>
-            <Download className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm" className="h-8 text-xs px-3 shadow-none" onClick={() => toast.success('Export Excel genere')}>
+            <Download className="h-3.5 w-3.5 mr-1.5" />
             Excel
           </Button>
-          <Button variant="outline" size="sm" onClick={() => toast.info('Impression en cours...')}>
-            <Printer className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm" className="h-8 text-xs px-3 shadow-none" onClick={() => toast.info('Impression en cours...')}>
+            <Printer className="h-3.5 w-3.5 mr-1.5" />
             Imprimer
           </Button>
         </div>
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col lg:flex-row lg:items-end gap-4">
-            <div className="space-y-2">
-              <Label>Type de restitution</Label>
-              <div className="flex items-center gap-1 p-1 rounded-lg bg-muted">
-                <button
-                  onClick={() => { setView('balance'); setDrillCompte(null); }}
-                  className={cn(
-                    'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all',
-                    view === 'balance' ? 'bg-background shadow-sm' : 'text-muted-foreground'
-                  )}
-                >
-                  <BarChart3 className="h-4 w-4" />
-                  Balance
-                </button>
-                <button
-                  onClick={() => { setView('grand-livre'); setDrillCompte(null); }}
-                  className={cn(
-                    'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all',
-                    view === 'grand-livre' ? 'bg-background shadow-sm' : 'text-muted-foreground'
-                  )}
-                >
-                  <BookOpen className="h-4 w-4" />
-                  Grand Livre
-                </button>
-                <button
-                  onClick={() => { setView('journaux'); setDrillCompte(null); }}
-                  className={cn(
-                    'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all',
-                    view === 'journaux' ? 'bg-background shadow-sm' : 'text-muted-foreground'
-                  )}
-                >
-                  <FileText className="h-4 w-4" />
-                  Journaux
-                </button>
-              </div>
+      <Card className="border-white/10 shadow-sm bg-background/50 backdrop-blur-xl">
+        <CardContent className="p-2">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+            <div className="flex items-center gap-1 p-0.5 rounded-md bg-muted/50 border border-border">
+              <button
+                onClick={() => { setView('balance'); setDrillCompte(null); }}
+                className={cn(
+                  'flex items-center h-7 px-3 rounded text-xs font-medium transition-all shadow-none',
+                  view === 'balance' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:bg-muted/50'
+                )}
+              >
+                <BarChart3 className="h-3.5 w-3.5 mr-1.5" />
+                Balance
+              </button>
+              <button
+                onClick={() => { setView('grand-livre'); setDrillCompte(null); }}
+                className={cn(
+                  'flex items-center h-7 px-3 rounded text-xs font-medium transition-all shadow-none',
+                  view === 'grand-livre' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:bg-muted/50'
+                )}
+              >
+                <BookOpen className="h-3.5 w-3.5 mr-1.5" />
+                Grand Livre
+              </button>
+              <button
+                onClick={() => { setView('journaux'); setDrillCompte(null); }}
+                className={cn(
+                  'flex items-center h-7 px-3 rounded text-xs font-medium transition-all shadow-none',
+                  view === 'journaux' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:bg-muted/50'
+                )}
+              >
+                <FileText className="h-3.5 w-3.5 mr-1.5" />
+                Journaux
+              </button>
             </div>
-            <div className="space-y-2 flex-1">
-              <Label>Periode</Label>
+            
+            <div className="flex-1 lg:max-w-xs ml-auto flex items-center gap-2">
               <Select value={periode} onValueChange={setPeriode}>
-                <SelectTrigger>
+                <SelectTrigger className="h-8 text-xs bg-background/50 shadow-none border-border">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="2025-07">Juillet 2025</SelectItem>
                   <SelectItem value="2025-06">Juin 2025</SelectItem>
                   <SelectItem value="2025-Q2">2eme Trimestre 2025</SelectItem>
-                  <SelectItem value="2025">Exercice 2025 (cumul)</SelectItem>
+                  <SelectItem value="2025">Exercice 2025</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2 flex-1">
-              <Label>Recherche rapide</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input 
-                  placeholder="Filtrer par compte ou libellé..." 
-                  className="pl-10" 
+                  placeholder="Rechercher..." 
+                  className="pl-8 h-8 text-xs bg-background/50 shadow-none border-border" 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -159,6 +149,7 @@ export default function RestitutionsPage() {
       {view === 'balance' && <BalanceView onDrillDown={(c) => { setDrillCompte(c); setView('grand-livre'); }} balance={balance} searchQuery={searchQuery} />}
       {view === 'grand-livre' && <GrandLivreView drillCompte={drillCompte} onBack={() => { setDrillCompte(null); setView('balance'); }} grandLivre={grandLivre} planComptable={planComptable} searchQuery={searchQuery} />}
       {view === 'journaux' && <JournauxView searchQuery={searchQuery} />}
+    </div>
     </div>
   );
 }

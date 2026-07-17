@@ -97,7 +97,7 @@ export default function SaisiePage() {
   const [view, setView] = useState<View>('saisie');
 
   return (
-    <div className="space-y-4 animate-fade-in pb-8">
+    <div className="space-y-3 animate-fade-in pb-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
           <h1 className="text-lg font-bold tracking-tight text-foreground/90">
@@ -484,63 +484,65 @@ function SaisieView() {
     <div className="space-y-2">
       
       {/* Statistiques Section */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Débits</CardTitle>
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <TrendingDown className="h-4 w-4" />
+          <CardContent className="p-2.5 flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Total Débits</span>
+              <span className="text-base font-bold leading-none mt-1" title={formatCurrency(totalDebit)}>{formatCurrency(totalDebit)}</span>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" title={formatCurrency(totalDebit)}>{formatCurrency(totalDebit)}</div>
+            <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+              <TrendingDown className="h-3.5 w-3.5" />
+            </div>
           </CardContent>
         </Card>
         
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Crédits</CardTitle>
-            <div className="p-2 rounded-lg bg-chart-5/10 text-chart-5">
-              <TrendingUp className="h-4 w-4" />
+          <CardContent className="p-2.5 flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Total Crédits</span>
+              <span className="text-base font-bold leading-none mt-1" title={formatCurrency(totalCredit)}>{formatCurrency(totalCredit)}</span>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" title={formatCurrency(totalCredit)}>{formatCurrency(totalCredit)}</div>
+            <div className="p-1.5 rounded-md bg-chart-5/10 text-chart-5">
+              <TrendingUp className="h-3.5 w-3.5" />
+            </div>
           </CardContent>
         </Card>
 
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Équilibre</CardTitle>
-            <div className={cn("p-2 rounded-lg", equilibre && hasLignes ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500")}>
-              <Scale className="h-4 w-4" />
+          <CardContent className="p-2.5 flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Équilibre</span>
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-base font-bold leading-none" title={formatCurrency(Math.abs(totalDebit - totalCredit))}>
+                  {formatCurrency(Math.abs(totalDebit - totalCredit))}
+                </span>
+                <span className={cn("text-[9px] font-medium", equilibre && hasLignes ? "text-emerald-500" : "text-rose-500")}>
+                  ({equilibre && hasLignes ? "Équilibré" : "Déséquilibré"})
+                </span>
+              </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" title={formatCurrency(Math.abs(totalDebit - totalCredit))}>
-              {formatCurrency(Math.abs(totalDebit - totalCredit))}
+            <div className={cn("p-1.5 rounded-md", equilibre && hasLignes ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500")}>
+              <Scale className="h-3.5 w-3.5" />
             </div>
-            <p className={cn("text-xs mt-1 font-medium", equilibre && hasLignes ? "text-emerald-500" : "text-rose-500")}>
-              {equilibre && hasLignes ? "Écriture équilibrée" : "Écriture déséquilibrée"}
-            </p>
           </CardContent>
         </Card>
 
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Brouillons en attente</CardTitle>
-            <div className="p-2 rounded-lg bg-warning/10 text-warning">
-              <Archive className="h-4 w-4" />
+          <CardContent className="p-2.5 flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Brouillons</span>
+              <span className="text-base font-bold leading-none mt-1" title={savedBrouillards.length.toString()}>{savedBrouillards.length}</span>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" title={savedBrouillards.length.toString()}>{savedBrouillards.length}</div>
+            <div className="p-1.5 rounded-md bg-warning/10 text-warning">
+              <Archive className="h-3.5 w-3.5" />
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Barre d'actions et Informations de l'en-tête (Sur la même ligne, sans fond) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1.5 border-b border-border/50 mb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1">
         {/* Informations de l'en-tête active (A gauche) */}
         <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
           {libelle ? (

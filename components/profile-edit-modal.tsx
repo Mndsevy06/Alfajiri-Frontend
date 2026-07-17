@@ -33,7 +33,7 @@ export function ProfileEditModal({ isOpen, onClose, currentUser, onProfileUpdate
       if (currentUser.photo_profil) {
         avatarUrl = currentUser.photo_profil.startsWith('http') 
           ? currentUser.photo_profil 
-          : `http://127.0.0.1:8000${currentUser.photo_profil.startsWith('/') ? '' : '/'}${currentUser.photo_profil}`;
+          : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000'}${currentUser.photo_profil.startsWith('/') ? '' : '/'}${currentUser.photo_profil}`;
       }
       
       setAvatarPreview(avatarUrl);

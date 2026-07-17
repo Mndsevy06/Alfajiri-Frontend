@@ -75,7 +75,7 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
     if (user?.photo_profil) {
       return user.photo_profil.startsWith('http') 
         ? user.photo_profil 
-        : `http://127.0.0.1:8000${user.photo_profil.startsWith('/') ? '' : '/'}${user.photo_profil}`;
+        : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000'}${user.photo_profil.startsWith('/') ? '' : '/'}${user.photo_profil}`;
     }
     return user?.avatar || '';
   };
