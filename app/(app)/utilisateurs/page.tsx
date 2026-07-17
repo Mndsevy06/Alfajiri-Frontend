@@ -27,6 +27,8 @@ import {
 } from 'lucide-react';
 import { AuditView } from './audit-view';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { GlassCard, Button as NeonButton } from '@/components/ui/Layout';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -88,41 +90,6 @@ export default function UtilisateursPage() {
 
   return (
     <div className="space-y-3 animate-fade-in">
-      <div className="flex justify-end mb-2">
-        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50">
-          <button
-            onClick={() => setActiveTab('users')}
-            className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all',
-              activeTab === 'users' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <Users className="w-3.5 h-3.5" />
-            Utilisateurs
-          </button>
-          <button
-            onClick={() => setActiveTab('permissions')}
-            className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all',
-              activeTab === 'permissions' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            Matrice de Permissions
-          </button>
-          <button
-            onClick={() => setActiveTab('audit')}
-            className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all',
-              activeTab === 'audit' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <ScrollText className="w-3.5 h-3.5" />
-            Journal d'Audit
-          </button>
-        </div>
-      </div>
-
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
@@ -131,7 +98,7 @@ export default function UtilisateursPage() {
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
         >
-          {activeTab === 'users' ? <UsersView /> : activeTab === 'permissions' ? <PermissionsMatrix /> : <AuditView />}
+          {activeTab === 'users' ? <UsersView activeTab={activeTab} setActiveTab={setActiveTab} /> : activeTab === 'permissions' ? <PermissionsMatrix /> : <AuditView />}
         </motion.div>
       </AnimatePresence>
     </div>
@@ -287,7 +254,7 @@ function PermissionsMatrix() {
   };
 
   return (
-    <Card className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
+    <GlassCard glow={false} className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
       <CardHeader className="flex flex-row items-center justify-between pb-4">
         <div>
           <CardTitle>Configuration des Rôles</CardTitle>
@@ -296,10 +263,10 @@ function PermissionsMatrix() {
             Les modifications prendront effet lors de la prochaine connexion de l'utilisateur.
           </CardDescription>
         </div>
-        <Button onClick={handleSave} disabled={isSaving} className="shadow-lg hover:shadow-primary/20 transition-all">
+        <NeonButton onClick={handleSave} disabled={isSaving} className="shadow-lg hover:shadow-primary/20 transition-all">
           <Save className="w-4 h-4 mr-2" />
           {isSaving ? 'Enregistrement...' : 'Sauvegarder'}
-        </Button>
+        </NeonButton>
       </CardHeader>
       <CardContent className="p-0 overflow-x-auto scrollbar-thin">
         <Table className="min-w-[1000px]">
@@ -349,14 +316,14 @@ function PermissionsMatrix() {
           </TableBody>
         </Table>
       </CardContent>
-    </Card>
+    </GlassCard>
   );
 }
 
 // ---------------------------------------------------------------------------
 // USERS VIEW COMPONENT (ORIGINAL)
 // ---------------------------------------------------------------------------
-function UsersView() {
+function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissions' | 'audit', setActiveTab: (t: 'users' | 'permissions' | 'audit') => void }) {
   const [users, setUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
@@ -524,7 +491,7 @@ function UsersView() {
     <div className="space-y-3">
       {/* Stats Cards */}
       <div className="grid grid-cols-3 gap-1 sm:gap-2">
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Total Utilisateurs</span>
@@ -534,9 +501,9 @@ function UsersView() {
               <Users className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
-        </Card>
+        </GlassCard>
         
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Actifs</span>
@@ -546,9 +513,9 @@ function UsersView() {
               <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
-        </Card>
+        </GlassCard>
 
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Inactifs</span>
@@ -558,20 +525,36 @@ function UsersView() {
               <XCircle className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
-        </Card>
+        </GlassCard>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1">
-        <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
-          <span>Gestion des accès et permissions</span>
+      {/* Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1 relative">
+        {/* Toggle (gauche) */}
+        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50 shrink-0">
+          <button onClick={() => setActiveTab('users')} className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all', activeTab === 'users' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground')}>
+            <Users className="w-3.5 h-3.5" /> Utilisateurs
+          </button>
+          <button onClick={() => setActiveTab('permissions')} className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all', activeTab === 'permissions' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground')}>
+            <ShieldCheck className="w-3.5 h-3.5" /> Permissions
+          </button>
+          <button onClick={() => setActiveTab('audit')} className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all', activeTab === 'audit' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground')}>
+            <ScrollText className="w-3.5 h-3.5" /> Audit
+          </button>
         </div>
 
+        {/* Info centré */}
+        <div className="absolute left-1/2 -translate-x-1/2 text-xs text-muted-foreground hidden lg:block whitespace-nowrap pointer-events-none">
+          Gestion des accès et permissions
+        </div>
+
+        {/* Boutons icônes (droite) */}
         <div className="flex items-center gap-2 shrink-0">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="icon" className={cn("h-8 w-8 rounded-lg shadow-sm hover:bg-accent group", searchQuery && "bg-accent")} title="Rechercher">
+              <NeonButton variant="outline" size="icon" className={cn("h-8 w-8 rounded-lg shadow-sm hover:bg-accent group", searchQuery && "bg-accent")} title="Rechercher">
                 <Search className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-              </Button>
+              </NeonButton>
             </PopoverTrigger>
             <PopoverContent className="w-64 p-2" align="end">
               <div className="relative">
@@ -589,14 +572,14 @@ function UsersView() {
 
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="icon" className={cn("h-8 w-8 rounded-lg shadow-sm hover:bg-accent group", (roleFilter !== 'all' || statusFilter !== 'all') && "bg-accent")} title="Filtrer">
+              <NeonButton variant="outline" size="icon" className={cn("h-8 w-8 rounded-lg shadow-sm hover:bg-accent group", (roleFilter !== 'all' || statusFilter !== 'all') && "bg-accent")} title="Filtrer">
                 <Filter className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
                 {(roleFilter !== 'all' || statusFilter !== 'all') && (
                   <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-primary-foreground">
                     {(roleFilter !== 'all' ? 1 : 0) + (statusFilter !== 'all' ? 1 : 0)}
                   </span>
                 )}
-              </Button>
+              </NeonButton>
             </PopoverTrigger>
             <PopoverContent className="w-64 p-4" align="end">
               <div className="space-y-4">
@@ -632,22 +615,21 @@ function UsersView() {
                 </div>
 
                 {(roleFilter !== 'all' || statusFilter !== 'all') && (
-                  <Button variant="ghost" size="sm" className="w-full h-8 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => { setRoleFilter('all'); setStatusFilter('all'); }}>
+                  <NeonButton variant="ghost" size="sm" className="w-full h-8 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => { setRoleFilter('all'); setStatusFilter('all'); }}>
                     Réinitialiser les filtres
-                  </Button>
+                  </NeonButton>
                 )}
               </div>
             </PopoverContent>
           </Popover>
 
-          <Button onClick={handleCreate} className="h-8 rounded-lg px-3 text-xs font-semibold shadow-sm hover:shadow-primary/20 transition-all">
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            <span className="hidden sm:inline">Ajouter</span>
-          </Button>
+          <NeonButton onClick={handleCreate} size="icon" className="h-8 w-8 rounded-lg shadow-sm" title="Ajouter un utilisateur">
+            <Plus className="h-3.5 w-3.5" />
+          </NeonButton>
         </div>
       </div>
 
-      <Card className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
+      <GlassCard glow={false} className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
         <CardContent className="p-0">
           <div className="rounded-md border-0">
             <Table>
@@ -708,16 +690,16 @@ function UsersView() {
                       </TableCell>
                       <TableCell className="text-right">
                         {user.email === 'a@gmail.com' ? (
-                          <Button variant="ghost" className="h-8 w-8 p-0 cursor-not-allowed" disabled>
+                          <NeonButton variant="ghost" className="h-8 w-8 p-0 cursor-not-allowed" disabled>
                             <Lock className="h-4 w-4 text-muted-foreground" />
-                          </Button>
+                          </NeonButton>
                         ) : (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-white/10 text-muted-foreground hover:text-foreground">
+                              <NeonButton variant="ghost" className="h-8 w-8 p-0 hover:bg-white/10 text-muted-foreground hover:text-foreground">
                                 <span className="sr-only">Ouvrir le menu</span>
                                 <MoreHorizontal className="h-4 w-4" />
-                              </Button>
+                              </NeonButton>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-[200px] bg-background/95 backdrop-blur-xl border-white/10">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
@@ -749,7 +731,7 @@ function UsersView() {
             </Table>
           </div>
         </CardContent>
-      </Card>
+      </GlassCard>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="w-[95vw] sm:max-w-[500px] rounded-xl border-white/10 bg-background/95 backdrop-blur-xl">
@@ -846,11 +828,11 @@ function UsersView() {
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="ghost" disabled={isSaving}>Annuler</Button>
+              <NeonButton variant="ghost" disabled={isSaving}>Annuler</NeonButton>
             </DialogClose>
-            <Button onClick={handleSave} disabled={isSaving}>
+            <NeonButton onClick={handleSave} disabled={isSaving}>
               {isSaving ? 'Enregistrement...' : 'Enregistrer'}
-            </Button>
+            </NeonButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

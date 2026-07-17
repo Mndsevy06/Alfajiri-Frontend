@@ -20,6 +20,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { GlassCard, Button as NeonButton } from '@/components/ui/Layout';
+
 import { Badge } from '@/components/ui/badge';
 import { 
   Dialog, 
@@ -51,33 +53,7 @@ export default function RHPage() {
   const [activeTab, setActiveTab] = useState<'employes' | 'paie'>('employes');
   
   return (
-    <div className="space-y-1 animate-fade-in -mt-2 lg:-mt-4">
-      <div className="flex justify-end items-center gap-4">
-        {/* Tab Switcher */}
-        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50">
-          <button
-            onClick={() => setActiveTab('employes')}
-            className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all',
-              activeTab === 'employes' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <Users className="w-3.5 h-3.5" />
-            Employés
-          </button>
-          <button
-            onClick={() => setActiveTab('paie')}
-            className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all',
-              activeTab === 'paie' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <Wallet className="w-3.5 h-3.5" />
-            Gestion de la Paie
-          </button>
-        </div>
-      </div>
-
+    <div className="space-y-1 animate-fade-in">
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
@@ -86,7 +62,7 @@ export default function RHPage() {
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
         >
-          {activeTab === 'employes' ? <EmployesView /> : <PaieView />}
+          {activeTab === 'employes' ? <EmployesView activeTab={activeTab} setActiveTab={setActiveTab} /> : <PaieView activeTab={activeTab} setActiveTab={setActiveTab} />}
         </motion.div>
       </AnimatePresence>
     </div>
@@ -96,7 +72,7 @@ export default function RHPage() {
 // ----------------------------------------------------------------------
 // EMPLOYES VIEW
 // ----------------------------------------------------------------------
-function EmployesView() {
+function EmployesView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'paie', setActiveTab: (t: 'employes' | 'paie') => void }) {
   const [employes, setEmployes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -182,7 +158,7 @@ function EmployesView() {
   return (
     <div className="space-y-1.5">
       <div className="grid grid-cols-4 gap-1 sm:gap-2">
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Total Employés</span>
@@ -192,8 +168,8 @@ function EmployesView() {
               <Users className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
-        </Card>
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        </GlassCard>
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Masse Salariale</span>
@@ -203,8 +179,8 @@ function EmployesView() {
               <Wallet className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
-        </Card>
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        </GlassCard>
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Recrutements</span>
@@ -214,8 +190,8 @@ function EmployesView() {
               <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
-        </Card>
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        </GlassCard>
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Départs</span>
@@ -225,25 +201,39 @@ function EmployesView() {
               <Building2 className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
-        </Card>
+        </GlassCard>
       </div>
 
-      <div className="flex justify-end items-center gap-2">
-        <div className="relative group">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher un employé..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8 h-8 w-8 text-xs bg-transparent border-border transition-all duration-300 focus:w-[200px] hover:w-[200px] focus:bg-background/50 rounded-full cursor-pointer focus:cursor-text"
-          />
+      {/* Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1 relative">
+        {/* Toggle (gauche) */}
+        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50 shrink-0">
+          <button onClick={() => setActiveTab('employes')} className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all', activeTab === 'employes' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground')}>
+            <Users className="w-3.5 h-3.5" /> Employés
+          </button>
+          <button onClick={() => setActiveTab('paie')} className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all', activeTab === 'paie' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground')}>
+            <Wallet className="w-3.5 h-3.5" /> Paie
+          </button>
         </div>
-        <Button size="sm" className="h-8 text-xs px-3 shadow-none" onClick={() => setIsNewEmployeOpen(true)}>
-          <Plus className="w-3.5 h-3.5 mr-1.5" /> Nouvel Employé
-        </Button>
+
+        {/* Boutons icônes (droite) */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative group">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher un employé..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 h-8 w-8 text-xs bg-transparent border-border transition-all duration-300 focus:w-[200px] hover:w-[200px] focus:bg-background/50 rounded-full cursor-pointer focus:cursor-text"
+            />
+          </div>
+          <NeonButton size="icon" className="h-8 w-8 rounded-lg shadow-sm" onClick={() => setIsNewEmployeOpen(true)} title="Nouvel Employé">
+            <Plus className="w-3.5 h-3.5" />
+          </NeonButton>
+        </div>
       </div>
 
-      <Card className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
+      <GlassCard glow={false} className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -285,9 +275,9 @@ function EmployesView() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => setSelectedEmploye(emp)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                      <NeonButton variant="ghost" size="icon" onClick={() => setSelectedEmploye(emp)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                         <Eye className="h-4 w-4" />
-                      </Button>
+                      </NeonButton>
                     </TableCell>
                   </TableRow>
                 ))
@@ -295,7 +285,7 @@ function EmployesView() {
             </TableBody>
           </Table>
         </CardContent>
-      </Card>
+      </GlassCard>
 
       {/* Détails Employé Dialog */}
       <Dialog open={!!selectedEmploye} onOpenChange={(open) => !open && setSelectedEmploye(null)}>
@@ -336,7 +326,7 @@ function EmployesView() {
                 </div>
               </div>
               <div className="pt-4 flex justify-end">
-                <Button variant="outline" onClick={() => setSelectedEmploye(null)}>Fermer</Button>
+                <NeonButton variant="outline" onClick={() => setSelectedEmploye(null)}>Fermer</NeonButton>
               </div>
             </div>
           )}
@@ -393,10 +383,10 @@ function EmployesView() {
               </div>
             </div>
             <div className="pt-4 flex justify-end gap-2">
-              <Button type="button" variant="ghost" onClick={() => setIsNewEmployeOpen(false)}>Annuler</Button>
-              <Button type="submit" disabled={isSubmitting || !nom}>
+              <NeonButton type="button" variant="ghost" onClick={() => setIsNewEmployeOpen(false)}>Annuler</NeonButton>
+              <NeonButton type="submit" disabled={isSubmitting || !nom}>
                 {isSubmitting ? 'Création...' : 'Créer'}
-              </Button>
+              </NeonButton>
             </div>
           </form>
         </DialogContent>
@@ -408,7 +398,7 @@ function EmployesView() {
 // ----------------------------------------------------------------------
 // PAIE VIEW (Original PaiePage Content)
 // ----------------------------------------------------------------------
-function PaieView() {
+function PaieView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'paie', setActiveTab: (t: 'employes' | 'paie') => void }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [filterMois, setFilterMois] = useState(() => {
@@ -491,7 +481,7 @@ function PaieView() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
           >
-            <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+            <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
                 <div className="flex flex-col overflow-hidden w-full">
                   <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">{kpi.title}</span>
@@ -501,59 +491,69 @@ function PaieView() {
                   <kpi.icon className="h-3 w-3 sm:h-4 sm:w-4" />
                 </div>
               </CardContent>
-            </Card>
+            </GlassCard>
           </motion.div>
         ))}
       </div>
 
-      <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold">Bulletins de Paie</h2>
-            <Badge variant="secondary">{filteredBulletins.length}</Badge>
-          </div>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-2 shrink-0">
-            {showSearch || searchTerm ? (
-              <div className="relative animate-in slide-in-from-right-5 fade-in duration-200">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  autoFocus={!searchTerm}
-                  placeholder="Rechercher un employé..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onBlur={() => { if (!searchTerm) setShowSearch(false); }}
-                  className="pl-8 h-8 w-[200px] sm:w-[250px] border-border bg-background text-sm shadow-sm rounded-lg"
-                />
-              </div>
-            ) : (
-              <Button variant="outline" size="icon" onClick={() => setShowSearch(true)} className="h-8 w-8 rounded-lg shadow-sm group" title="Rechercher">
-                <Search className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-              </Button>
-            )}
-
-            <div className="flex items-center gap-2 bg-background border border-border rounded-lg shadow-sm px-2 h-8">
-              <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-              <Input 
-                type="month" 
-                value={filterMois} 
-                onChange={(e) => setFilterMois(e.target.value)}
-                className="h-7 w-[140px] border-none bg-transparent p-0 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
-            </div>
-            
-            <Button variant="default" size="sm" onClick={() => setIsDialogOpen(true)} className="h-8 rounded-lg px-3 text-xs font-semibold shadow-sm ml-1" title="Nouveau bulletin">
-              <Plus className="h-3.5 w-3.5 mr-1.5" />
-              <span className="hidden sm:inline">Nouveau bulletin</span>
-            </Button>
-          </div>
+      {/* Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1 relative">
+        {/* Toggle (gauche) */}
+        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50 shrink-0">
+          <button onClick={() => setActiveTab('employes')} className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all', activeTab === 'employes' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground')}>
+            <Users className="w-3.5 h-3.5" /> Employés
+          </button>
+          <button onClick={() => setActiveTab('paie')} className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all', activeTab === 'paie' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground')}>
+            <Wallet className="w-3.5 h-3.5" /> Paie
+          </button>
         </div>
 
-        {/* Main Table */}
-        <Card className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent border-white/5">
+        {/* Info centré */}
+        <div className="absolute left-1/2 -translate-x-1/2 text-xs text-muted-foreground hidden lg:flex items-center gap-2 whitespace-nowrap pointer-events-none">
+          <FileText className="h-3.5 w-3.5" /> Bulletins de Paie — <Badge variant="secondary" className="text-[10px]">{filteredBulletins.length}</Badge>
+        </div>
+
+        {/* Boutons icônes (droite) */}
+        <div className="flex items-center gap-2 shrink-0">
+          {showSearch || searchTerm ? (
+            <div className="relative animate-in slide-in-from-right-5 fade-in duration-200">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                autoFocus={!searchTerm}
+                placeholder="Rechercher un employé..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onBlur={() => { if (!searchTerm) setShowSearch(false); }}
+                className="pl-8 h-8 w-[200px] sm:w-[250px] border-border bg-background text-sm shadow-sm rounded-lg"
+              />
+            </div>
+          ) : (
+            <NeonButton variant="outline" size="icon" onClick={() => setShowSearch(true)} className="h-8 w-8 rounded-lg shadow-sm group" title="Rechercher">
+              <Search className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+            </NeonButton>
+          )}
+
+          <div className="flex items-center gap-2 bg-background border border-border rounded-lg shadow-sm px-2 h-8">
+            <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+            <Input 
+              type="month" 
+              value={filterMois} 
+              onChange={(e) => setFilterMois(e.target.value)}
+              className="h-7 w-[130px] border-none bg-transparent p-0 text-xs focus-visible:ring-0 focus-visible:ring-offset-0"
+            />
+          </div>
+          
+          <NeonButton size="icon" onClick={() => setIsDialogOpen(true)} className="h-8 w-8 rounded-lg shadow-sm" title="Nouveau bulletin">
+            <Plus className="h-3.5 w-3.5" />
+          </NeonButton>
+        </div>
+      </div>
+
+      <GlassCard glow={false} className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent border-white/5">
                   <TableHead>Période</TableHead>
                   <TableHead>Employé</TableHead>
                   <TableHead className="text-right">Salaire Brut</TableHead>
@@ -606,8 +606,7 @@ function PaieView() {
               </TableBody>
             </Table>
           </CardContent>
-        </Card>
-      </div>
+        </GlassCard>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-[95vw] md:max-w-[800px] lg:max-w-[1000px] border-white/10 bg-background/95 backdrop-blur-xl p-0 overflow-hidden max-h-[90vh] flex flex-col">

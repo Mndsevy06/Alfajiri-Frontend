@@ -19,6 +19,8 @@ import {
   Filter,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { GlassCard, Button as NeonButton } from '@/components/ui/Layout';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -187,7 +189,7 @@ export default function VentesPage() {
   return (
     <div className="space-y-3 animate-fade-in">
       <div className="grid grid-cols-3 gap-1 sm:gap-2">
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">CA total (HT)</span>
@@ -197,8 +199,8 @@ export default function VentesPage() {
               <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
-        </Card>
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        </GlassCard>
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">CA total (TTC)</span>
@@ -208,8 +210,8 @@ export default function VentesPage() {
               <Receipt className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
-        </Card>
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        </GlassCard>
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Impayés</span>
@@ -219,28 +221,36 @@ export default function VentesPage() {
               <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
-        </Card>
+        </GlassCard>
       </div>
 
       <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-2 shrink-0">
-          {showSearch || search ? (
-            <div className="relative animate-in slide-in-from-right-5 fade-in duration-200">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                autoFocus={!search}
-                placeholder="Rechercher..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onBlur={() => { if (!search) setShowSearch(false); }}
-                className="pl-8 h-8 w-[200px] sm:w-[250px] border-border bg-background text-xs shadow-none rounded-lg"
-              />
-            </div>
-          ) : (
-            <Button variant="outline" size="icon" onClick={() => setShowSearch(true)} className="h-8 w-8 rounded-lg shadow-sm group" title="Rechercher">
-              <Search className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-            </Button>
-          )}
+        {/* Action Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1 relative">
+          {/* Info gauche */}
+          <div className="text-xs text-muted-foreground font-medium">
+            {filtered.length} facture{filtered.length > 1 ? 's' : ''}
+          </div>
+
+          {/* Boutons icônes (droite) */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-2 shrink-0">
+            {showSearch || search ? (
+              <div className="relative animate-in slide-in-from-right-5 fade-in duration-200">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  autoFocus={!search}
+                  placeholder="Rechercher..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onBlur={() => { if (!search) setShowSearch(false); }}
+                  className="pl-8 h-8 w-[200px] sm:w-[250px] border-border bg-background text-xs shadow-none rounded-lg"
+                />
+              </div>
+            ) : (
+              <NeonButton variant="outline" size="icon" onClick={() => setShowSearch(true)} className="h-8 w-8 rounded-lg shadow-sm group" title="Rechercher">
+                <Search className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+              </NeonButton>
+            )}
 
           <Select value={filterStatut} onValueChange={setFilterStatut}>
             <SelectTrigger className="h-8 w-8 px-0 flex items-center justify-center border-border bg-background shadow-sm hover:bg-accent text-muted-foreground hover:text-foreground [&>svg:last-child]:hidden [&>span]:hidden rounded-lg transition-colors" title="Filtrer par statut">
@@ -254,17 +264,17 @@ export default function VentesPage() {
             </SelectContent>
           </Select>
 
-          <Button variant="outline" size="icon" onClick={handleExportCSV} className="h-8 w-8 rounded-lg shadow-sm group" title="Exporter en CSV">
+          <NeonButton variant="outline" size="icon" onClick={handleExportCSV} className="h-8 w-8 rounded-lg shadow-sm group" title="Exporter en CSV">
             <Download className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-          </Button>
+          </NeonButton>
           
-          <Button variant="default" size="sm" onClick={() => setDialogOpen(true)} className="h-8 rounded-lg px-3 text-xs font-semibold shadow-sm ml-1" title="Nouvelle facture">
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            <span className="hidden sm:inline">Nouvelle facture</span>
-          </Button>
+          <NeonButton size="icon" onClick={() => setDialogOpen(true)} className="h-8 w-8 rounded-lg shadow-sm" title="Nouvelle facture">
+            <Plus className="h-3.5 w-3.5" />
+          </NeonButton>
+        </div>
         </div>
 
-      <Card className="border-muted/50 shadow-sm">
+      <GlassCard glow={false} className="border-muted/50 shadow-sm">
         <CardContent className="p-4 sm:p-6">
           <div className="overflow-x-auto rounded-lg border border-border/50">
             <table className="w-full text-sm whitespace-nowrap">
@@ -326,12 +336,12 @@ export default function VentesPage() {
                         <td className="py-3 px-4 text-muted-foreground">{formatDate(f.echeance)}</td>
                         <td className="py-3 px-4 text-right">
                           <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary" onClick={() => setViewing(f)}>
+                            <NeonButton variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary" onClick={() => setViewing(f)}>
                               <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive" onClick={() => handleDelete(f.id)}>
+                            </NeonButton>
+                            <NeonButton variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive" onClick={() => handleDelete(f.id)}>
                               <Trash2 className="h-4 w-4" />
-                            </Button>
+                            </NeonButton>
                           </div>
                         </td>
                       </tr>
@@ -342,7 +352,7 @@ export default function VentesPage() {
             </table>
           </div>
         </CardContent>
-      </Card>
+      </GlassCard>
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -427,12 +437,12 @@ export default function VentesPage() {
           </div>
           <DialogFooter className="pt-2 border-t border-border/30">
             <DialogClose asChild>
-              <Button variant="ghost">Annuler</Button>
+              <NeonButton variant="ghost">Annuler</NeonButton>
             </DialogClose>
-            <Button onClick={handleCreate} disabled={submitting} className="shadow-md">
+            <NeonButton onClick={handleCreate} disabled={submitting} className="shadow-md">
               {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
               Créer la facture
-            </Button>
+            </NeonButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -495,15 +505,15 @@ export default function VentesPage() {
                 </div>
               </div>
               <DialogFooter className="pt-4 border-t border-border/30 gap-2">
-                <Button variant="outline" onClick={() => toast.success('PDF généré avec succès')}>
+                <NeonButton variant="outline" onClick={() => toast.success('PDF généré avec succès')}>
                   <Download className="h-4 w-4 mr-2" />
                   Télécharger PDF
-                </Button>
+                </NeonButton>
                 {viewing.statut !== 'payee' && (
-                  <Button onClick={() => toast.success('Encaissement enregistré')} className="bg-success text-success-foreground hover:bg-success/90">
+                  <NeonButton onClick={() => toast.success('Encaissement enregistré')} className="bg-success text-success-foreground hover:bg-success/90">
                     <DollarSign className="h-4 w-4 mr-2" />
                     Encaisser
-                  </Button>
+                  </NeonButton>
                 )}
               </DialogFooter>
             </>

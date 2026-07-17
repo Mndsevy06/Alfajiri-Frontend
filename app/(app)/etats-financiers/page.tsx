@@ -16,6 +16,8 @@ import {
   Check,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { GlassCard, Button as NeonButton } from '@/components/ui/Layout';
+
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -357,7 +359,7 @@ export default function EtatsFinanciersPage() {
   return (
     <div className="space-y-1 animate-fade-in -mt-2 lg:-mt-4">
       <div className="grid grid-cols-3 gap-1 sm:gap-2">
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Total Actif Net</span>
@@ -370,9 +372,9 @@ export default function EtatsFinanciersPage() {
               <Scale className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
-        </Card>
+        </GlassCard>
 
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Total Passif</span>
@@ -385,9 +387,9 @@ export default function EtatsFinanciersPage() {
               <PieChart className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
-        </Card>
+        </GlassCard>
 
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Resultat Net</span>
@@ -404,7 +406,7 @@ export default function EtatsFinanciersPage() {
               <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
-        </Card>
+        </GlassCard>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
@@ -427,28 +429,28 @@ export default function EtatsFinanciersPage() {
           <div className="flex items-center gap-2 shrink-0">
             <Popover>
               <PopoverTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="icon"
+                  title="Checklist de clôture"
                   className={cn(
-                    "relative transition-all h-8 text-xs duration-300 shadow-sm",
-                    allDone 
-                      ? "bg-success/5 border-success/30 text-success hover:bg-success/10 hover:text-success" 
-                      : "bg-primary/5 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
+                    "relative h-8 w-8 rounded-lg shadow-sm transition-all group",
+                    allDone
+                      ? "border-emerald-500/40 text-emerald-500 hover:bg-emerald-500/10"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
                   )}
                 >
-                  <Lock className="h-3.5 w-3.5 mr-1.5" />
-                  <span className="font-semibold">Checklist</span>
-                  <div className={cn(
-                    "ml-1.5 flex h-4 items-center justify-center rounded-full px-1.5 text-[9px] font-bold transition-colors",
-                    allDone ? 'bg-success/20 text-success' : 'bg-primary/20 text-primary'
+                  <Lock className="h-3.5 w-3.5 group-hover:scale-110 transition-transform" />
+                  <span className={cn(
+                    "absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full text-[8px] font-bold",
+                    allDone ? "bg-emerald-500 text-white" : "bg-primary text-primary-foreground"
                   )}>
-                    {doneCount}/{steps.length}
-                  </div>
+                    {doneCount}
+                  </span>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent 
-                align="center" 
+              <PopoverContent
+                align="center"
                 sideOffset={12}
                 collisionPadding={24}
                 className="w-[300px] max-w-[calc(100vw-2rem)] p-0 border shadow-2xl rounded-xl overflow-hidden"
@@ -511,9 +513,17 @@ export default function EtatsFinanciersPage() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm" disabled={!allDone} className={cn("h-8 text-xs", !allDone && "opacity-50 cursor-not-allowed")}>
-                  <Download className="h-3.5 w-3.5 mr-1.5" />
-                  Exporter
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={!allDone}
+                  title="Exporter"
+                  className={cn(
+                    "h-8 w-8 rounded-lg shadow-sm group",
+                    !allDone ? "opacity-40 cursor-not-allowed" : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  )}
+                >
+                  <Download className="h-3.5 w-3.5 group-hover:scale-110 transition-transform" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -532,18 +542,26 @@ export default function EtatsFinanciersPage() {
 
         <TabsContent value="bilan">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card className="rounded-[1.5rem] border border-border group relative overflow-hidden transition-all duration-300 shadow-sm hover:shadow-md hover:border-primary/40 bg-background">
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-              <CardHeader className="relative z-10 pb-4">
-                <CardTitle className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">Actif</CardTitle>
-                <CardDescription className="text-[10px] uppercase tracking-widest font-bold mt-1">Immobilisations, stocks, creances, tresorerie</CardDescription>
-              </CardHeader>
-              <CardContent className="relative z-10">
+            {/* Actif card — style rapprochement bancaire */}
+            <GlassCard glow={false} className="flex flex-col border-t border-t-white/5 shadow-xl hover:shadow-primary/5 transition-shadow">
+              <div className="p-4 sm:p-5 border-b border-border/50 flex items-center justify-between bg-gradient-to-b from-primary/5 to-transparent rounded-t-2xl">
+                <div>
+                  <h2 className="font-bold text-foreground text-lg flex items-center gap-2">
+                    <Scale className="w-5 h-5 text-primary" />
+                    Actif
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Immobilisations, stocks, créances, trésorerie</p>
+                </div>
+                <span className="text-xs bg-primary/10 text-primary border border-primary/20 px-2.5 py-1 rounded-full font-bold">
+                  {formatCurrency(totalActifNet)}
+                </span>
+              </div>
+              <div className="p-0 flex-1 overflow-y-auto scrollbar-thin">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-16">Compte</TableHead>
-                      <TableHead>Libelle</TableHead>
+                      <TableHead>Libellé</TableHead>
                       <TableHead className="text-right">Brut</TableHead>
                       <TableHead className="text-right">Amort.</TableHead>
                       <TableHead className="text-right">Net</TableHead>
@@ -552,12 +570,12 @@ export default function EtatsFinanciersPage() {
                   <TableBody>
                     {bilan && ['actif_immobilise', 'actif_circulant', 'tresorerie_actif'].map((category) => (
                       bilan.actif[category]?.map((r: any) => (
-                        <TableRow key={r.poste}>
-                          <TableCell className="font-mono text-xs">{r.poste}</TableCell>
+                        <TableRow key={r.poste} className="hover:bg-primary/5 border-white/5">
+                          <TableCell className="font-mono text-xs text-muted-foreground">{r.poste}</TableCell>
                           <TableCell className="font-medium">{r.libelle}</TableCell>
                           <TableCell className="text-right font-mono">{formatCurrency(Math.abs(r.montant))}</TableCell>
                           <TableCell className="text-right font-mono text-muted-foreground">—</TableCell>
-                          <TableCell className="text-right font-mono font-semibold">
+                          <TableCell className="text-right font-mono font-semibold text-primary">
                             {r.montant < 0 ? `(${formatCurrency(Math.abs(r.montant))})` : formatCurrency(r.montant)}
                           </TableCell>
                         </TableRow>
@@ -573,31 +591,39 @@ export default function EtatsFinanciersPage() {
                     </TableRow>
                   </TableFooter>
                 </Table>
-              </CardContent>
-            </Card>
+              </div>
+            </GlassCard>
 
-            <Card className="rounded-[1.5rem] border border-border group relative overflow-hidden transition-all duration-300 shadow-sm hover:shadow-md hover:border-chart-4/40 bg-background">
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-              <CardHeader className="relative z-10 pb-4">
-                <CardTitle className="text-lg font-bold text-foreground group-hover:text-chart-4 transition-colors">Passif</CardTitle>
-                <CardDescription className="text-[10px] uppercase tracking-widest font-bold mt-1">Capitaux propres, dettes financieres, dettes d'exploitation</CardDescription>
-              </CardHeader>
-              <CardContent className="relative z-10">
+            {/* Passif card — style rapprochement comptabilité */}
+            <GlassCard glow={false} className="flex flex-col border-t border-t-white/5 shadow-xl hover:shadow-chart-4/5 transition-shadow">
+              <div className="p-4 sm:p-5 border-b border-border/50 flex items-center justify-between bg-gradient-to-b from-chart-4/5 to-transparent rounded-t-2xl">
+                <div>
+                  <h2 className="font-bold text-foreground text-lg flex items-center gap-2">
+                    <PieChart className="w-5 h-5 text-chart-4" />
+                    Passif
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Capitaux propres, dettes financières, dettes d'exploitation</p>
+                </div>
+                <span className="text-xs bg-chart-4/10 text-chart-4 border border-chart-4/20 px-2.5 py-1 rounded-full font-bold">
+                  {formatCurrency(totalPassif)}
+                </span>
+              </div>
+              <div className="p-0 flex-1 overflow-y-auto scrollbar-thin">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-16">Compte</TableHead>
-                      <TableHead>Libelle</TableHead>
+                      <TableHead>Libellé</TableHead>
                       <TableHead className="text-right">Montant</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {bilan && ['capitaux_propres', 'dettes_financieres', 'passif_circulant', 'tresorerie_passif'].map((category) => (
                       bilan.passif[category]?.map((r: any) => (
-                        <TableRow key={r.poste}>
-                          <TableCell className="font-mono text-xs">{r.poste}</TableCell>
+                        <TableRow key={r.poste} className="hover:bg-chart-4/5 border-white/5">
+                          <TableCell className="font-mono text-xs text-muted-foreground">{r.poste}</TableCell>
                           <TableCell className="font-medium">{r.libelle}</TableCell>
-                          <TableCell className="text-right font-mono font-semibold">{formatCurrency(r.montant)}</TableCell>
+                          <TableCell className="text-right font-mono font-semibold text-chart-4">{formatCurrency(r.montant)}</TableCell>
                         </TableRow>
                       ))
                     ))}
@@ -605,19 +631,19 @@ export default function EtatsFinanciersPage() {
                   <TableFooter>
                     <TableRow>
                       <TableCell colSpan={2} className="font-bold">Total Passif</TableCell>
-                      <TableCell className="text-right font-mono font-bold text-primary">
+                      <TableCell className="text-right font-mono font-bold text-chart-4">
                         {formatCurrency(totalPassif)}
                       </TableCell>
                     </TableRow>
                   </TableFooter>
                 </Table>
-              </CardContent>
-            </Card>
+              </div>
+            </GlassCard>
           </div>
         </TabsContent>
 
         <TabsContent value="resultat">
-          <Card>
+          <GlassCard glow={false}>
             <CardHeader>
               <CardTitle className="text-lg">Compte de resultat SYSCOHADA</CardTitle>
               <CardDescription>Produits et charges de l'exercice 2025</CardDescription>
@@ -723,11 +749,11 @@ export default function EtatsFinanciersPage() {
                 </p>
               </div>
             </CardContent>
-          </Card>
+          </GlassCard>
         </TabsContent>
 
         <TabsContent value="tafire">
-          <Card>
+          <GlassCard glow={false}>
             <CardHeader>
               <CardTitle className="text-lg">Tableau d'Analyse Financier des Ressources et Emplois (TAFIRE)</CardTitle>
               <CardDescription>Capacite de l'entreprise a generer des ressources internes</CardDescription>
@@ -767,7 +793,7 @@ export default function EtatsFinanciersPage() {
                 </TableBody>
               </Table>
             </CardContent>
-          </Card>
+          </GlassCard>
         </TabsContent>
       </Tabs>
     </div>

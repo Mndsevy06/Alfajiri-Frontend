@@ -21,6 +21,8 @@ import {
   Lock,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { GlassCard, Button as NeonButton } from '@/components/ui/Layout';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -110,7 +112,7 @@ export default function ParametresPage() {
 
         <TabsContent value="dossiers" className="space-y-4">
           {dossiers.map((d) => (
-            <Card key={d.id}>
+            <GlassCard glow={false} key={d.id}>
               <CardContent className="pt-6">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div className="space-y-3 flex-1">
@@ -150,20 +152,20 @@ export default function ParametresPage() {
                       </div>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => setEditingDossier(d)}>
+                  <NeonButton variant="outline" size="sm" onClick={() => setEditingDossier(d)}>
                     <Pencil className="h-4 w-4 mr-2" />
                     Modifier
-                  </Button>
+                  </NeonButton>
                 </div>
               </CardContent>
-            </Card>
+            </GlassCard>
           ))}
         </TabsContent>
 
 
 
         <TabsContent value="apparence" className="space-y-4">
-          <Card>
+          <GlassCard glow={false}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Palette className="h-5 w-5 text-primary" />
@@ -228,11 +230,11 @@ export default function ParametresPage() {
                 ))}
               </div>
             </CardContent>
-          </Card>
+          </GlassCard>
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-4">
-          <Card>
+          <GlassCard glow={false}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="h-5 w-5 text-primary" />
@@ -270,17 +272,17 @@ export default function ParametresPage() {
                 );
               })}
             </CardContent>
-          </Card>
+          </GlassCard>
         </TabsContent>
         <TabsContent value="taux-change" className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">Gestion des taux de change (Devise de référence : USD)</p>
-            <Button size="sm">
+            <NeonButton size="sm">
               <Plus className="h-4 w-4 mr-2" />
               Nouveau Taux
-            </Button>
+            </NeonButton>
           </div>
-          <Card>
+          <GlassCard glow={false}>
             <CardContent className="pt-6">
               <div className="space-y-4">
                 {[
@@ -302,19 +304,19 @@ export default function ParametresPage() {
                       <div className="text-right">
                         <p className="font-mono font-medium">1 USD = {t.taux} {t.devise}</p>
                       </div>
-                      <Button variant="ghost" size="icon">
+                      <NeonButton variant="ghost" size="icon">
                         <Pencil className="h-4 w-4" />
-                      </Button>
+                      </NeonButton>
                     </div>
                   </div>
                 ))}
               </div>
             </CardContent>
-          </Card>
+          </GlassCard>
         </TabsContent>
 
         <TabsContent value="ia-gemini" className="space-y-4">
-          <Card>
+          <GlassCard glow={false}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bot className="h-5 w-5 text-primary" />
@@ -357,11 +359,11 @@ export default function ParametresPage() {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </GlassCard>
         </TabsContent>
 
         <TabsContent value="securite" className="space-y-4">
-          <Card>
+          <GlassCard glow={false}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-primary" />
@@ -407,7 +409,7 @@ export default function ParametresPage() {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </GlassCard>
         </TabsContent>
       </Tabs>
 
@@ -476,9 +478,9 @@ export default function ParametresPage() {
               </div>
               <DialogFooter>
                 <DialogClose asChild>
-                  <Button variant="outline">Annuler</Button>
+                  <NeonButton variant="outline">Annuler</NeonButton>
                 </DialogClose>
-                <Button onClick={() => saveDossier(editingDossier)}>Enregistrer</Button>
+                <NeonButton onClick={() => saveDossier(editingDossier)}>Enregistrer</NeonButton>
               </DialogFooter>
             </>
           )}

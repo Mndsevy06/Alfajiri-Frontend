@@ -18,6 +18,8 @@ import {
   ChevronsUpDown,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { GlassCard, Button as NeonButton } from '@/components/ui/Layout';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -304,37 +306,9 @@ export default function ImmobilisationsPage() {
 
   return (
     <div className="space-y-3 animate-fade-in">
-      <div className="flex justify-end mb-2">
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 text-xs px-3 shadow-none">
-                <Download className="h-3.5 w-3.5 mr-1.5" />
-                Exporter
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={exportToCSV}>
-                <FileIcon className="h-4 w-4 mr-2" /> Export Excel / CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={exportToPDF}>
-                <Printer className="h-4 w-4 mr-2" /> Export PDF
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button variant="outline" size="sm" className="h-8 text-xs px-3 shadow-none" onClick={generateDotations}>
-            <Calculator className="h-3.5 w-3.5 mr-1.5" />
-            Générer dotations
-          </Button>
-          <Button size="sm" className="h-8 text-xs px-3 shadow-none" onClick={() => { resetForm(); setDialogOpen(true); }}>
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Nouvelle immo
-          </Button>
-        </div>
-      </div>
-
+      {/* Stats */}
       <div className="grid grid-cols-4 gap-1 sm:gap-2">
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Valeur d'acquisition</span>
@@ -344,9 +318,9 @@ export default function ImmobilisationsPage() {
               <Building2 className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
-        </Card>
+        </GlassCard>
 
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Cumul amortissements</span>
@@ -356,9 +330,9 @@ export default function ImmobilisationsPage() {
               <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
-        </Card>
+        </GlassCard>
 
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">VNC totale</span>
@@ -368,9 +342,9 @@ export default function ImmobilisationsPage() {
               <Calculator className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
-        </Card>
+        </GlassCard>
 
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Dotation annuelle</span>
@@ -380,25 +354,57 @@ export default function ImmobilisationsPage() {
               <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
-        </Card>
+        </GlassCard>
       </div>
 
-      <Card className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
-        <CardContent className="p-0">
-          <div className="relative p-2 border-b border-border/50">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+      {/* Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1 relative">
+        {/* Info gauche */}
+        <div className="text-xs text-muted-foreground font-medium">
+          {immos.length} immobilisation{immos.length > 1 ? 's' : ''} enregistrée{immos.length > 1 ? 's' : ''}
+        </div>
+
+        {/* Boutons icônes (droite) */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative group">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              placeholder="Rechercher par code, libellé ou catégorie..."
+              placeholder="Rechercher..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-8 text-xs bg-transparent border-none shadow-none focus-visible:ring-0"
+              className="pl-8 h-8 w-8 text-xs bg-transparent border-border transition-all duration-300 focus:w-[200px] hover:w-[200px] focus:bg-background/50 rounded-full cursor-pointer focus:cursor-text"
             />
           </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardContent className="pt-6">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg shadow-sm hover:bg-accent group" title="Exporter">
+                <Download className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={exportToCSV}>
+                <FileIcon className="h-4 w-4 mr-2" /> Export Excel / CSV
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={exportToPDF}>
+                <Printer className="h-4 w-4 mr-2" /> Export PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg shadow-sm hover:bg-accent group" onClick={generateDotations} title="Générer dotations">
+            <Calculator className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+          </Button>
+
+          <Button size="icon" className="h-8 w-8 rounded-lg shadow-sm" onClick={() => { resetForm(); setDialogOpen(true); }} title="Nouvelle immobilisation">
+            <Plus className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+
+      <GlassCard glow={false} className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
+        <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -443,20 +449,20 @@ export default function ImmobilisationsPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleSimulate(i)}>
+                          <NeonButton variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleSimulate(i)}>
                             <Calculator className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(i)}>
+                          </NeonButton>
+                          <NeonButton variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(i)}>
                             <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
+                          </NeonButton>
+                          <NeonButton
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 text-destructive"
                             onClick={() => handleDelete(i.id)}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          </NeonButton>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -472,7 +478,7 @@ export default function ImmobilisationsPage() {
               </TableBody>
             </Table>
         </CardContent>
-      </Card>
+      </GlassCard>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
@@ -510,7 +516,7 @@ export default function ImmobilisationsPage() {
                 <Label>Site</Label>
                 <Popover open={siteOpen} onOpenChange={setSiteOpen}>
                   <PopoverTrigger asChild>
-                    <Button
+                    <NeonButton
                       variant="outline"
                       role="combobox"
                       aria-expanded={siteOpen}
@@ -520,7 +526,7 @@ export default function ImmobilisationsPage() {
                         ? sites.find((s) => s.label === form.site)?.label || form.site
                         : "Sélectionner ou saisir un site..."}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
+                    </NeonButton>
                   </PopoverTrigger>
                   <PopoverContent className="w-[200px] p-0" align="start">
                     <Command>
@@ -532,7 +538,7 @@ export default function ImmobilisationsPage() {
                       <CommandList>
                         <CommandEmpty>
                           {siteSearch ? (
-                            <Button 
+                            <NeonButton 
                               variant="ghost" 
                               className="w-full justify-start text-sm font-normal py-2 px-2"
                               onClick={() => {
@@ -542,7 +548,7 @@ export default function ImmobilisationsPage() {
                               }}
                             >
                               Créer le site "{siteSearch}"
-                            </Button>
+                            </NeonButton>
                           ) : (
                             <span className="py-2 px-2 text-sm text-muted-foreground">Aucun site trouvé.</span>
                           )}
@@ -628,9 +634,9 @@ export default function ImmobilisationsPage() {
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">Annuler</Button>
+              <NeonButton variant="outline">Annuler</NeonButton>
             </DialogClose>
-            <Button onClick={handleCreate}>{form.id ? 'Modifier' : 'Créer'}</Button>
+            <NeonButton onClick={handleCreate}>{form.id ? 'Modifier' : 'Créer'}</NeonButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

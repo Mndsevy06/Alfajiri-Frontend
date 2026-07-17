@@ -15,6 +15,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { GlassCard, Button as NeonButton } from '@/components/ui/Layout';
+
 import { Badge } from '@/components/ui/badge';
 import { 
   Dialog, 
@@ -145,7 +147,7 @@ export default function PaiementsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
           >
-            <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+            <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
                 <div className="flex flex-col overflow-hidden w-full">
                   <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">
@@ -176,51 +178,59 @@ export default function PaiementsPage() {
                   <kpi.icon className="h-3 w-3 sm:h-4 sm:w-4" />
                 </div>
               </CardContent>
-            </Card>
+            </GlassCard>
           </motion.div>
         ))}
       </div>
 
       <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-2 shrink-0">
-          {showSearch || searchTerm ? (
-            <div className="relative animate-in slide-in-from-right-5 fade-in duration-200">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                autoFocus={!searchTerm}
-                placeholder="Rechercher (Tiers, Réf)..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onBlur={() => { if (!searchTerm) setShowSearch(false); }}
-                className="pl-8 h-8 w-[200px] sm:w-[250px] border-border bg-background text-sm shadow-sm rounded-lg"
-              />
-            </div>
-          ) : (
-            <Button variant="outline" size="icon" onClick={() => setShowSearch(true)} className="h-8 w-8 rounded-lg shadow-sm group" title="Rechercher">
-              <Search className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-            </Button>
-          )}
+        {/* Action Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1 relative">
+          {/* Info gauche */}
+          <div className="text-xs text-muted-foreground font-medium">
+            {filteredPayments.length} opération{filteredPayments.length > 1 ? 's' : ''}
+          </div>
 
-          <Select value={filterStatut} onValueChange={setFilterStatut}>
-            <SelectTrigger className="h-8 w-8 px-0 flex items-center justify-center border-border bg-background shadow-sm hover:bg-accent text-muted-foreground hover:text-foreground [&>svg:last-child]:hidden [&>span]:hidden rounded-lg transition-colors" title="Filtrer par statut">
-              <Filter className="h-3.5 w-3.5" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les statuts</SelectItem>
-              <SelectItem value="en_attente">En attente</SelectItem>
-              <SelectItem value="lettre">Lettré</SelectItem>
-              <SelectItem value="rapproche">Rapproché</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Button variant="default" size="sm" onClick={() => setIsDialogOpen(true)} className="h-8 rounded-lg px-3 text-xs font-semibold shadow-sm ml-1" title="Nouvelle opération">
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            <span className="hidden sm:inline">Nouvelle opération</span>
-          </Button>
+          {/* Boutons icônes (droite) */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-2 shrink-0">
+            {showSearch || searchTerm ? (
+              <div className="relative animate-in slide-in-from-right-5 fade-in duration-200">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  autoFocus={!searchTerm}
+                  placeholder="Rechercher (Tiers, Réf)..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onBlur={() => { if (!searchTerm) setShowSearch(false); }}
+                  className="pl-8 h-8 w-[200px] sm:w-[250px] border-border bg-background text-sm shadow-sm rounded-lg"
+                />
+              </div>
+            ) : (
+              <NeonButton variant="outline" size="icon" onClick={() => setShowSearch(true)} className="h-8 w-8 rounded-lg shadow-sm group" title="Rechercher">
+                <Search className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+              </NeonButton>
+            )}
+
+            <Select value={filterStatut} onValueChange={setFilterStatut}>
+              <SelectTrigger className="h-8 w-8 px-0 flex items-center justify-center border-border bg-background shadow-sm hover:bg-accent text-muted-foreground hover:text-foreground [&>svg:last-child]:hidden [&>span]:hidden rounded-lg transition-colors" title="Filtrer par statut">
+                <Filter className="h-3.5 w-3.5" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les statuts</SelectItem>
+                <SelectItem value="en_attente">En attente</SelectItem>
+                <SelectItem value="lettre">Lettré</SelectItem>
+                <SelectItem value="rapproche">Rapproché</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <NeonButton size="icon" onClick={() => setIsDialogOpen(true)} className="h-8 w-8 rounded-lg shadow-sm" title="Nouvelle opération">
+              <Plus className="h-3.5 w-3.5" />
+            </NeonButton>
+          </div>
         </div>
 
         {/* Main Table */}
-        <Card className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
+        <GlassCard glow={false} className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
@@ -288,7 +298,7 @@ export default function PaiementsPage() {
               </TableBody>
             </Table>
           </CardContent>
-        </Card>
+        </GlassCard>
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

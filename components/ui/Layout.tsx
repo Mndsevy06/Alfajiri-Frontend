@@ -26,7 +26,7 @@ export const GlassCard = React.forwardRef<HTMLDivElement, CardProps>(
         ref={ref as any}
         whileHover={glow ? { y: -4, transition: { duration: 0.2 } } : {}}
         className={cn(
-          "backdrop-blur-xl rounded-xl p-8 border transition-all duration-300",
+          "backdrop-blur-xl rounded-xl border transition-all duration-300",
           variants[variant],
           glow && "hover:shadow-2xl hover:shadow-black/5",
           className
@@ -43,11 +43,12 @@ GlassCard.displayName = 'GlassCard';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'neon-yellow' | 'neon-red' | 'ghost' | 'outline';
+  size?: 'default' | 'sm' | 'lg' | 'icon';
   children: React.ReactNode;
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ children, variant = 'primary', className, ...props }, ref) => {
+  ({ children, variant = 'primary', size = 'default', className, ...props }, ref) => {
     const variants = {
       primary: "bg-[#007FFF] text-white hover:bg-[#005BBB] shadow-[0_0_15px_rgba(0,127,255,0.3)]",
       secondary: "border border-[#007FFF] text-[#007FFF] hover:bg-[#007FFF]/10",
@@ -57,12 +58,20 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       outline: "border border-[var(--border-default)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
     };
 
+    const sizes = {
+      default: "px-6 py-2.5 rounded-xl",
+      sm: "h-9 px-3 rounded-md text-sm",
+      lg: "h-11 px-8 rounded-md",
+      icon: "h-10 w-10 rounded-xl flex items-center justify-center p-0",
+    };
+
     return (
       <button
         ref={ref}
         className={cn(
-          "px-6 py-2.5 rounded-xl font-medium transition-all duration-300 disabled:opacity-50",
+          "font-medium transition-all duration-300 disabled:opacity-50",
           variants[variant],
+          sizes[size],
           className
         )}
         {...props}

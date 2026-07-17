@@ -424,6 +424,21 @@ export const CHART_EXPLOSION_CHARGES = [
   { name: 'Autres charges', value: 15000, color: 'hsl(24 95% 53%)' },
 ];
 
+export const CHART_BALANCE_AGEE = [
+  { tranche: '0-30j', clients: 127100, fournisseurs: 97500 },
+  { tranche: '31-60j', clients: 123000, fournisseurs: 78000 },
+  { tranche: '61-90j', clients: 82400, fournisseurs: 49500 },
+  { tranche: '+90j', clients: 15000, fournisseurs: 8000 },
+];
+
+export const CHART_PERFORMANCE_RADAR = [
+  { subject: 'Liquidité', value: 85, fullMark: 100 },
+  { subject: 'Solvabilité', value: 92, fullMark: 100 },
+  { subject: 'Rentabilité', value: 78, fullMark: 100 },
+  { subject: 'Croissance', value: 88, fullMark: 100 },
+  { subject: 'Efficacité', value: 74, fullMark: 100 },
+];
+
 export const ACTIVITES_RECENTES = [
   { id: 'ac1', user: 'Sarah Mukendi', action: "a valide l'ecriture", objet: 'ACH-2025-00142', time: 'Il y a 12 min', type: 'validation' },
   { id: 'ac2', user: 'Joseph Kabongo', action: 'a saisi une sortie de caisse', objet: 'CAI-2025-00067', time: 'Il y a 28 min', type: 'creation' },

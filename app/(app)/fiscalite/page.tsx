@@ -20,6 +20,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { GlassCard, Button as NeonButton } from '@/components/ui/Layout';
+
 import { Badge } from '@/components/ui/badge';
 import { 
   Dialog, 
@@ -51,31 +53,6 @@ export default function FiscalitePage() {
   
   return (
     <div className="space-y-2">
-      <div className="flex justify-end items-center gap-4 -mt-2 lg:-mt-4">
-        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50">
-          <button
-            onClick={() => setActiveTab('declarations')}
-            className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all',
-              activeTab === 'declarations' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <FileSignature className="w-3.5 h-3.5" />
-            Déclarations
-          </button>
-          <button
-            onClick={() => setActiveTab('retenues')}
-            className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all',
-              activeTab === 'retenues' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <ReceiptText className="w-3.5 h-3.5" />
-            Retenues à la source
-          </button>
-        </div>
-      </div>
-
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
@@ -84,14 +61,14 @@ export default function FiscalitePage() {
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
         >
-          {activeTab === 'declarations' ? <DeclarationsView /> : <RetenuesView />}
+          {activeTab === 'declarations' ? <DeclarationsView activeTab={activeTab} setActiveTab={setActiveTab} /> : <RetenuesView activeTab={activeTab} setActiveTab={setActiveTab} />}
         </motion.div>
       </AnimatePresence>
     </div>
   );
 }
 
-function DeclarationsView() {
+function DeclarationsView({ activeTab, setActiveTab }: { activeTab: 'declarations' | 'retenues', setActiveTab: (t: 'declarations' | 'retenues') => void }) {
   const [declarations, setDeclarations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -206,7 +183,7 @@ function DeclarationsView() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
           >
-            <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+            <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
                 <div className="flex flex-col overflow-hidden w-full">
                   <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">{kpi.title}</span>
@@ -216,13 +193,25 @@ function DeclarationsView() {
                   <kpi.icon className="h-3 w-3 sm:h-4 sm:w-4" />
                 </div>
               </CardContent>
-            </Card>
+            </GlassCard>
           </motion.div>
         ))}
       </div>
 
-      <div className="space-y-1.5">
-        <div className="flex justify-end gap-2">
+      {/* Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1.5 relative">
+        {/* Toggle (gauche) */}
+        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50 shrink-0">
+          <button onClick={() => setActiveTab('declarations')} className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all', activeTab === 'declarations' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground')}>
+            <FileSignature className="w-3.5 h-3.5" /> Déclarations
+          </button>
+          <button onClick={() => setActiveTab('retenues')} className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all', activeTab === 'retenues' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground')}>
+            <ReceiptText className="w-3.5 h-3.5" /> Retenues
+          </button>
+        </div>
+
+        {/* Boutons icônes (droite) */}
+        <div className="flex items-center gap-2 shrink-0">
           <div className="relative group">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input 
@@ -232,13 +221,13 @@ function DeclarationsView() {
               className="pl-8 h-8 w-8 text-xs bg-transparent border-border transition-all duration-300 focus:w-[150px] hover:w-[150px] focus:bg-background/50 rounded-full cursor-pointer focus:cursor-text" 
             />
           </div>
-          <Button variant="default" size="sm" className="h-8 text-xs px-3 shadow-none" onClick={() => setIsDialogOpen(true)} title="Générer Déclaration">
-            <Plus className="w-3.5 h-3.5 mr-1.5" />
-            Générer
+          <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg shadow-sm hover:bg-accent group" onClick={() => setIsDialogOpen(true)} title="Générer Déclaration">
+            <Plus className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
           </Button>
         </div>
+      </div>
 
-        <Card className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
+        <GlassCard glow={false} className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
@@ -281,9 +270,9 @@ function DeclarationsView() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                        <NeonButton variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
                           <Download className="h-4 w-4" />
-                        </Button>
+                        </NeonButton>
                       </TableCell>
                     </TableRow>
                   ))
@@ -291,8 +280,7 @@ function DeclarationsView() {
               </TableBody>
             </Table>
           </CardContent>
-        </Card>
-      </div>
+        </GlassCard>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto rounded-xl border-white/10 bg-background/95 backdrop-blur-xl">
@@ -349,10 +337,10 @@ function DeclarationsView() {
               </Select>
             </div>
             <div className="pt-4 flex justify-end gap-2">
-              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Annuler</Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <NeonButton type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Annuler</NeonButton>
+              <NeonButton type="submit" disabled={isSubmitting}>
                 {isSubmitting ? 'Enregistrement...' : 'Enregistrer'}
-              </Button>
+              </NeonButton>
             </div>
           </form>
         </DialogContent>
@@ -361,7 +349,7 @@ function DeclarationsView() {
   );
 }
 
-function RetenuesView() {
+function RetenuesView({ activeTab, setActiveTab }: { activeTab: 'declarations' | 'retenues', setActiveTab: (t: 'declarations' | 'retenues') => void }) {
   const [retenues, setRetenues] = useState<any[]>([]);
   const [tiersList, setTiersList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -457,22 +445,36 @@ function RetenuesView() {
 
   return (
     <div className="space-y-1.5">
-      <div className="flex justify-end items-center gap-2">
-        <div className="relative group">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input 
-            placeholder="Rechercher..." 
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="pl-8 h-8 w-8 text-xs bg-transparent border-border transition-all duration-300 focus:w-[150px] hover:w-[150px] focus:bg-background/50 rounded-full cursor-pointer focus:cursor-text" 
-          />
+      {/* Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1.5 relative">
+        {/* Toggle (gauche) */}
+        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50 shrink-0">
+          <button onClick={() => setActiveTab('declarations')} className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all', activeTab === 'declarations' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground')}>
+            <FileSignature className="w-3.5 h-3.5" /> Déclarations
+          </button>
+          <button onClick={() => setActiveTab('retenues')} className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all', activeTab === 'retenues' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground')}>
+            <ReceiptText className="w-3.5 h-3.5" /> Retenues
+          </button>
         </div>
-        <Button variant="default" size="icon" className="h-8 w-8 rounded-full" onClick={() => setIsDialogOpen(true)} title="Saisir Retenue">
-          <Plus className="w-4 h-4" />
-        </Button>
+
+        {/* Boutons icônes (droite) */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative group">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input 
+              placeholder="Rechercher..." 
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="pl-8 h-8 w-8 text-xs bg-transparent border-border transition-all duration-300 focus:w-[150px] hover:w-[150px] focus:bg-background/50 rounded-full cursor-pointer focus:cursor-text" 
+            />
+          </div>
+          <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg shadow-sm hover:bg-accent group" onClick={() => setIsDialogOpen(true)} title="Saisir Retenue">
+            <Plus className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+          </Button>
+        </div>
       </div>
 
-      <Card className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
+      <GlassCard glow={false} className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -522,7 +524,7 @@ function RetenuesView() {
             </TableBody>
           </Table>
         </CardContent>
-      </Card>
+      </GlassCard>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto rounded-xl border-white/10 bg-background/95 backdrop-blur-xl">
@@ -589,10 +591,10 @@ function RetenuesView() {
               </Select>
             </div>
             <div className="pt-4 flex justify-end gap-2">
-              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Annuler</Button>
-              <Button type="submit" disabled={isSubmitting || !tiers}>
+              <NeonButton type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Annuler</NeonButton>
+              <NeonButton type="submit" disabled={isSubmitting || !tiers}>
                 {isSubmitting ? 'Enregistrement...' : 'Enregistrer'}
-              </Button>
+              </NeonButton>
             </div>
           </form>
         </DialogContent>

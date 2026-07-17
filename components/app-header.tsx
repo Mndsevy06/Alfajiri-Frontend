@@ -81,7 +81,7 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
   };
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-background/80 backdrop-blur-md border-b border-border flex items-center px-4 lg:px-6 gap-3">
+    <header className="sticky top-0 z-30 h-16 bg-white dark:bg-background/80 dark:backdrop-blur-md border-b border-border flex items-center px-4 lg:px-6 gap-3">
       <Button variant="ghost" size="icon" onClick={onMenuClick} className="lg:hidden">
         <Menu className="h-5 w-5" />
       </Button>

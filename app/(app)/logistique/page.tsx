@@ -28,6 +28,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
+import { GlassCard, Button as NeonButton } from '@/components/ui/Layout';
+
 import { toast } from 'sonner';
 import { fetchWithAuth } from '@/lib/api';
 import type { Expedition, CircuitLogistique, EtapeCircuit } from '@/lib/types';
@@ -135,10 +137,10 @@ export default function LogistiquePage() {
           Paramétrez au moins un circuit pour commencer à suivre vos expéditions sur le Kanban interactif.
         </p>
         <Link href="/logistique/configuration">
-          <Button size="lg" className="mt-4 rounded-full px-8">
+          <NeonButton size="lg" className="mt-4 rounded-full px-8">
             <Settings className="mr-2 h-4 w-4" />
             Créer un Circuit
-          </Button>
+          </NeonButton>
         </Link>
       </div>
     );
@@ -173,15 +175,15 @@ export default function LogistiquePage() {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <Link href="/logistique/configuration">
-              <Button variant="outline" size="sm" className="h-8 text-xs px-3 shadow-none">
+              <NeonButton variant="outline" size="sm" className="h-8 text-xs px-3 shadow-none">
                 <Settings className="h-3.5 w-3.5 mr-1.5" />
                 Configurer
-              </Button>
+              </NeonButton>
             </Link>
-            <Button variant="outline" size="sm" onClick={fetchData} disabled={isLoading} className="h-8 text-xs px-3 shadow-none group">
+            <NeonButton variant="outline" size="sm" onClick={fetchData} disabled={isLoading} className="h-8 text-xs px-3 shadow-none group">
               <RefreshCw className={cn("h-3.5 w-3.5 mr-1.5 group-hover:rotate-180 transition-transform duration-500", isLoading && "animate-spin")} />
               Actualiser
-            </Button>
+            </NeonButton>
           </div>
         </div>
 
@@ -194,7 +196,7 @@ export default function LogistiquePage() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: idx * 0.05 }}
             >
-              <Card 
+              <GlassCard glow={false} 
                 onClick={() => setFilterEtape(filterEtape === s.id ? 'all' : s.id)}
                 className={cn(
                   "cursor-pointer transition-shadow hover:shadow-md",
@@ -210,7 +212,7 @@ export default function LogistiquePage() {
                     <Truck className="h-3 w-3 sm:h-4 sm:w-4" />
                   </div>
                 </CardContent>
-              </Card>
+              </GlassCard>
             </motion.div>
           ))}
         </div>
@@ -326,9 +328,9 @@ export default function LogistiquePage() {
                     {selected.etape_actuelle_detail?.nom || 'Étape Inconnue'}
                   </Badge>
                 </div>
-                <Button variant="ghost" size="icon" className="rounded-full bg-muted/50 hover:bg-muted" onClick={() => setSelected(null)}>
+                <NeonButton variant="ghost" size="icon" className="rounded-full bg-muted/50 hover:bg-muted" onClick={() => setSelected(null)}>
                   <X className="h-5 w-5" />
-                </Button>
+                </NeonButton>
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
@@ -419,7 +421,7 @@ export default function LogistiquePage() {
 
               {/* Action Footer */}
               <div className="p-6 border-t border-border/50 bg-background/50 backdrop-blur-md">
-                <Button
+                <NeonButton
                   size="lg"
                   className={cn(
                     "w-full font-bold shadow-lg rounded-xl h-14 text-base transition-all duration-300",
@@ -443,7 +445,7 @@ export default function LogistiquePage() {
                       <ArrowRight className="h-5 w-5 ml-2" />
                     </>
                   )}
-                </Button>
+                </NeonButton>
               </div>
             </motion.div>
           </>

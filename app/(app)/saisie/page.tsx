@@ -98,37 +98,12 @@ export default function SaisiePage() {
 
   return (
     <div className="space-y-3 animate-fade-in pb-8">
-      <div className="flex justify-end gap-2 mb-2">
-        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50">
-          <button
-            onClick={() => setView('saisie')}
-            className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all',
-              view === 'saisie' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <PencilLine className="h-3.5 w-3.5" />
-            Saisie
-          </button>
-          <button
-            onClick={() => setView('valide')}
-            className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all',
-              view === 'valide' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            Journal
-          </button>
-        </div>
-      </div>
-
-      {view === 'saisie' ? <SaisieView /> : <ValideView />}
+      {view === 'saisie' ? <SaisieView setView={setView} view={view} /> : <ValideView setView={setView} view={view} />}
     </div>
   );
 }
 
-function SaisieView() {
+function SaisieView({ setView, view }: { setView: (v: View) => void; view: View }) {
   const [JOURNAUX, setJournaux] = useState<Journal[]>([]);
   const [PLAN_COMPTABLE, setPlanComptable] = useState<CompteType[]>([]);
   const [TIERS, setTiers] = useState<any[]>([]);
@@ -473,8 +448,9 @@ function SaisieView() {
   return (
     <div className="space-y-2">
       
-      {/* Statistiques Section */}
-      <div className="grid grid-cols-4 gap-1 sm:gap-2">
+      {/* Statistiques Section + Toggle Saisie/Journal à droite */}
+      <div className="flex items-start gap-2">
+        <div className="grid grid-cols-4 gap-1 sm:gap-2 flex-1">
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
@@ -529,12 +505,38 @@ function SaisieView() {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
 
       {/* Barre d'actions et Informations de l'en-tête (Sur la même ligne, sans fond) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1">
-        {/* Informations de l'en-tête active (A gauche) */}
-        <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1 relative">
+        
+        {/* Toggle Saisie / Journal (A gauche) */}
+        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50 shrink-0">
+          <button
+            onClick={() => setView('saisie')}
+            className={cn(
+              'flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all',
+              view === 'saisie' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <PencilLine className="h-3.5 w-3.5" />
+            Saisie
+          </button>
+          <button
+            onClick={() => setView('valide')}
+            className={cn(
+              'flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all',
+              view === 'valide' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Journal
+          </button>
+        </div>
+
+        {/* Informations de l'en-tête active (Centré) */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 text-xs font-medium text-muted-foreground hidden lg:flex whitespace-nowrap pointer-events-none">
           {libelle ? (
             <>
               <span className="flex items-center gap-1">
@@ -610,12 +612,11 @@ function SaisieView() {
             </PopoverContent>
           </Popover>
 
-          {/* Bouton Nouvelle Ligne */}
+          {/* Bouton Nouvelle Ligne (Icône seule) */}
           <Dialog open={openNewLine} onOpenChange={setOpenNewLine}>
             <DialogTrigger asChild>
-              <Button className="h-8 rounded-lg px-3 text-xs font-semibold shadow-sm">
-                <Plus className="h-3.5 w-3.5 mr-1.5" />
-                <span className="hidden sm:inline">Nouvelle Ligne</span>
+              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg shadow-sm hover:bg-accent group" title="Nouvelle Ligne">
+                <Plus className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
@@ -781,6 +782,38 @@ function SaisieView() {
               </div>
             </DialogContent>
           </Dialog>
+
+          {/* Bouton d'enregistrement vert avec dropdown (déplacé dans la barre d'action) */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="icon"
+                className="h-8 w-8 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm rounded-lg transition-all"
+                disabled={!hasLignes}
+                title="Enregistrer"
+              >
+                <Save className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem
+                className="cursor-pointer gap-2 text-sm py-2.5"
+                onClick={() => handleSave(false)}
+              >
+                <Archive className="h-4 w-4 text-warning" />
+                Enregistrer en brouillon
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="cursor-pointer gap-2 text-sm py-2.5"
+                onClick={() => handleSave(true)}
+                disabled={!equilibre || totalDebit === 0}
+              >
+                <Lock className="h-4 w-4 text-emerald-600" />
+                Enregistrer définitivement
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Modale Configuration En-tête */}
           <Dialog open={openConfig} onOpenChange={setOpenConfig}>
@@ -1256,32 +1289,11 @@ function SaisieView() {
           )}
         </CardContent>
       </Card>
-
-      {/* Boutons d'Action Globaux */}
-      <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-border/50">
-        <Button
-          variant="outline"
-          className="flex-1 shadow-sm h-11"
-          onClick={() => handleSave(false)}
-          disabled={!hasLignes}
-        >
-          <Save className="h-4 w-4 mr-2" />
-          Enregistrer en brouillard
-        </Button>
-        <Button
-          className="flex-1 shadow-sm h-11 bg-primary hover:bg-primary/90"
-          onClick={() => handleSave(true)}
-          disabled={!equilibre || !hasLignes || totalDebit === 0}
-        >
-          <Lock className="h-4 w-4 mr-2" />
-          Valider définitivement
-        </Button>
-      </div>
     </div>
   );
 }
 
-function ValideView() {
+function ValideView({ setView, view }: { setView: (v: View) => void; view: View }) {
   const [ECRITURES, setEcritures] = useState<Ecriture[]>([]);
 
   useEffect(() => {
@@ -1546,8 +1558,9 @@ function ValideView() {
 
   return (
     <div className="space-y-2">
-      {/* Statistiques Section */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Statistiques Section + Toggle Saisie/Journal à droite */}
+      <div className="flex items-start gap-2">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 flex-1">
         <Card className="p-4 border-y-0 border-r-0 border-l-4 border-l-primary bg-primary/5 shadow-sm rounded-xl">
           <div className="text-2xl font-black text-primary font-mono truncate" title={totalPieces.toString()}>{totalPieces}</div>
           <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1">Total Pièces</div>
@@ -1567,10 +1580,38 @@ function ValideView() {
           <div className="text-2xl font-black text-success font-mono truncate" title="Ce mois">Ce mois</div>
           <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1">Période</div>
         </Card>
+        </div>
+
       </div>
 
       {/* Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-2 py-1.5 border-b border-border/50 mb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1.5 border-b border-border/50 mb-2">
+        
+        {/* Toggle Saisie / Journal (A gauche) */}
+        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50 shrink-0">
+          <button
+            onClick={() => setView('saisie')}
+            className={cn(
+              'flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all',
+              view === 'saisie' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <PencilLine className="h-3.5 w-3.5" />
+            Saisie
+          </button>
+          <button
+            onClick={() => setView('valide')}
+            className={cn(
+              'flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all',
+              view === 'valide' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Journal
+          </button>
+        </div>
+
+        {/* Autres Boutons (A droite) */}
         <div className="flex items-center gap-2 shrink-0">
           <Popover>
             <PopoverTrigger asChild>
