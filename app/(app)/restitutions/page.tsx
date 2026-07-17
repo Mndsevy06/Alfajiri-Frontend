@@ -65,7 +65,7 @@ export default function RestitutionsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-    <div className="space-y-3 animate-fade-in -mt-4">
+    <div className="space-y-3 animate-fade-in -mt-2 lg:-mt-4">
       <div className="flex justify-end gap-2 mb-2">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="h-8 text-xs px-3 shadow-none" onClick={() => toast.success('Export PDF genere')}>
@@ -86,35 +86,35 @@ export default function RestitutionsPage() {
       <Card className="border-white/10 shadow-sm bg-background/50 backdrop-blur-xl">
         <CardContent className="p-2">
           <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-            <div className="flex items-center gap-1 p-0.5 rounded-md bg-muted/50 border border-border">
+            <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50">
               <button
                 onClick={() => { setView('balance'); setDrillCompte(null); }}
                 className={cn(
-                  'flex items-center h-7 px-3 rounded text-xs font-medium transition-all shadow-none',
-                  view === 'balance' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:bg-muted/50'
+                  'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all',
+                  view === 'balance' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
-                <BarChart3 className="h-3.5 w-3.5 mr-1.5" />
+                <BarChart3 className="h-3.5 w-3.5" />
                 Balance
               </button>
               <button
                 onClick={() => { setView('grand-livre'); setDrillCompte(null); }}
                 className={cn(
-                  'flex items-center h-7 px-3 rounded text-xs font-medium transition-all shadow-none',
-                  view === 'grand-livre' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:bg-muted/50'
+                  'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all',
+                  view === 'grand-livre' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
-                <BookOpen className="h-3.5 w-3.5 mr-1.5" />
+                <BookOpen className="h-3.5 w-3.5" />
                 Grand Livre
               </button>
               <button
                 onClick={() => { setView('journaux'); setDrillCompte(null); }}
                 className={cn(
-                  'flex items-center h-7 px-3 rounded text-xs font-medium transition-all shadow-none',
-                  view === 'journaux' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:bg-muted/50'
+                  'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all',
+                  view === 'journaux' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
-                <FileText className="h-3.5 w-3.5 mr-1.5" />
+                <FileText className="h-3.5 w-3.5" />
                 Journaux
               </button>
             </div>

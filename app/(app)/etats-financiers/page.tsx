@@ -355,53 +355,53 @@ export default function EtatsFinanciersPage() {
   };
 
   return (
-    <div className="space-y-1 animate-fade-in -mt-4">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+    <div className="space-y-1 animate-fade-in -mt-2 lg:-mt-4">
+      <div className="grid grid-cols-3 gap-1 sm:gap-2">
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-2.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Total Actif Net</span>
-              <div className="flex items-center gap-1 mt-1">
-                <span className="text-base font-bold leading-none" title={formatCurrency(totalActifNet)}>{formatCurrency(totalActifNet)}</span>
-                <span className="text-[9px] font-medium text-emerald-500 flex items-center">(<TrendingUp className="h-2 w-2 mr-0.5" />+5.2%)</span>
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Total Actif Net</span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1 mt-0.5 sm:mt-1">
+                <span className="text-[10px] sm:text-base font-bold leading-none text-primary truncate" title={formatCurrency(totalActifNet)}>{formatCurrency(totalActifNet)}</span>
+                <span className="text-[7px] sm:text-[9px] font-medium text-emerald-500 flex items-center hidden sm:flex">(<TrendingUp className="h-2 w-2 mr-0.5" />+5.2%)</span>
               </div>
             </div>
-            <div className="p-1.5 rounded-md bg-primary/10 text-primary">
-              <Scale className="h-3.5 w-3.5" />
+            <div className="p-1 sm:p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
+              <Scale className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-2.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Total Passif</span>
-              <div className="flex items-center gap-1 mt-1">
-                <span className="text-base font-bold leading-none" title={formatCurrency(totalPassif)}>{formatCurrency(totalPassif)}</span>
-                <span className="text-[9px] font-medium text-emerald-500 flex items-center">(<TrendingDown className="h-2 w-2 mr-0.5" />-1.5%)</span>
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Total Passif</span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1 mt-0.5 sm:mt-1">
+                <span className="text-[10px] sm:text-base font-bold leading-none text-chart-5 truncate" title={formatCurrency(totalPassif)}>{formatCurrency(totalPassif)}</span>
+                <span className="text-[7px] sm:text-[9px] font-medium text-emerald-500 flex items-center hidden sm:flex">(<TrendingDown className="h-2 w-2 mr-0.5" />-1.5%)</span>
               </div>
             </div>
-            <div className="p-1.5 rounded-md bg-chart-5/10 text-chart-5">
-              <PieChart className="h-3.5 w-3.5" />
+            <div className="p-1 sm:p-1.5 rounded-md bg-chart-5/10 text-chart-5 shrink-0">
+              <PieChart className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-2.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Resultat Net</span>
-              <div className="flex items-center gap-1 mt-1">
-                <span className={cn("text-base font-bold leading-none", resultatNet >= 0 ? "text-emerald-500" : "text-rose-500")} title={formatCurrency(resultatNet)}>
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Resultat Net</span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1 mt-0.5 sm:mt-1">
+                <span className={cn("text-[10px] sm:text-base font-bold leading-none truncate", resultatNet >= 0 ? "text-emerald-500" : "text-rose-500")} title={formatCurrency(resultatNet)}>
                   {formatCurrency(resultatNet)}
                 </span>
-                <span className={cn("text-[9px] font-medium flex items-center", resultatNet >= 0 ? "text-emerald-500" : "text-rose-500")}>
+                <span className={cn("text-[7px] sm:text-[9px] font-medium flex items-center hidden sm:flex", resultatNet >= 0 ? "text-emerald-500" : "text-rose-500")}>
                   (<TrendingUp className="h-2 w-2 mr-0.5" />+8.4%)
                 </span>
               </div>
             </div>
-            <div className={cn("p-1.5 rounded-md", resultatNet >= 0 ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500")}>
-              <TrendingUp className="h-3.5 w-3.5" />
+            <div className={cn("p-1 sm:p-1.5 rounded-md shrink-0", resultatNet >= 0 ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500")}>
+              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
         </Card>
@@ -409,17 +409,17 @@ export default function EtatsFinanciersPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1">
-          <TabsList className="h-8 bg-transparent p-0">
-            <TabsTrigger value="bilan" className="data-[state=active]:bg-muted/50 data-[state=active]:shadow-none rounded-md px-3 text-xs h-7">
-              <Scale className="h-3.5 w-3.5 mr-1.5" />
+          <TabsList className="flex items-center h-auto gap-1 p-1 rounded-md bg-muted/50 border border-border/50">
+            <TabsTrigger value="bilan" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all">
+              <Scale className="h-3.5 w-3.5" />
               Bilan
             </TabsTrigger>
-            <TabsTrigger value="resultat" className="data-[state=active]:bg-muted/50 data-[state=active]:shadow-none rounded-md px-3 text-xs h-7">
-              <TrendingUp className="h-3.5 w-3.5 mr-1.5" />
+            <TabsTrigger value="resultat" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all">
+              <TrendingUp className="h-3.5 w-3.5" />
               Compte de résultat
             </TabsTrigger>
-            <TabsTrigger value="tafire" className="data-[state=active]:bg-muted/50 data-[state=active]:shadow-none rounded-md px-3 text-xs h-7">
-              <FileText className="h-3.5 w-3.5 mr-1.5" />
+            <TabsTrigger value="tafire" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all">
+              <FileText className="h-3.5 w-3.5" />
               TAFIRE
             </TabsTrigger>
           </TabsList>

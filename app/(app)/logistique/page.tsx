@@ -186,11 +186,10 @@ export default function LogistiquePage() {
         </div>
 
         {/* KPI Compact Cards */}
-        <div className="flex gap-2 overflow-x-auto pb-1 snap-x hide-scrollbar items-center">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-1 sm:gap-2">
           {counts.map((s, idx) => (
             <motion.div
               key={s.id}
-              className="min-w-[140px] snap-start"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: idx * 0.05 }}
@@ -202,13 +201,13 @@ export default function LogistiquePage() {
                   filterEtape === s.id ? "bg-primary/5 border-primary/40" : "bg-background/40 backdrop-blur-sm border-white/10 shadow-sm"
                 )}
               >
-                <CardContent className="p-2.5 flex items-center justify-between gap-2">
-                  <div className="flex flex-col overflow-hidden">
-                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate" title={s.nom}>{s.nom}</span>
-                    <span className="text-base font-bold leading-none mt-1">{s.count}</span>
+                <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+                  <div className="flex flex-col overflow-hidden w-full">
+                    <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate" title={s.nom}>{s.nom}</span>
+                    <span className={cn("text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 truncate", s.couleur_badge.split(' ')[1])}>{s.count}</span>
                   </div>
-                  <div className={cn("p-1.5 rounded-md flex-shrink-0", s.couleur_badge)}>
-                    <Truck className="h-3.5 w-3.5" />
+                  <div className={cn("p-1 sm:p-1.5 rounded-md flex-shrink-0", s.couleur_badge)}>
+                    <Truck className="h-3 w-3 sm:h-4 sm:w-4" />
                   </div>
                 </CardContent>
               </Card>

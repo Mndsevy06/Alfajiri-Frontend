@@ -80,30 +80,30 @@ export default function ParametresPage() {
       </div>
 
       <Tabs defaultValue="dossiers">
-        <TabsList className="w-full flex-wrap sm:w-auto gap-2">
-          <TabsTrigger value="dossiers" className="flex-1 sm:flex-none">
-            <Building2 className="h-4 w-4 mr-2" />
+        <TabsList className="flex flex-wrap items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50 h-auto">
+          <TabsTrigger value="dossiers" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all flex-1 sm:flex-none">
+            <Building2 className="h-3.5 w-3.5" />
             Dossiers
           </TabsTrigger>
 
-          <TabsTrigger value="apparence" className="flex-1 sm:flex-none">
-            <Palette className="h-4 w-4 mr-2" />
+          <TabsTrigger value="apparence" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all flex-1 sm:flex-none">
+            <Palette className="h-3.5 w-3.5" />
             Apparence
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex-1 sm:flex-none">
-            <Bell className="h-4 w-4 mr-2" />
+          <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all flex-1 sm:flex-none">
+            <Bell className="h-3.5 w-3.5" />
             Notifications
           </TabsTrigger>
-          <TabsTrigger value="taux-change" className="flex-1 sm:flex-none">
-            <Coins className="h-4 w-4 mr-2" />
+          <TabsTrigger value="taux-change" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all flex-1 sm:flex-none">
+            <Coins className="h-3.5 w-3.5" />
             Taux de change
           </TabsTrigger>
-          <TabsTrigger value="ia-gemini" className="flex-1 sm:flex-none">
-            <Bot className="h-4 w-4 mr-2" />
+          <TabsTrigger value="ia-gemini" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all flex-1 sm:flex-none">
+            <Bot className="h-3.5 w-3.5" />
             IA Gemini
           </TabsTrigger>
-          <TabsTrigger value="securite" className="flex-1 sm:flex-none">
-            <ShieldCheck className="h-4 w-4 mr-2" />
+          <TabsTrigger value="securite" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all flex-1 sm:flex-none">
+            <ShieldCheck className="h-3.5 w-3.5" />
             Sécurité
           </TabsTrigger>
         </TabsList>

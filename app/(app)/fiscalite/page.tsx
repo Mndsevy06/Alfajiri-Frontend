@@ -28,6 +28,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 import {
   Select,
   SelectContent,
@@ -50,26 +51,28 @@ export default function FiscalitePage() {
   
   return (
     <div className="space-y-2">
-      <div className="flex justify-end items-center gap-4 -mt-4">
-        <div className="flex items-center p-0.5 bg-muted/50 rounded-md border border-border">
-          <Button 
-            variant={activeTab === 'declarations' ? 'default' : 'ghost'} 
-            size="sm" 
-            className="rounded h-7 text-xs px-2 shadow-none"
+      <div className="flex justify-end items-center gap-4 -mt-2 lg:-mt-4">
+        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50">
+          <button
             onClick={() => setActiveTab('declarations')}
+            className={cn(
+              'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all',
+              activeTab === 'declarations' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
+            )}
           >
-            <FileSignature className="w-3.5 h-3.5 mr-1.5" />
+            <FileSignature className="w-3.5 h-3.5" />
             Déclarations
-          </Button>
-          <Button 
-            variant={activeTab === 'retenues' ? 'default' : 'ghost'} 
-            size="sm" 
-            className="rounded h-7 text-xs px-2 shadow-none"
+          </button>
+          <button
             onClick={() => setActiveTab('retenues')}
+            className={cn(
+              'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all',
+              activeTab === 'retenues' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
+            )}
           >
-            <ReceiptText className="w-3.5 h-3.5 mr-1.5" />
+            <ReceiptText className="w-3.5 h-3.5" />
             Retenues à la source
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -195,7 +198,7 @@ function DeclarationsView() {
 
   return (
     <div className="space-y-1">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-1 sm:gap-2">
         {KPIS.map((kpi, i) => (
           <motion.div
             key={kpi.title}
@@ -204,13 +207,13 @@ function DeclarationsView() {
             transition={{ delay: i * 0.1 }}
           >
             <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="p-2.5 flex items-center justify-between">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{kpi.title}</span>
-                  <span className="text-base font-bold leading-none mt-1" title={kpi.value}>{kpi.value}</span>
+              <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+                <div className="flex flex-col overflow-hidden w-full">
+                  <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">{kpi.title}</span>
+                  <span className={cn("text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 truncate", kpi.iconClass.split(' ')[1])} title={kpi.value}>{kpi.value}</span>
                 </div>
-                <div className={`p-1.5 rounded-md ${kpi.iconClass}`}>
-                  <kpi.icon className="h-3.5 w-3.5" />
+                <div className={cn("p-1 sm:p-1.5 rounded-md shrink-0", kpi.iconClass)}>
+                  <kpi.icon className="h-3 w-3 sm:h-4 sm:w-4" />
                 </div>
               </CardContent>
             </Card>

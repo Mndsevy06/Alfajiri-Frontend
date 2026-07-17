@@ -333,51 +333,51 @@ export default function ImmobilisationsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-1 sm:gap-2">
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-2.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Valeur d'acquisition</span>
-              <span className="text-base font-bold leading-none mt-1" title={formatCurrency(totalAcquisition)}>{formatCurrency(totalAcquisition)}</span>
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Valeur d'acquisition</span>
+              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-primary truncate" title={formatCurrency(totalAcquisition)}>{formatCurrency(totalAcquisition)}</span>
             </div>
-            <div className="p-1.5 rounded-md bg-primary/10 text-primary">
-              <Building2 className="h-3.5 w-3.5" />
+            <div className="p-1 sm:p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
+              <Building2 className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-2.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Cumul amortissements</span>
-              <span className="text-base font-bold leading-none mt-1" title={formatCurrency(totalAmortissement)}>{formatCurrency(totalAmortissement)}</span>
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Cumul amortissements</span>
+              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-warning truncate" title={formatCurrency(totalAmortissement)}>{formatCurrency(totalAmortissement)}</span>
             </div>
-            <div className="p-1.5 rounded-md bg-warning/10 text-warning">
-              <TrendingDown className="h-3.5 w-3.5" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-2.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">VNC totale</span>
-              <span className="text-base font-bold leading-none mt-1" title={formatCurrency(totalVNC)}>{formatCurrency(totalVNC)}</span>
-            </div>
-            <div className="p-1.5 rounded-md bg-chart-2/10 text-chart-2">
-              <Calculator className="h-3.5 w-3.5" />
+            <div className="p-1 sm:p-1.5 rounded-md bg-warning/10 text-warning shrink-0">
+              <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-2.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Dotation annuelle</span>
-              <span className="text-base font-bold leading-none mt-1" title={formatCurrency(totalDotation)}>{formatCurrency(totalDotation)}</span>
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">VNC totale</span>
+              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-chart-2 truncate" title={formatCurrency(totalVNC)}>{formatCurrency(totalVNC)}</span>
             </div>
-            <div className="p-1.5 rounded-md bg-chart-4/10 text-chart-4">
-              <Calendar className="h-3.5 w-3.5" />
+            <div className="p-1 sm:p-1.5 rounded-md bg-chart-2/10 text-chart-2 shrink-0">
+              <Calculator className="h-3 w-3 sm:h-4 sm:w-4" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Dotation annuelle</span>
+              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-chart-4 truncate" title={formatCurrency(totalDotation)}>{formatCurrency(totalDotation)}</span>
+            </div>
+            <div className="p-1 sm:p-1.5 rounded-md bg-chart-4/10 text-chart-4 shrink-0">
+              <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
         </Card>

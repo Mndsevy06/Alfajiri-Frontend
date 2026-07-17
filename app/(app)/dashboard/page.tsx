@@ -139,7 +139,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPIs Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 gap-1 sm:gap-4">
         {KPIS_DASHBOARD.map((kpi, i) => {
           const Icon = iconMap[kpi.icon];
           const positive = kpi.evolution > 0;
@@ -150,34 +150,46 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: i * 0.1, ease: "easeOut" }}
             >
-              <GlassCard className="relative overflow-hidden group p-0" variant="default">
+              <GlassCard className="relative overflow-hidden group p-1.5 sm:p-5 flex items-center sm:flex-col justify-between sm:justify-between h-full gap-1 sm:gap-4" variant="default">
                 <div
-                  className="absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-opacity duration-500"
+                  className="absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-opacity duration-500 hidden sm:block"
                   style={{ backgroundColor: kpi.color }}
                 />
                 
-                <div className="p-5 flex flex-col justify-between h-full gap-4">
-                  <div className="flex items-center justify-between">
-                    <div
-                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-sm transform group-hover:scale-110 transition-transform duration-300"
-                      style={{ backgroundColor: `${kpi.color}20`, color: kpi.color }}
-                    >
-                      <Icon className="h-6 w-6" />
-                    </div>
-                    <Badge variant="secondary" className={cn(
-                        'flex items-center gap-0.5 text-xs font-bold px-2 py-1 rounded-md border-0',
-                        positive ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'
-                      )}>
-                      {positive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                      {Math.abs(kpi.evolution)}%
-                    </Badge>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold tracking-wide uppercase text-muted-foreground mb-1">{kpi.label}</p>
-                    <div className={cn("text-2xl font-black tracking-tighter", i === 0 && "rdc-gradient-text")}>
+                {/* Mobile Text (Left) / Desktop Bottom Text */}
+                <div className="flex flex-col overflow-hidden w-full order-1 sm:order-2">
+                  <p className="text-[8px] sm:text-xs font-semibold tracking-wide uppercase text-muted-foreground sm:mb-1 truncate" title={kpi.label}>{kpi.label}</p>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1 mt-0.5 sm:mt-0">
+                    <div className={cn("text-[10px] sm:text-2xl font-black tracking-tighter truncate leading-none", i === 0 && "sm:rdc-gradient-text")} style={{ color: kpi.color }} title={formatCurrency(kpi.value)}>
                       {formatCurrency(kpi.value)}
                     </div>
+                    {/* Mobile Evolution */}
+                    <span className={cn(
+                      'flex sm:hidden items-center text-[7px] font-bold mt-0.5',
+                      positive ? 'text-success' : 'text-destructive'
+                    )}>
+                      {positive ? <ArrowUpRight className="h-2 w-2" /> : <ArrowDownRight className="h-2 w-2" />}
+                      {Math.abs(kpi.evolution)}%
+                    </span>
                   </div>
+                </div>
+
+                {/* Mobile Icon (Right) / Desktop Top Icon+Badge */}
+                <div className="flex items-center sm:w-full justify-end sm:justify-between shrink-0 order-2 sm:order-1">
+                  <div
+                    className="flex h-6 w-6 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-md sm:rounded-xl shadow-sm transform group-hover:scale-110 transition-transform duration-300"
+                    style={{ backgroundColor: `${kpi.color}20`, color: kpi.color }}
+                  >
+                    <Icon className="h-3 w-3 sm:h-6 sm:w-6" />
+                  </div>
+                  {/* Desktop Evolution Badge */}
+                  <Badge variant="secondary" className={cn(
+                      'hidden sm:flex items-center gap-0.5 text-xs font-bold px-2 py-1 rounded-md border-0',
+                      positive ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'
+                    )}>
+                    {positive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                    {Math.abs(kpi.evolution)}%
+                  </Badge>
                 </div>
               </GlassCard>
             </motion.div>

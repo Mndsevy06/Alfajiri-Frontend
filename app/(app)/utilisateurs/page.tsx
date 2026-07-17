@@ -89,34 +89,37 @@ export default function UtilisateursPage() {
   return (
     <div className="space-y-3 animate-fade-in">
       <div className="flex justify-end mb-2">
-        <div className="flex items-center p-1 bg-muted/50 rounded-lg border border-border">
-          <Button 
-            variant={activeTab === 'users' ? 'default' : 'ghost'} 
-            size="sm" 
-            className="rounded-md px-3 h-8 text-xs shadow-none"
+        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50">
+          <button
             onClick={() => setActiveTab('users')}
+            className={cn(
+              'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all',
+              activeTab === 'users' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
+            )}
           >
-            <Users className="w-3.5 h-3.5 mr-1.5" />
+            <Users className="w-3.5 h-3.5" />
             Utilisateurs
-          </Button>
-          <Button 
-            variant={activeTab === 'permissions' ? 'default' : 'ghost'} 
-            size="sm" 
-            className="rounded-md px-3 h-8 text-xs shadow-none"
+          </button>
+          <button
             onClick={() => setActiveTab('permissions')}
+            className={cn(
+              'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all',
+              activeTab === 'permissions' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
+            )}
           >
-            <ShieldCheck className="w-3.5 h-3.5 mr-1.5" />
+            <ShieldCheck className="w-3.5 h-3.5" />
             Matrice de Permissions
-          </Button>
-          <Button 
-            variant={activeTab === 'audit' ? 'default' : 'ghost'} 
-            size="sm" 
-            className="rounded-md px-3 h-8 text-xs shadow-none"
+          </button>
+          <button
             onClick={() => setActiveTab('audit')}
+            className={cn(
+              'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all',
+              activeTab === 'audit' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
+            )}
           >
-            <ScrollText className="w-3.5 h-3.5 mr-1.5" />
+            <ScrollText className="w-3.5 h-3.5" />
             Journal d'Audit
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -520,39 +523,39 @@ function UsersView() {
   return (
     <div className="space-y-3">
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-1 sm:gap-2">
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-2.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Total Utilisateurs</span>
-              <span className="text-base font-bold leading-none mt-1">{totalUsers}</span>
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Total Utilisateurs</span>
+              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-primary truncate">{totalUsers}</span>
             </div>
-            <div className="p-1.5 rounded-md bg-primary/10 text-primary">
-              <Users className="h-3.5 w-3.5" />
+            <div className="p-1 sm:p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
+              <Users className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
         </Card>
         
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-2.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Actifs</span>
-              <span className="text-base font-bold leading-none mt-1">{activeUsers}</span>
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Actifs</span>
+              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-emerald-500 truncate">{activeUsers}</span>
             </div>
-            <div className="p-1.5 rounded-md bg-emerald-500/10 text-emerald-500">
-              <CheckCircle2 className="h-3.5 w-3.5" />
+            <div className="p-1 sm:p-1.5 rounded-md bg-emerald-500/10 text-emerald-500 shrink-0">
+              <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-2.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Inactifs</span>
-              <span className="text-base font-bold leading-none mt-1">{inactiveUsers}</span>
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Inactifs</span>
+              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-destructive truncate">{inactiveUsers}</span>
             </div>
-            <div className="p-1.5 rounded-md bg-destructive/10 text-destructive">
-              <XCircle className="h-3.5 w-3.5" />
+            <div className="p-1 sm:p-1.5 rounded-md bg-destructive/10 text-destructive shrink-0">
+              <XCircle className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
         </Card>

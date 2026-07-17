@@ -98,23 +98,13 @@ export default function SaisiePage() {
 
   return (
     <div className="space-y-3 animate-fade-in pb-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div>
-          <h1 className="text-lg font-bold tracking-tight text-foreground/90">
-            {view === 'saisie' ? 'Saisie Comptable' : 'Journal Comptable'}
-          </h1>
-          <p className="text-[11px] text-muted-foreground font-medium">
-            {view === 'saisie' 
-              ? 'Journalisation des opérations - Brouillard & Validation' 
-              : 'Historique des écritures validées et intégrées'}
-          </p>
-        </div>
+      <div className="flex justify-end gap-2 mb-2">
         <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50">
           <button
             onClick={() => setView('saisie')}
             className={cn(
               'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all',
-              view === 'saisie' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+              view === 'saisie' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
             )}
           >
             <PencilLine className="h-3.5 w-3.5" />
@@ -124,7 +114,7 @@ export default function SaisiePage() {
             onClick={() => setView('valide')}
             className={cn(
               'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all',
-              view === 'valide' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+              view === 'valide' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground'
             )}
           >
             <CheckCircle2 className="h-3.5 w-3.5" />
@@ -484,58 +474,58 @@ function SaisieView() {
     <div className="space-y-2">
       
       {/* Statistiques Section */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-1 sm:gap-2">
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-2.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Total Débits</span>
-              <span className="text-base font-bold leading-none mt-1" title={formatCurrency(totalDebit)}>{formatCurrency(totalDebit)}</span>
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Débits</span>
+              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-primary truncate" title={formatCurrency(totalDebit)}>{formatCurrency(totalDebit)}</span>
             </div>
-            <div className="p-1.5 rounded-md bg-primary/10 text-primary">
-              <TrendingDown className="h-3.5 w-3.5" />
+            <div className="p-1 sm:p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
+              <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
         </Card>
         
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-2.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Total Crédits</span>
-              <span className="text-base font-bold leading-none mt-1" title={formatCurrency(totalCredit)}>{formatCurrency(totalCredit)}</span>
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Crédits</span>
+              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-chart-5 truncate" title={formatCurrency(totalCredit)}>{formatCurrency(totalCredit)}</span>
             </div>
-            <div className="p-1.5 rounded-md bg-chart-5/10 text-chart-5">
-              <TrendingUp className="h-3.5 w-3.5" />
+            <div className="p-1 sm:p-1.5 rounded-md bg-chart-5/10 text-chart-5 shrink-0">
+              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-2.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Équilibre</span>
-              <div className="flex items-center gap-1 mt-1">
-                <span className="text-base font-bold leading-none" title={formatCurrency(Math.abs(totalDebit - totalCredit))}>
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Équilibre</span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1 mt-0.5 sm:mt-1">
+                <span className={cn("text-[10px] sm:text-base font-bold leading-none truncate", equilibre && hasLignes ? "text-emerald-500" : "text-rose-500")} title={formatCurrency(Math.abs(totalDebit - totalCredit))}>
                   {formatCurrency(Math.abs(totalDebit - totalCredit))}
                 </span>
-                <span className={cn("text-[9px] font-medium", equilibre && hasLignes ? "text-emerald-500" : "text-rose-500")}>
+                <span className={cn("text-[7px] sm:text-[9px] font-medium truncate", equilibre && hasLignes ? "text-emerald-500/80" : "text-rose-500/80")}>
                   ({equilibre && hasLignes ? "Équilibré" : "Déséquilibré"})
                 </span>
               </div>
             </div>
-            <div className={cn("p-1.5 rounded-md", equilibre && hasLignes ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500")}>
-              <Scale className="h-3.5 w-3.5" />
+            <div className={cn("p-1 sm:p-1.5 rounded-md shrink-0", equilibre && hasLignes ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500")}>
+              <Scale className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-2.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Brouillons</span>
-              <span className="text-base font-bold leading-none mt-1" title={savedBrouillards.length.toString()}>{savedBrouillards.length}</span>
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Brouillons</span>
+              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-warning truncate" title={savedBrouillards.length.toString()}>{savedBrouillards.length}</span>
             </div>
-            <div className="p-1.5 rounded-md bg-warning/10 text-warning">
-              <Archive className="h-3.5 w-3.5" />
+            <div className="p-1 sm:p-1.5 rounded-md bg-warning/10 text-warning shrink-0">
+              <Archive className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
         </Card>
@@ -566,7 +556,7 @@ function SaisieView() {
         </div>
 
         {/* Boutons et Icônes (A droite) */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 self-end sm:self-auto w-full sm:w-auto">
           
           <Popover>
             <PopoverTrigger asChild>

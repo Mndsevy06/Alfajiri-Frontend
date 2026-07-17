@@ -192,7 +192,7 @@ export default function RapprochementPage() {
   };
 
   return (
-    <div className="space-y-3 animate-fade-in -mt-4">
+    <div className="space-y-3 animate-fade-in -mt-2 lg:-mt-4">
       <div className="flex justify-end gap-2 mb-2">
         <div className="flex items-center gap-2">
           <input 

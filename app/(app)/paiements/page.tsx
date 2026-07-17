@@ -22,6 +22,7 @@ import {
   DialogHeader, 
   DialogTitle, 
 } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 import { 
   Select, 
   SelectContent, 
@@ -134,17 +135,9 @@ export default function PaiementsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Gestion des Paiements</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Suivi centralisé des encaissements et décaissements de l'entreprise.
-          </p>
-        </div>
-      </div>
 
       {/* KPIs */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-4 gap-1 sm:gap-4">
         {KPIS.map((kpi, i) => (
           <motion.div
             key={kpi.title}
@@ -153,27 +146,35 @@ export default function PaiementsPage() {
             transition={{ delay: i * 0.1 }}
           >
             <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {kpi.title}
-                </CardTitle>
-                <div className={`p-2 rounded-lg ${
+              <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+                <div className="flex flex-col overflow-hidden w-full">
+                  <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">
+                    {kpi.title}
+                  </span>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1 mt-0.5 sm:mt-1">
+                    <span className={cn("text-[10px] sm:text-base font-bold leading-none truncate", 
+                      kpi.trend === 'up' && kpi.icon !== ArrowUpRight ? 'text-emerald-500' :
+                      kpi.trend === 'down' || kpi.icon === ArrowUpRight ? 'text-rose-500' :
+                      'text-amber-500'
+                    )} title={kpi.value}>
+                      {kpi.value}
+                    </span>
+                    <span className={cn("text-[7px] sm:text-[9px] font-medium truncate hidden sm:block",
+                      kpi.trend === 'up' && kpi.icon !== ArrowUpRight ? 'text-emerald-500/80' :
+                      kpi.trend === 'down' || kpi.icon === ArrowUpRight ? 'text-rose-500/80' :
+                      'text-amber-500/80'
+                    )}>
+                      {kpi.change}
+                    </span>
+                  </div>
+                </div>
+                <div className={cn("p-1 sm:p-1.5 rounded-md shrink-0", 
                   kpi.trend === 'up' && kpi.icon !== ArrowUpRight ? 'bg-emerald-500/10 text-emerald-500' :
                   kpi.trend === 'down' || kpi.icon === ArrowUpRight ? 'bg-rose-500/10 text-rose-500' :
                   'bg-amber-500/10 text-amber-500'
-                }`}>
-                  <kpi.icon className="h-4 w-4" />
+                )}>
+                  <kpi.icon className="h-3 w-3 sm:h-4 sm:w-4" />
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{kpi.value}</div>
-                <p className={`text-xs mt-1 font-medium ${
-                  kpi.trend === 'up' && kpi.icon !== ArrowUpRight ? 'text-emerald-500' :
-                  kpi.trend === 'down' || kpi.icon === ArrowUpRight ? 'text-rose-500' :
-                  'text-amber-500'
-                }`}>
-                  {kpi.change}
-                </p>
               </CardContent>
             </Card>
           </motion.div>

@@ -186,37 +186,37 @@ export default function VentesPage() {
 
   return (
     <div className="space-y-3 animate-fade-in">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-1 sm:gap-2">
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-2.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">CA total (HT)</span>
-              {loading ? <Skeleton className="h-5 w-16 mt-1" /> : <span className="text-base font-bold leading-none mt-1">{formatCurrency(totalHT)}</span>}
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">CA total (HT)</span>
+              {loading ? <Skeleton className="h-4 w-12 sm:h-5 sm:w-16 mt-1" /> : <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-primary truncate" title={formatCurrency(totalHT)}>{formatCurrency(totalHT)}</span>}
             </div>
-            <div className="p-1.5 rounded-md bg-primary/10 text-primary">
-              <DollarSign className="h-3.5 w-3.5" />
+            <div className="p-1 sm:p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
+              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
         </Card>
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-2.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">CA total (TTC)</span>
-              {loading ? <Skeleton className="h-5 w-16 mt-1" /> : <span className="text-base font-bold leading-none mt-1">{formatCurrency(totalTTC)}</span>}
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">CA total (TTC)</span>
+              {loading ? <Skeleton className="h-4 w-12 sm:h-5 sm:w-16 mt-1" /> : <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-chart-2 truncate" title={formatCurrency(totalTTC)}>{formatCurrency(totalTTC)}</span>}
             </div>
-            <div className="p-1.5 rounded-md bg-chart-2/10 text-chart-2">
-              <Receipt className="h-3.5 w-3.5" />
+            <div className="p-1 sm:p-1.5 rounded-md bg-chart-2/10 text-chart-2 shrink-0">
+              <Receipt className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
         </Card>
         <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-2.5 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Impayés</span>
-              {loading ? <Skeleton className="h-5 w-16 mt-1" /> : <span className="text-base font-bold leading-none mt-1 text-destructive">{formatCurrency(impayees)}</span>}
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Impayés</span>
+              {loading ? <Skeleton className="h-4 w-12 sm:h-5 sm:w-16 mt-1" /> : <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-destructive truncate" title={formatCurrency(impayees)}>{formatCurrency(impayees)}</span>}
             </div>
-            <div className="p-1.5 rounded-md bg-destructive/10 text-destructive">
-              <AlertCircle className="h-3.5 w-3.5" />
+            <div className="p-1 sm:p-1.5 rounded-md bg-destructive/10 text-destructive shrink-0">
+              <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
         </Card>
