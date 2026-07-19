@@ -1,4 +1,27 @@
+// ─── Notifications ────────────────────────────────────────────
+export type NotificationType = 'critical' | 'urgent' | 'warning' | 'info';
+
+export type NotificationModule =
+  | 'comptabilite' | 'ventes' | 'paiements' | 'logistique'
+  | 'terrain' | 'rh' | 'fiscalite' | 'rapprochement'
+  | 'immobilisations' | 'cloture' | 'securite';
+
+export type AppNotification = {
+  id: string;
+  titre: string;
+  message: string;
+  type: NotificationType;
+  module: NotificationModule;
+  action_url: string | null;
+  lu: boolean;
+  cree_le: string;       // ISO string
+  time_ago?: string;
+  meta?: Record<string, unknown>;
+};
+
+// ──────────────────────────────────────────────────────────────
 export type Site = 'zambie' | 'lubumbashi' | 'sabri' | 'frontiere';
+
 
 export type SiteInfo = {
   id: Site;

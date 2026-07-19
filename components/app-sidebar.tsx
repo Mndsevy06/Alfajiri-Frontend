@@ -43,6 +43,7 @@ const NAV_ITEMS = [
   { href: '/fiscalite', label: 'Gestion Fiscale', icon: FileSignature, group: 'Fiscalite & Legal', requiredPermission: 'fisc_read' },
   { href: '/etats-financiers', label: 'Etats Financiers OHADA', icon: FileText, group: 'Cloture', requiredPermission: 'etats_financiers_read' },
   { href: '/utilisateurs', label: 'Utilisateurs', icon: Users, group: 'Systeme', requiredPermission: 'users_read' },
+  { href: '/notifications', label: 'Notifications', icon: ScrollText, group: 'Systeme', requiredPermission: 'dashboard_read' },
   { href: '/parametres', label: 'Parametres', icon: Settings, group: 'Systeme', requiredPermission: 'settings_write' },
 ];
 

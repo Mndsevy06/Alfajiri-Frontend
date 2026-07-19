@@ -98,7 +98,13 @@ export default function UtilisateursPage() {
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
         >
-          {activeTab === 'users' ? <UsersView activeTab={activeTab} setActiveTab={setActiveTab} /> : activeTab === 'permissions' ? <PermissionsMatrix /> : <AuditView />}
+          {activeTab === 'users' ? (
+            <UsersView activeTab={activeTab} setActiveTab={setActiveTab} />
+          ) : activeTab === 'permissions' ? (
+            <PermissionsMatrix onBack={() => setActiveTab('users')} />
+          ) : (
+            <AuditView />
+          )}
         </motion.div>
       </AnimatePresence>
     </div>
@@ -108,6 +114,26 @@ export default function UtilisateursPage() {
 // ---------------------------------------------------------------------------
 // PERMISSIONS MATRIX COMPONENT (POWERFUL FRONTEND MOCK)
 // ---------------------------------------------------------------------------
+
+const ROLE_STYLE: Record<string, { bg: string; text: string; border: string; dot: string }> = {
+  'Super Admin': { bg: 'bg-amber-500/15', text: 'text-amber-500', border: 'border-amber-500/30', dot: 'bg-amber-500' },
+  'Chef Comptable': { bg: 'bg-primary/15', text: 'text-primary', border: 'border-primary/30', dot: 'bg-primary' },
+  'Comptable': { bg: 'bg-chart-2/15', text: 'text-chart-2', border: 'border-chart-2/30', dot: 'bg-chart-2' },
+  'Auditeur': { bg: 'bg-purple-500/15', text: 'text-purple-500', border: 'border-purple-500/30', dot: 'bg-purple-500' },
+  'Directeur': { bg: 'bg-sky-500/15', text: 'text-sky-500', border: 'border-sky-500/30', dot: 'bg-sky-500' },
+  'Agent': { bg: 'bg-muted/60', text: 'text-muted-foreground', border: 'border-border/40', dot: 'bg-muted-foreground' },
+};
+
+const MODULE_STYLE: Record<string, { accent: string; bg: string; icon_bg: string }> = {
+  'Pilotage':             { accent: 'text-sky-500',    bg: 'bg-sky-500/8',    icon_bg: 'bg-sky-500/15' },
+  'Comptabilité':         { accent: 'text-primary',    bg: 'bg-primary/8',    icon_bg: 'bg-primary/15' },
+  'Opérations':           { accent: 'text-chart-2',    bg: 'bg-chart-2/8',    icon_bg: 'bg-chart-2/15' },
+  'Ressources Humaines':  { accent: 'text-purple-500', bg: 'bg-purple-500/8', icon_bg: 'bg-purple-500/15' },
+  'Gestion Fiscale':      { accent: 'text-amber-500',  bg: 'bg-amber-500/8',  icon_bg: 'bg-amber-500/15' },
+  'Clôture':              { accent: 'text-rose-500',   bg: 'bg-rose-500/8',   icon_bg: 'bg-rose-500/15' },
+  'Paramètres Système':   { accent: 'text-muted-foreground', bg: 'bg-muted/30', icon_bg: 'bg-muted/50' },
+};
+
 const CustomToggle = ({ checked, onChange, disabled }: { checked: boolean, onChange: (val: boolean) => void, disabled?: boolean }) => (
   <button
     type="button"
@@ -115,14 +141,25 @@ const CustomToggle = ({ checked, onChange, disabled }: { checked: boolean, onCha
     aria-checked={checked}
     disabled={disabled}
     onClick={() => !disabled && onChange(!checked)}
-    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${checked ? 'bg-primary' : 'bg-muted'}`}
+    className={cn(
+      'relative inline-flex h-[22px] w-10 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent',
+      'transition-all duration-300 ease-in-out',
+      'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background',
+      disabled ? 'opacity-40 cursor-not-allowed' : 'hover:opacity-90',
+      checked ? 'bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.4)]' : 'bg-muted hover:bg-muted/80'
+    )}
   >
-    <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${checked ? 'translate-x-4' : 'translate-x-0'}`} />
+    <span className={cn(
+      'pointer-events-none inline-block h-[16px] w-[16px] transform rounded-full shadow-md ring-0',
+      'transition-all duration-300 ease-in-out',
+      checked ? 'translate-x-[18px] bg-white' : 'translate-x-0.5 bg-muted-foreground/50'
+    )} />
   </button>
 );
 
-function PermissionsMatrix() {
+function PermissionsMatrix({ onBack }: { onBack: () => void }) {
   const [isSaving, setIsSaving] = useState(false);
+  const [activeRole, setActiveRole] = useState<string | null>(null);
   
   const PERMISSIONS_DATA = [
     {
@@ -139,7 +176,7 @@ function PermissionsMatrix() {
         { id: 'compta_read', name: 'Consulter le Plan Comptable' },
         { id: 'compta_write', name: 'Modifier le Plan Comptable' },
         { id: 'saisie_create', name: 'Créer une Écriture' },
-        { id: 'saisie_validate', name: 'Valider une Écriture (Brouillon -> Définitif)' },
+        { id: 'saisie_validate', name: 'Valider une Écriture (Brouillon → Définitif)' },
         { id: 'restitutions_read', name: 'Consulter les Restitutions' },
         { id: 'rapprochement_read', name: 'Consulter le Rapprochement Bancaire' },
         { id: 'rapprochement_write', name: 'Effectuer un Rapprochement Bancaire' },
@@ -218,7 +255,6 @@ function PermissionsMatrix() {
         data.forEach((item: any) => {
           fetchedMatrix[item.role] = item.permissions;
         });
-        // Fusionner avec le défaut pour les rôles qui n'ont pas encore été configurés
         setMatrix({ ...defaultMatrix, ...fetchedMatrix });
       }
     } catch (error) {
@@ -253,76 +289,208 @@ function PermissionsMatrix() {
     }
   };
 
+  // Stats
+  const totalPermissions = PERMISSIONS_DATA.reduce((sum, m) => sum + m.actions.length, 0);
+  const totalActive = ROLES.reduce((sum, role) => {
+    return sum + PERMISSIONS_DATA.reduce((ms, m) => {
+      return ms + m.actions.filter(a => matrix[role]?.[a.id]).length;
+    }, 0);
+  }, 0);
+
+  const displayRoles = activeRole ? [activeRole] : ROLES;
+
   return (
-    <GlassCard glow={false} className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
-      <CardHeader className="flex flex-row items-center justify-between pb-4">
-        <div>
-          <CardTitle>Configuration des Rôles</CardTitle>
-          <CardDescription>
-            Définissez précisément quelles actions sont autorisées pour chaque rôle. 
-            Les modifications prendront effet lors de la prochaine connexion de l'utilisateur.
-          </CardDescription>
+    <div className="space-y-3 animate-fade-in">
+      {/* Action bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1">
+        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50 shrink-0">
+          <button
+            onClick={onBack}
+            className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all text-muted-foreground hover:text-foreground')}
+          >
+            <Users className="w-3.5 h-3.5" /> Utilisateurs
+          </button>
+          <button className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all bg-blue-600 shadow-sm text-white')}>
+            <ShieldCheck className="w-3.5 h-3.5" /> Permissions
+          </button>
+          <button
+            onClick={onBack}
+            className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all text-muted-foreground hover:text-foreground')}
+          >
+            <ScrollText className="w-3.5 h-3.5" /> Audit
+          </button>
         </div>
-        <NeonButton onClick={handleSave} disabled={isSaving} className="shadow-lg hover:shadow-primary/20 transition-all">
-          <Save className="w-4 h-4 mr-2" />
-          {isSaving ? 'Enregistrement...' : 'Sauvegarder'}
-        </NeonButton>
-      </CardHeader>
-      <CardContent className="p-0 overflow-x-auto scrollbar-thin">
-        <Table className="min-w-[1000px]">
-          <TableHeader>
-            <TableRow className="bg-muted/50 border-white/5">
-              <TableHead className="w-[300px] font-bold text-foreground">Ressource / Action</TableHead>
-              {ROLES.map(role => (
-                <TableHead key={role} className="text-center font-bold">
-                  <div className="flex flex-col items-center justify-center gap-1">
-                    <Badge variant={role === 'Super Admin' ? 'default' : 'outline'} className={role === 'Super Admin' ? 'bg-primary/20 text-primary border-none' : 'border-white/10'}>
-                      {role}
-                    </Badge>
-                  </div>
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {PERMISSIONS_DATA.map((module, mIdx) => (
-              <React.Fragment key={module.module}>
-                <TableRow className="bg-muted/30 hover:bg-muted/30 border-t-2 border-border">
-                  <TableCell colSpan={ROLES.length + 1} className="py-2">
-                    <div className="flex items-center gap-2 font-bold text-primary">
-                      <module.icon className="w-4 h-4" />
-                      {module.module}
-                    </div>
-                  </TableCell>
-                </TableRow>
-                {module.actions.map((action) => (
-                  <TableRow key={action.id} className="hover:bg-white/5 transition-colors border-white/5">
-                    <TableCell className="pl-8 text-sm font-medium text-muted-foreground">
-                      {action.name}
-                    </TableCell>
-                    {ROLES.map(role => (
-                      <TableCell key={`${role}-${action.id}`} className="text-center">
-                        <CustomToggle 
-                          checked={matrix[role]?.[action.id] || false}
-                          onChange={(val) => handleToggle(role, action.id, val)}
-                          disabled={role === 'Super Admin'} // Super Admin always has all permissions
-                        />
-                      </TableCell>
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+            <span className="text-[11px] font-semibold text-amber-500 uppercase tracking-wider">Super Admin = accès total</span>
+          </div>
+          <NeonButton onClick={handleSave} disabled={isSaving} className="h-8 px-3 shadow-lg hover:shadow-primary/20 transition-all text-xs">
+            <Save className="w-3.5 h-3.5 mr-1.5" />
+            {isSaving ? 'Sauvegarde...' : 'Sauvegarder'}
+          </NeonButton>
+        </div>
+      </div>
+
+      {/* Mini stats */}
+      <div className="grid grid-cols-3 gap-1 sm:gap-2">
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Rôles Configurés</span>
+              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-primary truncate">{ROLES.length}</span>
+            </div>
+            <div className="p-1 sm:p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
+              <ShieldCheck className="h-3 w-3 sm:h-4 sm:w-4" />
+            </div>
+          </CardContent>
+        </GlassCard>
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Permissions totales</span>
+              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-chart-2 truncate">{totalActive}<span className="text-muted-foreground font-normal">/{totalPermissions * ROLES.length}</span></span>
+            </div>
+            <div className="p-1 sm:p-1.5 rounded-md bg-chart-2/10 text-chart-2 shrink-0">
+              <ShieldAlert className="h-3 w-3 sm:h-4 sm:w-4" />
+            </div>
+          </CardContent>
+        </GlassCard>
+        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Modules couverts</span>
+              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-purple-500 truncate">{PERMISSIONS_DATA.length}</span>
+            </div>
+            <div className="p-1 sm:p-1.5 rounded-md bg-purple-500/10 text-purple-500 shrink-0">
+              <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
+            </div>
+          </CardContent>
+        </GlassCard>
+      </div>
+
+      {/* Role filter pills */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider mr-1">Filtrer :</span>
+        <button
+          onClick={() => setActiveRole(null)}
+          className={cn(
+            'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
+            activeRole === null
+              ? 'bg-foreground text-background border-foreground'
+              : 'bg-muted/50 text-muted-foreground border-border/50 hover:border-foreground/30'
+          )}
+        >
+          Tous les rôles
+        </button>
+        {ROLES.map(role => {
+          const s = ROLE_STYLE[role] || ROLE_STYLE['Agent'];
+          return (
+            <button
+              key={role}
+              onClick={() => setActiveRole(activeRole === role ? null : role)}
+              className={cn(
+                'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
+                activeRole === role
+                  ? `${s.bg} ${s.text} ${s.border}`
+                  : 'bg-muted/30 text-muted-foreground border-border/40 hover:border-border'
+              )}
+            >
+              <span className={cn('h-1.5 w-1.5 rounded-full', s.dot)} />
+              {role}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Permissions Table */}
+      <GlassCard glow={false} className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
+        <CardContent className="p-0 overflow-x-auto scrollbar-thin">
+          <table className="w-full text-sm" style={{ minWidth: `${displayRoles.length * 120 + 300}px` }}>
+            <thead>
+              <tr className="border-b border-border/50 bg-muted/30">
+                <th className="text-left py-3.5 px-4 font-semibold text-muted-foreground w-[300px]">
+                  Ressource / Action
+                </th>
+                {displayRoles.map(role => {
+                  const s = ROLE_STYLE[role] || ROLE_STYLE['Agent'];
+                  const permCount = PERMISSIONS_DATA.reduce((sum, m) => sum + m.actions.filter(a => matrix[role]?.[a.id]).length, 0);
+                  return (
+                    <th key={role} className="text-center py-3 px-2 font-medium min-w-[110px]">
+                      <div className="flex flex-col items-center gap-1.5">
+                        <div className={cn('flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border', s.bg, s.text, s.border)}>
+                          <span className={cn('h-1.5 w-1.5 rounded-full', s.dot)} />
+                          {role}
+                        </div>
+                        <span className="text-[10px] text-muted-foreground font-normal">
+                          {permCount}/{totalPermissions}
+                        </span>
+                        {role === 'Super Admin' && (
+                          <span className="text-[9px] uppercase tracking-widest text-amber-500 font-bold">Verrouillé</span>
+                        )}
+                      </div>
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {PERMISSIONS_DATA.map((module) => {
+                const ms = MODULE_STYLE[module.module] || MODULE_STYLE['Paramètres Système'];
+                return (
+                  <React.Fragment key={module.module}>
+                    {/* Module header row */}
+                    <tr className={cn('border-t-2 border-border/60', ms.bg)}>
+                      <td colSpan={displayRoles.length + 1} className="py-2.5 px-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className={cn('flex items-center justify-center h-6 w-6 rounded-md', ms.icon_bg)}>
+                            <module.icon className={cn('w-3.5 h-3.5', ms.accent)} />
+                          </div>
+                          <span className={cn('font-bold text-xs uppercase tracking-wider', ms.accent)}>{module.module}</span>
+                          <span className="text-[10px] text-muted-foreground ml-1">· {module.actions.length} action{module.actions.length > 1 ? 's' : ''}</span>
+                        </div>
+                      </td>
+                    </tr>
+                    {/* Action rows */}
+                    {module.actions.map((action, aIdx) => (
+                      <tr
+                        key={action.id}
+                        className={cn(
+                          'border-b border-border/20 transition-colors',
+                          aIdx % 2 === 0 ? 'hover:bg-muted/30' : 'bg-muted/10 hover:bg-muted/30'
+                        )}
+                      >
+                        <td className="pl-12 pr-4 py-3 text-sm font-medium text-muted-foreground">
+                          {action.name}
+                        </td>
+                        {displayRoles.map(role => (
+                          <td key={`${role}-${action.id}`} className="text-center py-3 px-2">
+                            <div className="flex items-center justify-center">
+                              <CustomToggle
+                                checked={matrix[role]?.[action.id] || false}
+                                onChange={(val) => handleToggle(role, action.id, val)}
+                                disabled={role === 'Super Admin'}
+                              />
+                            </div>
+                          </td>
+                        ))}
+                      </tr>
                     ))}
-                  </TableRow>
-                ))}
-              </React.Fragment>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </GlassCard>
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </CardContent>
+      </GlassCard>
+    </div>
   );
 }
 
 // ---------------------------------------------------------------------------
 // USERS VIEW COMPONENT (ORIGINAL)
 // ---------------------------------------------------------------------------
+
 function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissions' | 'audit', setActiveTab: (t: 'users' | 'permissions' | 'audit') => void }) {
   const [users, setUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');

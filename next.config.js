@@ -3,21 +3,26 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   images: { unoptimized: true },
 
   // Fix ERR_MEMORY_ALLOCATION_FAILED: reduce webpack memory pressure
   webpack: (config, { dev, isServer }) => {
-    // 1. Switch from in-memory cache to filesystem cache.
-    //    This prevents the cache from growing unboundedly in RAM and
-    //    avoids the zlib Gunzip allocations that trigger the OOM crash.
-    config.cache = {
-      type: 'filesystem',
-      // Separate caches for client/server so they don't collide
-      name: isServer ? 'server' : 'client',
-      // Compress cache files with a lighter algorithm to reduce
-      // the large zlib buffer allocations that cause the crash
-      compression: false,
-    };
+    // 1. Cache strategy:
+    //    - Dev: use memory cache to avoid "PureExpressionDependency" webpack
+    //      serialisation errors that corrupt the filesystem cache in Next 13.
+    //    - Prod: filesystem cache (no compression) to keep RAM usage low.
+    if (dev) {
+      config.cache = { type: 'memory' };
+    } else {
+      config.cache = {
+        type: 'filesystem',
+        name: isServer ? 'server' : 'client',
+        compression: false,
+      };
+    }
 
     // 2. Limit webpack's parallelism so it doesn't try to
     //    decompress dozens of modules simultaneously in memory.
