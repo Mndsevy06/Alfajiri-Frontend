@@ -58,10 +58,11 @@ export default function TerrainPage() {
   const [montant, setMontant] = useState('');
   const [nature, setNature] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [notes, setNotes] = useState('');
   const [historiqueOpen, setHistoriqueOpen] = useState(false);
   const [historique, setHistorique] = useState<
-    { id: string; typeOp: 'depense' | 'recette'; montant: number; nature: string; date: string; photo: boolean; notes?: string }[]
+    { id: string; typeOp: 'depense' | 'recette'; montant: number; nature: string; date: string; photo: boolean; fichier?: string; notes?: string }[]
   >([]);
 
   useEffect(() => {
@@ -76,6 +77,7 @@ export default function TerrainPage() {
           nature: op.nature,
           date: op.date_creation,
           photo: op.has_photo,
+          fichier: op.fichier,
           notes: op.notes
         }));
         setHistorique(mapped);
@@ -93,9 +95,17 @@ export default function TerrainPage() {
     const file = e.target.files?.[0];
     if (file) {
       setPhoto(URL.createObjectURL(file));
+      setPhotoFile(file);
       toast.success('Reçu attaché', { description: file.name });
     }
   };
+
+  const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
 
   const handleSubmit = async () => {
     const m = parseFloat(montant);
@@ -110,12 +120,23 @@ export default function TerrainPage() {
     const natureLabel = typeOp === 'depense' ? (NATURES_DEPENSE.find((n) => n.value === nature)?.label || nature) : nature;
     
     try {
+      let fichier_base64 = null;
+      let fichier_nom = null;
+      if (photoFile) {
+          try {
+              fichier_base64 = await toBase64(photoFile);
+              fichier_nom = photoFile.name;
+          } catch(e){}
+      }
+
       const payload = {
         type_op: typeOp,
         montant: m,
         nature: natureLabel,
-        has_photo: !!photo,
-        notes: notes || ""
+        has_photo: !!photoFile,
+        notes: notes || "",
+        fichier_base64,
+        fichier_nom
       };
       
       const savedOp = await fetchWithAuth('/terrain/operations/', {
@@ -130,6 +151,7 @@ export default function TerrainPage() {
         nature: savedOp.nature,
         date: savedOp.date_creation,
         photo: savedOp.has_photo,
+        fichier: savedOp.fichier,
         notes: savedOp.notes
       };
 
@@ -141,6 +163,7 @@ export default function TerrainPage() {
       setMontant('');
       setNature('');
       setPhoto(null);
+      setPhotoFile(null);
       setNotes('');
     } catch (error) {
       toast.error("Erreur lors de l'envoi de l'opération");
@@ -149,14 +172,7 @@ export default function TerrainPage() {
 
   return (
     <div className="space-y-6 animate-fade-in pb-20 max-w-lg mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground/90">Saisie Terrain</h1>
-          <p className="text-xs text-muted-foreground mt-0.5 font-medium">
-            Opérateurs en déplacement
-          </p>
-        </div>
-        
+      <div className="flex items-center justify-end">
         <Dialog open={historiqueOpen} onOpenChange={setHistoriqueOpen}>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">
@@ -188,7 +204,22 @@ export default function TerrainPage() {
                       {h.typeOp === 'recette' ? '+' : '-'}{formatCurrency(h.montant)}
                     </p>
                     {h.photo && (
-                      <Badge variant="secondary" className="text-[10px] mt-1">
+                      <Badge 
+                        variant="secondary" 
+                        className={`text-[10px] mt-1 ${h.fichier ? 'cursor-pointer hover:bg-secondary/80' : ''}`}
+                        onClick={() => { 
+                          if(h.fichier) {
+                            let url = h.fichier;
+                            if (url.startsWith('/')) {
+                              const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace('/api', '');
+                              url = baseUrl + url;
+                            }
+                            window.open(url, '_blank');
+                          } else {
+                            toast.info("Le fichier n'est pas disponible.");
+                          }
+                        }}
+                      >
                         <Camera className="h-3 w-3 mr-1" />
                         Reçu
                       </Badge>
@@ -204,7 +235,7 @@ export default function TerrainPage() {
         </Dialog>
       </div>
 
-      <Card className="border-border/50 shadow-md">
+      <Card className="border-[var(--border-default)]/50 shadow-md">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Smartphone className="h-5 w-5 text-primary" />
@@ -292,7 +323,7 @@ export default function TerrainPage() {
                     variant="destructive"
                     size="icon"
                     className="absolute top-2 right-2 h-8 w-8"
-                    onClick={() => setPhoto(null)}
+                    onClick={() => { setPhoto(null); setPhotoFile(null); }}
                   >
                     <X className="h-4 w-4" />
                   </Button>

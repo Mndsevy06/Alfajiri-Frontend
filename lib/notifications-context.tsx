@@ -12,6 +12,7 @@ import {
 import { toast } from 'sonner';
 import { fetchWithAuth } from './api';
 import type { AppNotification } from './types';
+import { useEntite } from './entite-context';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface NotificationsContextValue {
@@ -30,6 +31,7 @@ const NotificationsContext = createContext<NotificationsContextValue | null>(nul
 
 // ─── Provider ──────────────────────────────────────────────────────────────────
 export function NotificationsProvider({ children }: { children: ReactNode }) {
+  const { activeEntite } = useEntite();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
@@ -54,7 +56,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [activeEntite?.id]);
 
   // ─ WebSocket ───────────────────────────────────────────────────────────────
   const connect = useCallback(() => {
@@ -65,7 +67,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
     const wsBase = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000')
       .replace(/^http/, 'ws');
-    const ws = new WebSocket(`${wsBase}/ws/notifications/?token=${token}`);
+    const dossierIdParam = activeEntite?.id ? `&dossier_id=${activeEntite.id}` : '';
+    const ws = new WebSocket(`${wsBase}/ws/notifications/?token=${token}${dossierIdParam}`);
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -120,8 +123,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     ws.onclose = (evt) => {
       setIsConnected(false);
       wsRef.current = null;
-      // Reconnexion automatique (backoff exponentiel) sauf déconnexion auth
-      if (evt.code !== 4001 && retryCount.current < MAX_RETRIES) {
+      // Reconnexion automatique (backoff exponentiel) sauf déconnexion auth ou démontage (1000)
+      if (evt.code !== 4001 && evt.code !== 1000 && retryCount.current < MAX_RETRIES) {
         const delay = Math.min(BASE_RETRY_MS * 2 ** retryCount.current, 30000);
         retryCount.current += 1;
         retryRef.current = setTimeout(connect, delay);
@@ -129,7 +132,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     };
 
     ws.onerror = () => ws.close();
-  }, []);
+  }, [activeEntite?.id]);
 
   useEffect(() => {
     refresh();

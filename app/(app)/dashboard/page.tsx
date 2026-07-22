@@ -139,7 +139,8 @@ export default function DashboardPage() {
         }
       };
 
-      ws.onclose = () => {
+      ws.onclose = (evt) => {
+        if (evt.code === 1000) return; // Ne pas reconnecter si fermé volontairement (unmount)
         console.log("WebSocket disconnected, retrying in 3s...");
         reconnectTimeout = setTimeout(connect, 3000);
       };
@@ -149,7 +150,7 @@ export default function DashboardPage() {
 
     return () => {
       clearTimeout(reconnectTimeout);
-      if (ws) ws.close();
+      if (ws) ws.close(1000);
     };
   }, [activeEntite?.id]);
 
@@ -223,34 +224,40 @@ export default function DashboardPage() {
             </span>
           </div>
           <div className="p-5 sm:p-6 flex-1 min-h-[320px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={cashflowData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorEntrees" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.6} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorSorties" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.6} />
-                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
-                  </linearGradient>
-                  {/* Subtle drop shadow for line */}
-                  <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="4" stdDeviation="5" floodColor="#10b981" floodOpacity="0.3" />
-                  </filter>
-                  <filter id="glowRed" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="4" stdDeviation="5" floodColor="#f43f5e" floodOpacity="0.3" />
-                  </filter>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} opacity={0.3} />
-                <XAxis dataKey="mois" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} dy={10} fontWeight={600} />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} dx={-10} />
-                <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--muted))', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '13px', paddingTop: '20px', fontWeight: 600 }} />
-                <Area type="monotone" dataKey="entrees" name="Entrées" stroke="#10b981" strokeWidth={4} fill="url(#colorEntrees)" filter="url(#glow)" activeDot={{ r: 8, strokeWidth: 0, fill: '#10b981', className: 'drop-shadow-lg' }} />
-                <Area type="monotone" dataKey="sorties" name="Sorties" stroke="#f43f5e" strokeWidth={4} fill="url(#colorSorties)" filter="url(#glowRed)" activeDot={{ r: 8, strokeWidth: 0, fill: '#f43f5e', className: 'drop-shadow-lg' }} />
-              </AreaChart>
-            </ResponsiveContainer>
+            {cashflowData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={cashflowData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorEntrees" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.6} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorSorties" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.6} />
+                      <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                    </linearGradient>
+                    {/* Subtle drop shadow for line */}
+                    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="4" stdDeviation="5" floodColor="#10b981" floodOpacity="0.3" />
+                    </filter>
+                    <filter id="glowRed" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="4" stdDeviation="5" floodColor="#f43f5e" floodOpacity="0.3" />
+                    </filter>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} opacity={0.3} />
+                  <XAxis dataKey="mois" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} dy={10} fontWeight={600} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} dx={-10} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--muted))', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '13px', paddingTop: '20px', fontWeight: 600 }} />
+                  <Area type="monotone" dataKey="entrees" name="Entrées" stroke="#10b981" strokeWidth={4} fill="url(#colorEntrees)" filter="url(#glow)" activeDot={{ r: 8, strokeWidth: 0, fill: '#10b981', className: 'drop-shadow-lg' }} />
+                  <Area type="monotone" dataKey="sorties" name="Sorties" stroke="#f43f5e" strokeWidth={4} fill="url(#colorSorties)" filter="url(#glowRed)" activeDot={{ r: 8, strokeWidth: 0, fill: '#f43f5e', className: 'drop-shadow-lg' }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground/60">
+                Aucune donnée disponible
+              </div>
+            )}
           </div>
         </GlassCard>
 
@@ -270,27 +277,33 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="p-5 sm:p-6 flex-1 min-h-[320px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={balanceAgeeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} barSize={32}>
-                <defs>
-                  <linearGradient id="gradClients" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#06b6d4" stopOpacity={1} />
-                    <stop offset="100%" stopColor="#0891b2" stopOpacity={0.8} />
-                  </linearGradient>
-                  <linearGradient id="gradFournisseurs" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#a855f7" stopOpacity={1} />
-                    <stop offset="100%" stopColor="#9333ea" stopOpacity={0.8} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} opacity={0.3} />
-                <XAxis dataKey="tranche" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} dy={10} fontWeight={600} />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} dx={-10} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }} />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '13px', paddingTop: '20px', fontWeight: 600 }} />
-                <Bar dataKey="clients" name="Créances Clients" stackId="a" fill="url(#gradClients)" radius={[0, 0, 4, 4]} />
-                <Bar dataKey="fournisseurs" name="Dettes Fournisseurs" stackId="a" fill="url(#gradFournisseurs)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {balanceAgeeData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={balanceAgeeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} barSize={32}>
+                  <defs>
+                    <linearGradient id="gradClients" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#06b6d4" stopOpacity={1} />
+                      <stop offset="100%" stopColor="#0891b2" stopOpacity={0.8} />
+                    </linearGradient>
+                    <linearGradient id="gradFournisseurs" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#a855f7" stopOpacity={1} />
+                      <stop offset="100%" stopColor="#9333ea" stopOpacity={0.8} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} opacity={0.3} />
+                  <XAxis dataKey="tranche" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} dy={10} fontWeight={600} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} dx={-10} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }} />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '13px', paddingTop: '20px', fontWeight: 600 }} />
+                  <Bar dataKey="clients" name="Créances Clients" stackId="a" fill="url(#gradClients)" radius={[0, 0, 4, 4]} />
+                  <Bar dataKey="fournisseurs" name="Dettes Fournisseurs" stackId="a" fill="url(#gradFournisseurs)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground/60">
+                Aucune donnée disponible
+              </div>
+            )}
           </div>
         </GlassCard>
       </div>
@@ -308,31 +321,37 @@ export default function DashboardPage() {
             <p className="text-sm text-muted-foreground mt-1">CA vs Coûts par expédition</p>
           </div>
           <div className="p-5 sm:p-6 flex-1 min-h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={rentabiliteData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="gradCA" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.8} />
-                    <stop offset="100%" stopColor="#2563eb" stopOpacity={0.6} />
-                  </linearGradient>
-                  <linearGradient id="gradCouts" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.8} />
-                    <stop offset="100%" stopColor="#e11d48" stopOpacity={0.6} />
-                  </linearGradient>
-                  <filter id="glowMarge" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#10b981" floodOpacity="0.5" />
-                  </filter>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} opacity={0.3} />
-                <XAxis dataKey="voyage" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} dy={10} fontWeight={600} />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} dx={-10} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }} />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '13px', paddingTop: '20px', fontWeight: 600 }} />
-                <Bar dataKey="ca" name="CA" fill="url(#gradCA)" radius={[4, 4, 0, 0]} maxBarSize={20} />
-                <Bar dataKey="couts" name="Coûts" fill="url(#gradCouts)" radius={[4, 4, 0, 0]} maxBarSize={20} />
-                <Line type="monotone" dataKey="marge" name="Marge" stroke="#10b981" strokeWidth={3} filter="url(#glowMarge)" dot={{ r: 4, strokeWidth: 2, fill: '#0a0a14' }} activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981' }} />
-              </ComposedChart>
-            </ResponsiveContainer>
+            {rentabiliteData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={rentabiliteData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="gradCA" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.8} />
+                      <stop offset="100%" stopColor="#2563eb" stopOpacity={0.6} />
+                    </linearGradient>
+                    <linearGradient id="gradCouts" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.8} />
+                      <stop offset="100%" stopColor="#e11d48" stopOpacity={0.6} />
+                    </linearGradient>
+                    <filter id="glowMarge" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#10b981" floodOpacity="0.5" />
+                    </filter>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} opacity={0.3} />
+                  <XAxis dataKey="voyage" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} dy={10} fontWeight={600} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} dx={-10} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }} />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '13px', paddingTop: '20px', fontWeight: 600 }} />
+                  <Bar dataKey="ca" name="CA" fill="url(#gradCA)" radius={[4, 4, 0, 0]} maxBarSize={20} />
+                  <Bar dataKey="couts" name="Coûts" fill="url(#gradCouts)" radius={[4, 4, 0, 0]} maxBarSize={20} />
+                  <Line type="monotone" dataKey="marge" name="Marge" stroke="#10b981" strokeWidth={3} filter="url(#glowMarge)" dot={{ r: 4, strokeWidth: 2, fill: '#0a0a14' }} activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981' }} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground/60">
+                Aucune donnée disponible
+              </div>
+            )}
           </div>
         </GlassCard>
 
@@ -347,43 +366,51 @@ export default function DashboardPage() {
           </div>
           <div className="p-5 sm:p-6 flex-1 flex flex-col items-center justify-center min-h-[300px]">
             <div className="w-full h-[220px] relative">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <defs>
-                    {chargesData.map((entry, index) => (
-                      <linearGradient key={`gradPie-${index}`} id={`pieGrad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={entry.color} stopOpacity={1} />
-                        <stop offset="100%" stopColor={entry.color} stopOpacity={0.6} />
-                      </linearGradient>
-                    ))}
-                    <filter id="shadowPie">
-                      <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#000" floodOpacity="0.4" />
-                    </filter>
-                  </defs>
-                  <Pie 
-                    data={chargesData} 
-                    cx="50%" 
-                    cy="50%" 
-                    innerRadius={65} 
-                    outerRadius={95} 
-                    paddingAngle={6} 
-                    dataKey="value" 
-                    stroke="none" 
-                    cornerRadius={8}
-                  >
-                    {chargesData.map((entry, i) => (
-                      <Cell key={i} fill={`url(#pieGrad-${i})`} filter="url(#shadowPie)" className="hover:opacity-80 transition-opacity outline-none" />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none flex-col">
-                <span className="text-3xl font-black text-foreground drop-shadow-md">
-                  {(chargesData.reduce((acc, curr) => acc + curr.value, 0) / 1000).toFixed(0)}k
-                </span>
-                <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">Total</span>
-              </div>
+              {chargesData.length > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <defs>
+                        {chargesData.map((entry, index) => (
+                          <linearGradient key={`gradPie-${index}`} id={`pieGrad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={entry.color} stopOpacity={1} />
+                            <stop offset="100%" stopColor={entry.color} stopOpacity={0.6} />
+                          </linearGradient>
+                        ))}
+                        <filter id="shadowPie">
+                          <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#000" floodOpacity="0.4" />
+                        </filter>
+                      </defs>
+                      <Pie 
+                        data={chargesData} 
+                        cx="50%" 
+                        cy="50%" 
+                        innerRadius={65} 
+                        outerRadius={95} 
+                        paddingAngle={6} 
+                        dataKey="value" 
+                        stroke="none" 
+                        cornerRadius={8}
+                      >
+                        {chargesData.map((entry, i) => (
+                          <Cell key={i} fill={`url(#pieGrad-${i})`} filter="url(#shadowPie)" className="hover:opacity-80 transition-opacity outline-none" />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none flex-col">
+                    <span className="text-3xl font-black text-foreground drop-shadow-md">
+                      {(chargesData.reduce((acc, curr) => acc + curr.value, 0) / 1000).toFixed(0)}k
+                    </span>
+                    <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">Total</span>
+                  </div>
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground/60">
+                  Aucune donnée disponible
+                </div>
+              )}
             </div>
             <div className="w-full mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2">
               {chargesData.slice(0, 4).map((s, i) => (
@@ -407,23 +434,29 @@ export default function DashboardPage() {
             <p className="text-sm text-muted-foreground mt-1">Indice de performance globale</p>
           </div>
           <div className="p-5 sm:p-6 flex-1 min-h-[300px] relative z-10">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart cx="50%" cy="50%" outerRadius="75%" data={performanceData}>
-                <PolarGrid stroke="hsl(var(--border))" strokeOpacity={0.5} />
-                <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 600 }} />
-                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                <Radar
-                  name="Performance"
-                  dataKey="value"
-                  stroke="#10b981"
-                  strokeWidth={3}
-                  fill="#10b981"
-                  fillOpacity={0.25}
-                  className="drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]"
-                />
-                <Tooltip content={<RadarTooltip />} />
-              </RadarChart>
-            </ResponsiveContainer>
+            {performanceData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart cx="50%" cy="50%" outerRadius="75%" data={performanceData}>
+                  <PolarGrid stroke="hsl(var(--border))" strokeOpacity={0.5} />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 600 }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                  <Radar
+                    name="Performance"
+                    dataKey="value"
+                    stroke="#10b981"
+                    strokeWidth={3}
+                    fill="#10b981"
+                    fillOpacity={0.25}
+                    className="drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]"
+                  />
+                  <Tooltip content={<RadarTooltip />} />
+                </RadarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground/60">
+                Aucune donnée disponible
+              </div>
+            )}
           </div>
         </GlassCard>
       </div>
@@ -441,30 +474,36 @@ export default function DashboardPage() {
             <p className="text-sm text-muted-foreground mt-1">Évolution nette</p>
           </div>
           <div className="p-5 sm:p-6 flex-1 min-h-[350px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={cashflowData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                <defs>
-                  {cashflowData.map((_, index) => (
-                    <linearGradient key={`barGrad-${index}`} id={`barGrad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={COLORS[index % COLORS.length]} stopOpacity={1} />
-                      <stop offset="100%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.4} />
-                    </linearGradient>
-                  ))}
-                  <filter id="shadowBar">
-                    <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#000" floodOpacity="0.3" />
-                  </filter>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} opacity={0.3} />
-                <XAxis dataKey="mois" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} dy={10} fontWeight={600} />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }} />
-                <Bar dataKey="solde" name="Marge Nette" radius={[6, 6, 0, 0]} maxBarSize={35}>
-                  {cashflowData.map((_, i) => (
-                    <Cell key={i} fill={`url(#barGrad-${i})`} filter="url(#shadowBar)" className="hover:opacity-80 transition-opacity cursor-pointer" />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            {cashflowData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={cashflowData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                  <defs>
+                    {cashflowData.map((_, index) => (
+                      <linearGradient key={`barGrad-${index}`} id={`barGrad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={COLORS[index % COLORS.length]} stopOpacity={1} />
+                        <stop offset="100%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.4} />
+                      </linearGradient>
+                    ))}
+                    <filter id="shadowBar">
+                      <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#000" floodOpacity="0.3" />
+                    </filter>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} opacity={0.3} />
+                  <XAxis dataKey="mois" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} dy={10} fontWeight={600} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }} />
+                  <Bar dataKey="solde" name="Marge Nette" radius={[6, 6, 0, 0]} maxBarSize={35}>
+                    {cashflowData.map((_, i) => (
+                      <Cell key={i} fill={`url(#barGrad-${i})`} filter="url(#shadowBar)" className="hover:opacity-80 transition-opacity cursor-pointer" />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground/60">
+                Aucune donnée disponible
+              </div>
+            )}
           </div>
         </GlassCard>
 

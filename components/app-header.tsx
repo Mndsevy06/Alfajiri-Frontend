@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import {
-  Menu, Search, Bell, ChevronDown, Building2, Check, LogOut,
+  Search, Bell, ChevronDown, Building2, Check, LogOut,
   User, Settings, AlertTriangle, Info, XCircle, CheckCircle2,
   Plus, Wifi, WifiOff, Trash2, ExternalLink, CheckCheck,
   Zap, ShieldAlert, TriangleAlert, CircleCheck,
+  PanelLeftOpen, RefreshCw, Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -18,12 +19,31 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { fetchWithAuth } from '@/lib/api';
-import { ProfileEditModal } from '@/components/profile-edit-modal';
 import { useEntite } from '@/lib/entite-context';
 import { useNotifications } from '@/lib/notifications-context';
 import type { AppNotification, NotificationType } from '@/lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
+import { fetchWithAuth } from '@/lib/api';
+
+// ─── Page title mapping ────────────────────────────────────────────────────────
+const PAGE_TITLES: Record<string, string> = {
+  '/dashboard': 'Tableau de bord',
+  '/plan-comptable': 'Plan Comptable',
+  '/saisie': 'Saisie Comptable',
+  '/restitutions': 'Restitutions',
+  '/rapprochement': 'Rapprochement Bancaire',
+  '/terrain': 'Saisie Terrain',
+  '/ventes': 'Ventes & Facturation',
+  '/logistique': 'Suivi Logistique',
+  '/paiements': 'Gestion des Paiements',
+  '/immobilisations': 'Immobilisations',
+  '/rh': 'Ressources Humaines',
+  '/fiscalite': 'Gestion Fiscale',
+  '/etats-financiers': 'États Financiers OHADA',
+  '/utilisateurs': 'Utilisateurs',
+  '/notifications': 'Notifications',
+  '/parametres': 'Paramètres',
+};
 
 // ─── Helpers visuels ───────────────────────────────────────────────────────────
 const TYPE_CONFIG: Record<NotificationType, {
@@ -101,8 +121,8 @@ function NotifItem({
       exit={{ opacity: 0, x: 40 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        'group flex items-start gap-3 px-3 py-3 border-b border-border last:border-0',
-        'hover:bg-muted/40 cursor-pointer transition-colors relative',
+        'group flex items-start gap-3 px-3 py-3 border-b border-[var(--border-default)] last:border-0',
+        'hover:bg-[var(--bg-secondary)] cursor-pointer transition-colors relative',
         !notif.lu && 'bg-primary/[0.04]',
       )}
       onClick={() => { if (!notif.lu) onRead(notif.id); }}
@@ -160,33 +180,28 @@ function NotifItem({
 // ─── AppHeader ─────────────────────────────────────────────────────────────────
 export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
   const router = useRouter();
-  const { entites, activeEntite, setActiveEntite } = useEntite();
+  const pathname = usePathname();
+  const { entites, activeEntite, setActiveEntite, isLoading: entitesLoading, error: entitesError, reload: reloadEntites } = useEntite();
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        const data = await fetchWithAuth('/users/me/');
+        setUserRole(data.role || null);
+      } catch (err) {
+        console.error('Header failed to fetch user permissions');
+      }
+    };
+    fetchMe();
+  }, []);
   const { notifications, unreadCount, isConnected, markRead, markAllRead, deleteNotif } = useNotifications();
 
-  const [currentUserData, setCurrentUserData] = useState<any>(null);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [filterType, setFilterType] = useState<NotificationType | 'all'>('all');
   const [open, setOpen] = useState(false);
 
-  const fetchUser = async () => {
-    try {
-      const user = await fetchWithAuth('/users/me/');
-      setCurrentUserData(user);
-    } catch (e) {
-      console.error('Failed to fetch user profile', e);
-    }
-  };
-
-  useEffect(() => { fetchUser(); }, []);
-
-  const getAvatarUrl = (user: any) => {
-    if (user?.photo_profil) {
-      return user.photo_profil.startsWith('http')
-        ? user.photo_profil
-        : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000'}${user.photo_profil.startsWith('/') ? '' : '/'}${user.photo_profil}`;
-    }
-    return user?.avatar || '';
-  };
+  // Get current page title
+  const pageTitle = PAGE_TITLES[pathname] || 'FinERP';
 
   const filteredNotifs = filterType === 'all'
     ? notifications
@@ -203,54 +218,104 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
   ];
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-white dark:bg-background/80 dark:backdrop-blur-md border-b border-border flex items-center px-4 lg:px-6 gap-3">
-      <Button variant="ghost" size="icon" onClick={onMenuClick} className="lg:hidden">
-        <Menu className="h-5 w-5" />
-      </Button>
+    <header className="sticky top-0 z-30 flex-shrink-0 flex h-14 sm:h-16 items-center justify-between bg-[var(--bg-primary)]/95 backdrop-blur-sm border-b border-[var(--border-default)] px-3 sm:px-4 lg:px-8">
+      {/* Left: menu button + page title */}
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <button
+          type="button"
+          onClick={onMenuClick}
+          title="Ouvrir le menu"
+          aria-label="Ouvrir le menu"
+          className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg border border-[var(--border-default)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] lg:hidden flex-shrink-0 transition-colors"
+        >
+          <PanelLeftOpen size={16} />
+        </button>
+        <h1 className="text-base sm:text-lg font-semibold text-[var(--text-primary)] truncate">
+          {pageTitle}
+        </h1>
+      </div>
 
-      {/* Sélecteur dossier */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" title="Dossiers / Sites">
-            <Building2 className="h-5 w-5 text-primary" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-80">
-          <DropdownMenuLabel>Dossiers / Sites</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {entites.length === 0 && (
-            <div className="py-4 text-center text-sm text-muted-foreground">Aucune entité configurée</div>
-          )}
-          {entites.map((d) => (
-            <DropdownMenuItem key={d.id} onClick={() => setActiveEntite(d)} className="flex items-start gap-3 py-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
-                <Building2 className="h-4 w-4" />
+      {/* Right: actions */}
+      <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+        {/* Sélecteur dossier et création */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" title="Entités" className="relative text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]">
+              <Building2 className="h-5 w-5 text-primary" />
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-white">
+                {entites.length}
+              </span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-80">
+            <DropdownMenuLabel className="flex justify-between items-center">
+              <span>Mes Entités ({entites.length})</span>
+            </DropdownMenuLabel>
+            
+            {(userRole === 'Super Admin' || userRole === 'Chef Comptable' || userRole === 'Directeur') && (
+              <>
+                <DropdownMenuItem asChild className="cursor-pointer text-primary">
+                  <Link href="/onboarding" className="flex items-center gap-2 py-2">
+                    <Plus className="h-4 w-4" />
+                    <span className="font-medium">Créer une entité</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
+            
+            {/* État de chargement */}
+            {entitesLoading && (
+              <div className="py-4 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Chargement des entités...</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{d.raisonSociale}</p>
-                <p className="text-xs text-muted-foreground">Exercice {d.exerciceEnCours} - {d.devise}</p>
+            )}
+
+            {/* Erreur de chargement */}
+            {!entitesLoading && entitesError && (
+              <div className="py-4 px-3 text-center">
+                <p className="text-sm text-destructive mb-2">{entitesError}</p>
+                <button
+                  onClick={reloadEntites}
+                  className="text-xs text-primary hover:underline flex items-center gap-1 mx-auto"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Réessayer
+                </button>
               </div>
-              {activeEntite && activeEntite.id === d.id && <Check className="h-4 w-4 text-primary shrink-0" />}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+            )}
 
-      <Button variant="ghost" size="icon" title="Nouvelle entité" asChild>
-        <Link href="/onboarding"><Plus className="h-5 w-5 text-primary" /></Link>
-      </Button>
+            {/* Liste vide */}
+            {!entitesLoading && !entitesError && entites.length === 0 && (
+              <div className="py-4 text-center text-sm text-muted-foreground">Aucune entité configurée</div>
+            )}
 
-      <div className="flex-1" />
+            {/* Liste des entités */}
+            {!entitesLoading && entites.map((d) => (
+              <DropdownMenuItem key={d.id} onClick={() => setActiveEntite(d)} className="flex items-start gap-3 py-3 cursor-pointer">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                  <Building2 className="h-4 w-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{d.raisonSociale}</p>
+                  <p className="text-xs text-muted-foreground">Exercice {d.exerciceEnCours} - {d.devise}</p>
+                </div>
+                {activeEntite && activeEntite.id === d.id && <Check className="h-4 w-4 text-primary shrink-0" />}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-      <div className="ml-auto flex items-center gap-1 sm:gap-2">
-        <Button variant="ghost" size="icon">
+        {/* Search */}
+        <Button variant="ghost" size="icon" title="Recherche" className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]">
           <Search className="h-5 w-5" />
         </Button>
 
         {/* ─── Cloche Notifications ─────────────────────────────────── */}
         <DropdownMenu open={open} onOpenChange={setOpen}>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative" id="notifications-bell">
+            <Button variant="ghost" size="icon" className="relative text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]" id="notifications-bell">
               <Bell className="h-5 w-5" />
               <AnimatePresence>
                 {unreadCount > 0 && (
@@ -275,7 +340,7 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
 
           <DropdownMenuContent align="end" className="w-[380px] lg:w-[420px] p-0" sideOffset={8}>
             {/* Header panel */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-default)]">
               <div className="flex items-center gap-2">
                 <Bell className="h-4 w-4 text-primary" />
                 <span className="text-sm font-semibold">Notifications</span>
@@ -308,7 +373,7 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
             </div>
 
             {/* Filtres par type */}
-            <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border">
+            <div className="flex items-center gap-1.5 px-3 py-2 border-b border-[var(--border-default)]">
               {FILTERS.map(f => (
                 <button
                   key={f.key}
@@ -317,7 +382,7 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
                     'text-xs px-2.5 py-1 rounded-full border transition-all font-medium',
                     filterType === f.key
                       ? 'bg-primary text-primary-foreground border-primary'
-                      : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground',
+                      : 'border-[var(--border-default)] text-muted-foreground hover:border-primary/50 hover:text-foreground',
                   )}
                 >
                   {f.label}
@@ -355,63 +420,7 @@ export function AppHeader({ onMenuClick }: { onMenuClick: () => void }) {
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {/* ─── Menu utilisateur ─────────────────────────────────────── */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 rounded-lg p-1 pr-2 hover:bg-muted transition-colors">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={getAvatarUrl(currentUserData)} alt={currentUserData?.nom} />
-                <AvatarFallback>
-                  {currentUserData?.nom ? currentUserData.nom.substring(0, 2).toUpperCase() : 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <div className="hidden sm:block text-left">
-                <p className="text-sm font-medium leading-none">{currentUserData?.nom}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{currentUserData?.role}</p>
-              </div>
-              <ChevronDown className="h-4 w-4 text-muted-foreground hidden sm:block" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>
-              <div>
-                <p className="text-sm font-medium">{currentUserData?.nom}</p>
-                <p className="text-xs text-muted-foreground font-normal">{currentUserData?.email}</p>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setIsProfileModalOpen(true)}>
-              <User className="h-4 w-4 mr-2" /> Mon profil
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/parametres"><Settings className="h-4 w-4 mr-2" /> Paramètres</Link>
-            </DropdownMenuItem>
-            <div className="px-2 py-1.5 flex justify-between items-center">
-              <span className="text-sm font-medium">Thème</span>
-              <ThemeToggle className="h-8 w-8" />
-            </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive cursor-pointer"
-              onSelect={() => {
-                localStorage.removeItem('accessToken');
-                localStorage.removeItem('refreshToken');
-                window.location.href = '/login';
-              }}
-            >
-              <LogOut className="h-4 w-4 mr-2" /> Déconnexion
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
-
-      <ProfileEditModal
-        isOpen={isProfileModalOpen}
-        onClose={() => setIsProfileModalOpen(false)}
-        currentUser={currentUserData}
-        onProfileUpdated={fetchUser}
-      />
     </header>
   );
 }

@@ -57,6 +57,13 @@ import {
 } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import { ECRITURES, CLASSES_SYSCOHADA } from '@/lib/mock-data';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { fetchWithAuth } from '@/lib/api';
 import type { CompteComptable } from '@/lib/types';
 import { formatCurrency, formatDate } from '@/lib/format';
@@ -95,7 +102,7 @@ export default function RestitutionsPage() {
 
   function ViewToggle() {
     return (
-      <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50">
+      <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-[var(--border-default)]/50">
         <button
           onClick={() => { setView('balance'); setDrillCompte(null); }}
           className={cn('flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all', view === 'balance' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground')}
@@ -123,7 +130,7 @@ export default function RestitutionsPage() {
       <div className="animate-fade-in-up space-y-2">
         {view === 'balance' && <BalanceView onDrillDown={(c) => { setDrillCompte(c); setView('grand-livre'); }} balance={balance} loading={loading} periode={periode} setPeriode={setPeriode} viewToggle={<ViewToggle />} />}
         {view === 'grand-livre' && <GrandLivreView drillCompte={drillCompte} onBack={() => { setDrillCompte(null); setView('balance'); }} grandLivre={grandLivre} planComptable={planComptable} loading={loading} periode={periode} setPeriode={setPeriode} viewToggle={<ViewToggle />} />}
-        {view === 'journaux' && <JournauxView loading={loading} periode={periode} setPeriode={setPeriode} viewToggle={<ViewToggle />} />}
+        {view === 'journaux' && <JournauxView loading={loading} periode={periode} setPeriode={setPeriode} viewToggle={<ViewToggle />} grandLivre={grandLivre} />}
       </div>
     </div>
   );
@@ -206,7 +213,7 @@ function BalanceView({ onDrillDown, balance, loading, periode, setPeriode, viewT
     <div className="space-y-2">
       {/* Statistiques Section */}
       <div className="grid grid-cols-4 gap-1 sm:gap-2">
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Mvt Débit</span>
@@ -218,7 +225,7 @@ function BalanceView({ onDrillDown, balance, loading, periode, setPeriode, viewT
           </CardContent>
         </GlassCard>
         
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Mvt Crédit</span>
@@ -230,7 +237,7 @@ function BalanceView({ onDrillDown, balance, loading, periode, setPeriode, viewT
           </CardContent>
         </GlassCard>
 
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Solde Débiteur</span>
@@ -242,7 +249,7 @@ function BalanceView({ onDrillDown, balance, loading, periode, setPeriode, viewT
           </CardContent>
         </GlassCard>
 
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Solde Créditeur</span>
@@ -256,7 +263,7 @@ function BalanceView({ onDrillDown, balance, loading, periode, setPeriode, viewT
       </div>
 
       {/* Barre d'actions et Informations de l'en-tête */}
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center w-full py-1 border-b border-border/50 mb-1 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center w-full py-1 border-b border-[var(--border-default)]/50 mb-1 gap-2">
         <div className="flex items-center justify-start order-2 sm:order-1">
           {viewToggle}
         </div>
@@ -316,19 +323,19 @@ function BalanceView({ onDrillDown, balance, loading, periode, setPeriode, viewT
         </div>
       </div>
 
-      <GlassCard glow={false} className="border-border/50 shadow-sm overflow-hidden flex flex-col h-[calc(100vh-140px)] min-h-[400px]">
-        <CardContent className="p-0 overflow-y-auto flex-1">
-          <Table>
+      <GlassCard glow={false} className="border-[var(--border-default)]/50 shadow-sm overflow-hidden flex flex-col h-[calc(100vh-140px)] min-h-[400px]">
+        <CardContent className="p-0 overflow-auto flex-1">
+          <Table className="text-xs sm:text-sm">
             <TableHeader className="bg-muted/30">
               <TableRow className="hover:bg-transparent">
-                <TableHead className="text-center w-[10%]">N° Compte</TableHead>
-                <TableHead className="text-center w-[30%]">Libellé</TableHead>
-                <TableHead className="text-center w-[10%]">S. Ouv. Débit</TableHead>
-                <TableHead className="text-center w-[10%]">S. Ouv. Crédit</TableHead>
-                <TableHead className="text-center w-[10%]">Mvt Débit</TableHead>
-                <TableHead className="text-center w-[10%]">Mvt Crédit</TableHead>
-                <TableHead className="text-center w-[10%]">S. Fin. Débit</TableHead>
-                <TableHead className="text-center w-[10%]">S. Fin. Crédit</TableHead>
+                <TableHead className="text-left whitespace-nowrap px-2 py-2 font-semibold">N° Compte</TableHead>
+                <TableHead className="text-left whitespace-nowrap px-2 py-2 font-semibold">Libellé</TableHead>
+                <TableHead className="text-right whitespace-nowrap px-2 py-2 font-semibold">S. Ouv. Débit</TableHead>
+                <TableHead className="text-right whitespace-nowrap px-2 py-2 font-semibold">S. Ouv. Crédit</TableHead>
+                <TableHead className="text-right whitespace-nowrap px-2 py-2 font-semibold">Mvt Débit</TableHead>
+                <TableHead className="text-right whitespace-nowrap px-2 py-2 font-semibold">Mvt Crédit</TableHead>
+                <TableHead className="text-right whitespace-nowrap px-2 py-2 font-semibold">S. Fin. Débit</TableHead>
+                <TableHead className="text-right whitespace-nowrap px-2 py-2 font-semibold">S. Fin. Crédit</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -348,16 +355,16 @@ function BalanceView({ onDrillDown, balance, loading, periode, setPeriode, viewT
                     className="group transition-colors hover:bg-muted/20 cursor-pointer"
                     onClick={() => onDrillDown(c)}
                   >
-                    <TableCell className="text-left font-mono text-xs">
-                      <Badge variant="secondary" className="font-mono bg-background shadow-sm border-border/50">{c.compte}</Badge>
+                    <TableCell className="text-left font-mono whitespace-nowrap px-2 py-1.5">
+                      <Badge variant="secondary" className="font-mono bg-background shadow-sm border-[var(--border-default)]/50 text-[10px] sm:text-xs px-1.5">{c.compte}</Badge>
                     </TableCell>
-                    <TableCell className="text-left font-medium text-sm">{c.libelle}</TableCell>
-                    <TableCell className="text-right font-mono font-medium text-sm text-muted-foreground/50">-</TableCell>
-                    <TableCell className="text-right font-mono font-medium text-sm text-muted-foreground/50">-</TableCell>
-                    <TableCell className="text-right font-mono font-medium text-sm text-foreground/90">{debit > 0 ? formatCurrency(debit) : '-'}</TableCell>
-                    <TableCell className="text-right font-mono font-medium text-sm text-foreground/90">{credit > 0 ? formatCurrency(credit) : '-'}</TableCell>
-                    <TableCell className="text-right font-mono font-bold text-sm text-indigo-400">{soldeD > 0 ? formatCurrency(soldeD) : '-'}</TableCell>
-                    <TableCell className="text-right font-mono font-bold text-sm text-indigo-400">{soldeC > 0 ? formatCurrency(soldeC) : '-'}</TableCell>
+                    <TableCell className="text-left font-medium truncate max-w-[150px] sm:max-w-[250px] px-2 py-1.5" title={c.libelle}>{c.libelle}</TableCell>
+                    <TableCell className="text-right font-mono font-medium text-muted-foreground/50 whitespace-nowrap px-2 py-1.5">-</TableCell>
+                    <TableCell className="text-right font-mono font-medium text-muted-foreground/50 whitespace-nowrap px-2 py-1.5">-</TableCell>
+                    <TableCell className="text-right font-mono font-medium text-foreground/90 whitespace-nowrap px-2 py-1.5">{debit > 0 ? formatCurrency(debit) : '-'}</TableCell>
+                    <TableCell className="text-right font-mono font-medium text-foreground/90 whitespace-nowrap px-2 py-1.5">{credit > 0 ? formatCurrency(credit) : '-'}</TableCell>
+                    <TableCell className="text-right font-mono font-bold text-indigo-400 whitespace-nowrap px-2 py-1.5">{soldeD > 0 ? formatCurrency(soldeD) : '-'}</TableCell>
+                    <TableCell className="text-right font-mono font-bold text-indigo-400 whitespace-nowrap px-2 py-1.5">{soldeC > 0 ? formatCurrency(soldeC) : '-'}</TableCell>
                   </TableRow>
                 );
               })}
@@ -400,7 +407,7 @@ function GrandLivreView({ drillCompte, onBack, grandLivre, planComptable, loadin
     <div className="space-y-2">
       {/* Statistiques Section */}
       <div className="grid grid-cols-3 gap-1 sm:gap-2">
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Total Débit</span>
@@ -412,7 +419,7 @@ function GrandLivreView({ drillCompte, onBack, grandLivre, planComptable, loadin
           </CardContent>
         </GlassCard>
         
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Total Crédit</span>
@@ -424,7 +431,7 @@ function GrandLivreView({ drillCompte, onBack, grandLivre, planComptable, loadin
           </CardContent>
         </GlassCard>
 
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Solde</span>
@@ -445,7 +452,7 @@ function GrandLivreView({ drillCompte, onBack, grandLivre, planComptable, loadin
       </div>
 
       {/* Barre d'actions et Informations de l'en-tête */}
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center w-full py-1 border-b border-border/50 mb-1 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center w-full py-1 border-b border-[var(--border-default)]/50 mb-1 gap-2">
         <div className="flex items-center justify-start order-2 sm:order-1">
           {viewToggle}
         </div>
@@ -459,7 +466,7 @@ function GrandLivreView({ drillCompte, onBack, grandLivre, planComptable, loadin
           
 
           {compteData && (
-            <div className="flex items-center gap-1 bg-muted/30 px-2 py-1 rounded-md border border-border/50">
+            <div className="flex items-center gap-1 bg-muted/30 px-2 py-1 rounded-md border border-[var(--border-default)]/50">
               <span className="font-mono font-bold text-foreground">{compteData.compte}</span>
               <span className="truncate max-w-[150px] sm:max-w-[200px] xl:max-w-[300px] text-muted-foreground">- {compteData.libelle}</span>
             </div>
@@ -472,30 +479,21 @@ function GrandLivreView({ drillCompte, onBack, grandLivre, planComptable, loadin
           <div className="hidden sm:block w-px h-6 bg-border mx-1" />
           
           {!drillCompte && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <NeonButton size="icon" className="h-8 w-8 rounded-lg shadow-sm bg-blue-600 hover:bg-blue-700 text-white border-0" title="Sélectionner un compte">
-                  <BookOpen className="h-4 w-4" />
-                </NeonButton>
-              </PopoverTrigger>
-              <PopoverContent className="w-[300px] p-3" align="end">
-                <div className="space-y-2">
-                  <Label className="text-xs">Sélectionner un compte</Label>
-                  <Select value={selectedCompte} onValueChange={setSelectedCompte}>
-                    <SelectTrigger className="h-8 text-xs font-medium w-full">
-                      <SelectValue placeholder="Sélectionner un compte..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {grandLivre.map((c) => (
-                        <SelectItem key={c.compte} value={c.compte}>
-                          {c.compte} - {c.libelle}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </PopoverContent>
-            </Popover>
+            <div className="w-[200px] sm:w-[250px]">
+              <Select value={selectedCompte} onValueChange={setSelectedCompte}>
+                <SelectTrigger className="h-8 text-xs font-medium w-full bg-background border-[var(--border-default)]/50 shadow-sm">
+                  <SelectValue placeholder="Sélectionner un compte..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {grandLivre.map((c) => (
+                    <SelectItem key={c.compte} value={c.compte}>
+                      <span className="font-mono font-bold mr-2">{c.compte}</span>
+                      <span className="text-muted-foreground truncate max-w-[150px] inline-block align-bottom">{c.libelle}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
 
           <Popover>
@@ -520,7 +518,7 @@ function GrandLivreView({ drillCompte, onBack, grandLivre, planComptable, loadin
         </div>
       </div>
 
-      <GlassCard glow={false} className="border-border/50 shadow-sm overflow-hidden flex flex-col h-[calc(100vh-140px)] min-h-[400px]">
+      <GlassCard glow={false} className="border-[var(--border-default)]/50 shadow-sm overflow-hidden flex flex-col h-[calc(100vh-140px)] min-h-[400px]">
         <CardContent className="p-0 overflow-y-auto flex-1">
           {!compteData ? (
             <div className="flex-1 flex flex-col items-center justify-center h-[300px] text-muted-foreground">
@@ -577,10 +575,28 @@ function GrandLivreView({ drillCompte, onBack, grandLivre, planComptable, loadin
   );
 }
 
-function JournauxView({ loading, periode, setPeriode, viewToggle }: { loading: boolean; periode: string; setPeriode: (val: string) => void; viewToggle?: React.ReactNode }) {
+function JournauxView({ loading, periode, setPeriode, viewToggle, grandLivre }: { loading: boolean; periode: string; setPeriode: (val: string) => void; viewToggle?: React.ReactNode; grandLivre: any[] }) {
   const [journaux, setJournaux] = useState<any[]>([]);
   const [loadingJournaux, setLoadingJournaux] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedJournal, setSelectedJournal] = useState<any>(null);
+
+  const selectedJournalLines = useMemo(() => {
+    if (!selectedJournal) return [];
+    let lines: any[] = [];
+    grandLivre.forEach((c: any) => {
+      c.ecritures.forEach((e: any) => {
+        if (e.journal === selectedJournal.ecriture__journal__code) {
+          lines.push({
+            ...e,
+            compte_numero: c.compte,
+            compte_libelle: c.libelle,
+          });
+        }
+      });
+    });
+    return lines.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [selectedJournal, grandLivre]);
 
   useEffect(() => {
     setLoadingJournaux(true);
@@ -605,7 +621,7 @@ function JournauxView({ loading, periode, setPeriode, viewToggle }: { loading: b
     <div className="space-y-2">
       {/* Statistiques Section */}
       <div className="grid grid-cols-4 gap-1 sm:gap-2">
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Total Journaux</span>
@@ -617,7 +633,7 @@ function JournauxView({ loading, periode, setPeriode, viewToggle }: { loading: b
           </CardContent>
         </GlassCard>
 
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Total Mouvements</span>
@@ -629,7 +645,7 @@ function JournauxView({ loading, periode, setPeriode, viewToggle }: { loading: b
           </CardContent>
         </GlassCard>
 
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Total Écritures</span>
@@ -641,7 +657,7 @@ function JournauxView({ loading, periode, setPeriode, viewToggle }: { loading: b
           </CardContent>
         </GlassCard>
 
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Plus Actif</span>
@@ -655,7 +671,7 @@ function JournauxView({ loading, periode, setPeriode, viewToggle }: { loading: b
       </div>
 
       {/* Barre d'actions et Informations de l'en-tête */}
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center w-full py-1 border-b border-border/50 mb-1 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center w-full py-1 border-b border-[var(--border-default)]/50 mb-1 gap-2">
         <div className="flex items-center justify-start order-2 sm:order-1">
           {viewToggle}
         </div>
@@ -696,7 +712,7 @@ function JournauxView({ loading, periode, setPeriode, viewToggle }: { loading: b
           <p className="text-sm">Chargement des journaux...</p>
         </div>
       ) : filteredJournaux.length === 0 ? (
-        <div className="text-center p-12 border border-dashed border-border/50 rounded-xl bg-muted/5">
+        <div className="text-center p-12 border border-dashed border-[var(--border-default)]/50 rounded-xl bg-muted/5">
           <p className="text-muted-foreground text-sm">Aucun journal trouvé pour cette période.</p>
         </div>
       ) : (
@@ -712,7 +728,7 @@ function JournauxView({ loading, periode, setPeriode, viewToggle }: { loading: b
                 key={code} 
                 className="hover:shadow-md transition-all duration-300 cursor-pointer group border-l-2 border-l-indigo-500/50" 
                 glow={false}
-                onClick={() => toast.info(`Centralisation ${code} - ${count} écritures`)}
+                onClick={() => setSelectedJournal(j)}
               >
                 <CardContent className="p-3">
                   <div className="flex items-start justify-between mb-2">
@@ -721,7 +737,7 @@ function JournauxView({ loading, periode, setPeriode, viewToggle }: { loading: b
                         <FileText className="w-4 h-4" />
                       </div>
                       <div>
-                        <Badge variant="outline" className="font-mono text-[10px] font-bold tracking-widest border-border/50 bg-background/50">
+                        <Badge variant="outline" className="font-mono text-[10px] font-bold tracking-widest border-[var(--border-default)]/50 bg-[var(--bg-secondary)]/40">
                           {code}
                         </Badge>
                       </div>
@@ -731,7 +747,7 @@ function JournauxView({ loading, periode, setPeriode, viewToggle }: { loading: b
                     <h3 className="font-semibold text-sm text-foreground group-hover:text-indigo-400 transition-colors truncate">{libelle}</h3>
                     <p className="text-[10px] text-muted-foreground mt-0.5">{count} écritures validées</p>
                   </div>
-                  <div className="flex items-end justify-between pt-2 border-t border-border/50">
+                  <div className="flex items-end justify-between pt-2 border-t border-[var(--border-default)]/50">
                     <div>
                       <p className="text-[9px] uppercase tracking-widest font-semibold text-muted-foreground mb-0.5">Mouvement</p>
                       <p className="font-mono font-bold text-foreground text-sm">{formatCurrency(total)}</p>
@@ -746,6 +762,95 @@ function JournauxView({ loading, periode, setPeriode, viewToggle }: { loading: b
           })}
         </div>
       )}
+
+      {/* Drill-down Dialog */}
+      <Dialog open={!!selectedJournal} onOpenChange={(open) => !open && setSelectedJournal(null)}>
+        <DialogContent className="max-w-5xl h-[85vh] flex flex-col p-0 gap-0 overflow-hidden bg-background border-[var(--border-default)]">
+          <DialogHeader className="p-4 sm:p-6 border-b border-[var(--border-default)]/50 bg-muted/10 shrink-0">
+            <DialogTitle className="flex items-center gap-2 text-xl font-bold">
+              <div className="flex items-center justify-center w-8 h-8 rounded-md bg-indigo-500/10 text-indigo-500">
+                <FileText className="w-4 h-4" />
+              </div>
+              Détail du Journal {selectedJournal?.ecriture__journal__code}
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground mt-1">
+              {selectedJournal?.ecriture__journal__libelle} - Période {periode}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto p-4 sm:p-6 bg-muted/5">
+            <div className="rounded-xl border border-[var(--border-default)]/50 bg-background overflow-hidden shadow-sm">
+              <Table>
+                <TableHeader className="bg-muted/30">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-[100px] text-center font-semibold">Date</TableHead>
+                    <TableHead className="w-[150px] text-center font-semibold">Pièce</TableHead>
+                    <TableHead className="w-[100px] text-center font-semibold">Compte</TableHead>
+                    <TableHead className="min-w-[200px] font-semibold">Libellé de l'écriture</TableHead>
+                    <TableHead className="w-[120px] text-right font-semibold">Débit</TableHead>
+                    <TableHead className="w-[120px] text-right font-semibold">Crédit</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selectedJournalLines.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                        Aucune écriture trouvée pour ce journal.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    selectedJournalLines.map((l: any, i: number) => {
+                      const debit = parseFloat(l.debit);
+                      const credit = parseFloat(l.credit);
+                      return (
+                        <TableRow key={i} className="group transition-colors hover:bg-muted/20">
+                          <TableCell className="text-center font-mono text-xs text-muted-foreground">
+                            {formatDate(l.date)}
+                          </TableCell>
+                          <TableCell className="text-center font-mono font-medium text-xs text-foreground/80">
+                            {l.piece}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline" className="font-mono text-[10px] tracking-wider bg-background" title={l.compte_libelle}>
+                              {l.compte_numero}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-medium text-sm text-foreground/90">
+                            {l.libelle}
+                            <span className="block text-[10px] text-muted-foreground font-normal truncate mt-0.5" title={l.compte_libelle}>{l.compte_libelle}</span>
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-medium text-sm text-foreground/90">
+                            {debit > 0 ? formatCurrency(debit) : '-'}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-medium text-sm text-foreground/90">
+                            {credit > 0 ? formatCurrency(credit) : '-'}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            
+            {/* Total Footer inside Dialog */}
+            <div className="mt-4 flex justify-end gap-6 p-4 rounded-xl border border-[var(--border-default)]/50 bg-background shadow-sm">
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground">Total Débit</span>
+                <span className="font-mono font-bold text-foreground">
+                  {formatCurrency(selectedJournalLines.reduce((acc, l) => acc + parseFloat(l.debit || 0), 0))}
+                </span>
+              </div>
+              <div className="w-px bg-border h-full" />
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground">Total Crédit</span>
+                <span className="font-mono font-bold text-foreground">
+                  {formatCurrency(selectedJournalLines.reduce((acc, l) => acc + parseFloat(l.credit || 0), 0))}
+                </span>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

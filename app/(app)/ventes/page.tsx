@@ -45,6 +45,9 @@ import { fetchWithAuth } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { TiersFormModal } from '@/components/tiers-form-modal';
+import { generateInvoicePDF } from '@/lib/pdf-generator';
+import { useEntite } from '@/lib/entite-context';
 
 const STATUT_STYLE: Record<string, { label: string; class: string; icon: React.ComponentType<{ className?: string }> }> = {
   impayee: { label: 'Impayée', class: 'bg-destructive/10 text-destructive border-destructive/20', icon: AlertCircle },
@@ -53,6 +56,7 @@ const STATUT_STYLE: Record<string, { label: string; class: string; icon: React.C
 };
 
 export default function VentesPage() {
+  const { activeEntite } = useEntite();
   const [factures, setFactures] = useState<any[]>([]);
   const [tiers, setTiers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +65,7 @@ export default function VentesPage() {
   const [showSearch, setShowSearch] = useState(false);
   const [filterStatut, setFilterStatut] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isTiersModalOpen, setIsTiersModalOpen] = useState(false);
   const [viewing, setViewing] = useState<any | null>(null);
   
   const [form, setForm] = useState({
@@ -89,7 +94,7 @@ export default function VentesPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [activeEntite?.id]);
 
   const filtered = useMemo(() => {
     return factures.filter((f) => {
@@ -158,6 +163,23 @@ export default function VentesPage() {
     }
   };
 
+  const handleEncaissement = async (id: string) => {
+    try {
+      setSubmitting(true);
+      await fetchWithAuth(`/ventes/factures/${id}/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ statut: 'payee' }),
+      });
+      toast.success('Encaissement enregistré');
+      setViewing(null);
+      fetchData();
+    } catch (error: any) {
+      toast.error('Erreur lors de l\'encaissement', { description: error.message });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleExportCSV = () => {
     if (filtered.length === 0) {
       toast.error('Aucune donnée à exporter');
@@ -189,7 +211,7 @@ export default function VentesPage() {
   return (
     <div className="space-y-3 animate-fade-in">
       <div className="grid grid-cols-3 gap-1 sm:gap-2">
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">CA total (HT)</span>
@@ -200,7 +222,7 @@ export default function VentesPage() {
             </div>
           </CardContent>
         </GlassCard>
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">CA total (TTC)</span>
@@ -211,7 +233,7 @@ export default function VentesPage() {
             </div>
           </CardContent>
         </GlassCard>
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Impayés</span>
@@ -226,7 +248,7 @@ export default function VentesPage() {
 
       <div className="space-y-3">
         {/* Action Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1 relative">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-[var(--border-default)]/50 mb-1 relative">
           {/* Info gauche */}
           <div className="text-xs text-muted-foreground font-medium">
             {filtered.length} facture{filtered.length > 1 ? 's' : ''}
@@ -276,34 +298,34 @@ export default function VentesPage() {
 
       <GlassCard glow={false} className="border-muted/50 shadow-sm">
         <CardContent className="p-4 sm:p-6">
-          <div className="overflow-x-auto rounded-lg border border-border/50">
-            <table className="w-full text-sm whitespace-nowrap">
+          <div className="overflow-x-auto rounded-lg border border-[var(--border-default)]/50">
+            <table className="w-full text-xs sm:text-sm">
               <thead className="bg-muted/30">
-                <tr className="border-b border-border/50">
-                  <th className="text-left py-3.5 px-4 font-semibold text-muted-foreground">N° Facture</th>
-                  <th className="text-left py-3.5 px-4 font-semibold text-muted-foreground">Date</th>
-                  <th className="text-left py-3.5 px-4 font-semibold text-muted-foreground">Client</th>
-                  <th className="text-right py-3.5 px-4 font-semibold text-muted-foreground">Montant HT</th>
-                  <th className="text-right py-3.5 px-4 font-semibold text-muted-foreground">TVA</th>
-                  <th className="text-right py-3.5 px-4 font-semibold text-muted-foreground">TTC</th>
-                  <th className="text-center py-3.5 px-4 font-semibold text-muted-foreground">Statut</th>
-                  <th className="text-left py-3.5 px-4 font-semibold text-muted-foreground">Échéance</th>
-                  <th className="py-3.5 px-4 w-[100px]"></th>
+                <tr className="border-b border-[var(--border-default)]/50">
+                  <th className="text-left py-3 px-2 font-semibold text-muted-foreground whitespace-nowrap">N° Facture</th>
+                  <th className="text-left py-3 px-2 font-semibold text-muted-foreground whitespace-nowrap">Date</th>
+                  <th className="text-left py-3 px-2 font-semibold text-muted-foreground whitespace-nowrap">Client</th>
+                  <th className="text-right py-3 px-2 font-semibold text-muted-foreground whitespace-nowrap">Montant HT</th>
+                  <th className="text-right py-3 px-2 font-semibold text-muted-foreground whitespace-nowrap">TVA</th>
+                  <th className="text-right py-3 px-2 font-semibold text-muted-foreground whitespace-nowrap">TTC</th>
+                  <th className="text-center py-3 px-2 font-semibold text-muted-foreground whitespace-nowrap">Statut</th>
+                  <th className="text-left py-3 px-2 font-semibold text-muted-foreground whitespace-nowrap">Échéance</th>
+                  <th className="py-3 px-2 w-[80px]"></th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   Array(5).fill(0).map((_, i) => (
                     <tr key={i} className="border-b border-border/30">
-                      <td className="py-3 px-4"><Skeleton className="h-5 w-32" /></td>
-                      <td className="py-3 px-4"><Skeleton className="h-5 w-24" /></td>
-                      <td className="py-3 px-4"><Skeleton className="h-5 w-40" /></td>
-                      <td className="py-3 px-4 flex justify-end"><Skeleton className="h-5 w-24" /></td>
-                      <td className="py-3 px-4"><Skeleton className="h-5 w-20 ml-auto" /></td>
-                      <td className="py-3 px-4"><Skeleton className="h-5 w-28 ml-auto" /></td>
-                      <td className="py-3 px-4 flex justify-center"><Skeleton className="h-6 w-20 rounded-full" /></td>
-                      <td className="py-3 px-4"><Skeleton className="h-5 w-24" /></td>
-                      <td className="py-3 px-4"><Skeleton className="h-8 w-16 ml-auto" /></td>
+                      <td className="py-2.5 px-2"><Skeleton className="h-4 w-20 sm:w-28" /></td>
+                      <td className="py-2.5 px-2"><Skeleton className="h-4 w-16 sm:w-20" /></td>
+                      <td className="py-2.5 px-2"><Skeleton className="h-4 w-24 sm:w-32" /></td>
+                      <td className="py-2.5 px-2 flex justify-end"><Skeleton className="h-4 w-16 sm:w-20" /></td>
+                      <td className="py-2.5 px-2"><Skeleton className="h-4 w-12 sm:w-16 ml-auto" /></td>
+                      <td className="py-2.5 px-2"><Skeleton className="h-4 w-16 sm:w-24 ml-auto" /></td>
+                      <td className="py-2.5 px-2 flex justify-center"><Skeleton className="h-5 w-16 sm:w-20 rounded-full" /></td>
+                      <td className="py-2.5 px-2"><Skeleton className="h-4 w-16 sm:w-20" /></td>
+                      <td className="py-2.5 px-2"><Skeleton className="h-6 w-12 sm:w-16 ml-auto" /></td>
                     </tr>
                   ))
                 ) : filtered.length === 0 ? (
@@ -321,26 +343,26 @@ export default function VentesPage() {
                     const Icon = statut.icon;
                     return (
                       <tr key={f.id} className="border-b border-border/30 hover:bg-muted/40 transition-all duration-200 group">
-                        <td className="py-3 px-4 font-mono font-medium text-foreground/90">{f.numero}</td>
-                        <td className="py-3 px-4 text-muted-foreground">{formatDate(f.date)}</td>
-                        <td className="py-3 px-4 font-medium">{f.client?.nom || '-'}</td>
-                        <td className="py-3 px-4 text-right font-mono text-muted-foreground">{formatCurrency(f.montantHT)}</td>
-                        <td className="py-3 px-4 text-right font-mono text-muted-foreground/70">{formatCurrency(f.tva)}</td>
-                        <td className="py-3 px-4 text-right font-mono font-semibold">{formatCurrency(f.montantTTC)}</td>
-                        <td className="py-3 px-4 text-center">
-                          <Badge variant="outline" className={cn('text-[11px] font-medium border uppercase tracking-wider', statut.class)}>
-                            <Icon className="h-3 w-3 mr-1.5" />
+                        <td className="py-2.5 px-2 font-mono font-medium text-foreground/90 whitespace-nowrap">{f.numero}</td>
+                        <td className="py-2.5 px-2 text-muted-foreground whitespace-nowrap">{formatDate(f.date)}</td>
+                        <td className="py-2.5 px-2 font-medium min-w-[120px] max-w-[200px] truncate" title={f.client?.nom}>{f.client?.nom || '-'}</td>
+                        <td className="py-2.5 px-2 text-right font-mono text-muted-foreground whitespace-nowrap">{formatCurrency(f.montantHT)}</td>
+                        <td className="py-2.5 px-2 text-right font-mono text-muted-foreground/70 whitespace-nowrap">{formatCurrency(f.tva)}</td>
+                        <td className="py-2.5 px-2 text-right font-mono font-semibold whitespace-nowrap">{formatCurrency(f.montantTTC)}</td>
+                        <td className="py-2.5 px-2 text-center whitespace-nowrap">
+                          <Badge variant="outline" className={cn('text-[10px] sm:text-[11px] font-medium border uppercase tracking-wider', statut.class)}>
+                            <Icon className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1 sm:mr-1.5" />
                             {statut.label}
                           </Badge>
                         </td>
-                        <td className="py-3 px-4 text-muted-foreground">{formatDate(f.echeance)}</td>
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <NeonButton variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary" onClick={() => setViewing(f)}>
-                              <Eye className="h-4 w-4" />
+                        <td className="py-2.5 px-2 text-muted-foreground whitespace-nowrap">{formatDate(f.echeance)}</td>
+                        <td className="py-2.5 px-2 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1">
+                            <NeonButton variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-primary/10 hover:text-primary" onClick={() => setViewing(f)}>
+                              <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             </NeonButton>
-                            <NeonButton variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive" onClick={() => handleDelete(f.id)}>
-                              <Trash2 className="h-4 w-4" />
+                            <NeonButton variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-destructive/10 hover:text-destructive" onClick={() => handleDelete(f.id)}>
+                              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             </NeonButton>
                           </div>
                         </td>
@@ -364,7 +386,10 @@ export default function VentesPage() {
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Client</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Client</Label>
+                  <button type="button" onClick={() => setIsTiersModalOpen(true)} className="text-[10px] text-primary hover:underline font-semibold">+ Nouveau</button>
+                </div>
                 <Select value={form.client} onValueChange={(v) => setForm({ ...form, client: v })}>
                   <SelectTrigger className="bg-muted/20">
                     <SelectValue placeholder="Sélectionner un client..." />
@@ -505,14 +530,25 @@ export default function VentesPage() {
                 </div>
               </div>
               <DialogFooter className="pt-4 border-t border-border/30 gap-2">
-                <NeonButton variant="outline" onClick={() => toast.success('PDF généré avec succès')}>
+                <NeonButton variant="outline" onClick={() => {
+                  try {
+                    generateInvoicePDF(viewing, activeEntite);
+                    toast.success('PDF généré avec succès');
+                  } catch (e) {
+                    toast.error('Erreur lors de la génération du PDF');
+                  }
+                }}>
                   <Download className="h-4 w-4 mr-2" />
                   Télécharger PDF
                 </NeonButton>
                 {viewing.statut !== 'payee' && (
-                  <NeonButton onClick={() => toast.success('Encaissement enregistré')} className="bg-success text-success-foreground hover:bg-success/90">
-                    <DollarSign className="h-4 w-4 mr-2" />
-                    Encaisser
+                  <NeonButton 
+                    onClick={() => handleEncaissement(viewing.id)} 
+                    disabled={submitting}
+                    className="bg-success text-success-foreground hover:bg-success/90"
+                  >
+                    {submitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <DollarSign className="h-4 w-4 mr-2" />}
+                    {submitting ? 'Encaissement...' : 'Encaisser'}
                   </NeonButton>
                 )}
               </DialogFooter>
@@ -520,6 +556,18 @@ export default function VentesPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <TiersFormModal 
+        open={isTiersModalOpen} 
+        onOpenChange={setIsTiersModalOpen}
+        onSuccess={(newTiers) => {
+          if (newTiers && newTiers.code) {
+            setForm({ ...form, client: newTiers.code });
+          }
+          fetchData();
+        }}
+        defaultType="client"
+      />
     </div>
   );
 }

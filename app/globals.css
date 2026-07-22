@@ -1,10 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 210 25% 94%;
+    --font-sans: 'Inter', sans-serif;
+    --font-display: 'Outfit', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    /* ─── Mode Clair (aligné sur brouillon) ─── */
+    --background: 0 0% 100%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
@@ -12,11 +18,11 @@
     --popover-foreground: 222 47% 11%;
     --primary: 221 83% 53%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 25% 90%;
+    --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
-    --muted: 210 25% 90%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 210 25% 88%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 20% 35%;
+    --accent: 210 40% 95%;
     --accent-foreground: 222 47% 11%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
@@ -35,7 +41,7 @@
     --radius: 0.625rem;
     --sidebar: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-accent: 210 40% 94%;
+    --sidebar-accent: 210 40% 96%;
     --sidebar-border: 214 32% 91%;
 
     /* Young DRC Light Colors */
@@ -45,25 +51,32 @@
     --bg-elevated: #FFFFFF;
     --text-primary: #0F172A;
     --text-secondary: #475569;
+    --text-tertiary: #64748B;
     --border-default: #E2E8F0;
     --glass-bg: rgba(255, 255, 255, 0.7);
     --glass-border: rgba(0, 0, 0, 0.06);
+
+    /* Autofill */
+    --input-bg: #FFFFFF;
+    --input-border: rgba(0,0,0,0.08);
+    --input-autofill-bg: #FFFFFF;
   }
 
   .dark {
-    --background: 0 0% 2%;
+    /* ─── Mode Sombre (aligné sur brouillon zinc) ─── */
+    --background: 240 6% 3.5%;
     --foreground: 0 0% 98%;
-    --card: 0 0% 10%;
+    --card: 240 4% 9.5%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 10%;
+    --popover: 240 4% 9.5%;
     --popover-foreground: 0 0% 98%;
     --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 15%;
+    --secondary: 240 4% 15%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 65%;
-    --accent: 0 0% 15%;
+    --muted: 240 4% 15%;
+    --muted-foreground: 240 5% 72%;
+    --accent: 240 4% 15%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
@@ -71,18 +84,18 @@
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    --border: 0 0% 16%;
-    --input: 0 0% 16%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
     --ring: 217 91% 60%;
     --chart-1: 217 91% 60%;
     --chart-2: 142 71% 45%;
     --chart-3: 38 92% 50%;
     --chart-4: 280 65% 65%;
     --chart-5: 0 72% 60%;
-    --sidebar: 0 0% 5%;
+    --sidebar: 240 6% 3.5%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 12%;
-    --sidebar-border: 0 0% 16%;
+    --sidebar-accent: 240 4% 15%;
+    --sidebar-border: 240 4% 16%;
 
     /* Young DRC Dark Colors */
     --bg-primary: #09090B;
@@ -91,9 +104,15 @@
     --bg-elevated: #18181B;
     --text-primary: #FAFAFA;
     --text-secondary: #A1A1AA;
+    --text-tertiary: #A1A1AA;
     --border-default: #27272A;
     --glass-bg: rgba(24, 24, 27, 0.92);
     --glass-border: rgba(255, 255, 255, 0.08);
+
+    /* Autofill sombre */
+    --input-bg: #18181B;
+    --input-border: rgba(255,255,255,0.10);
+    --input-autofill-bg: #18181B;
   }
 }
 
@@ -106,19 +125,52 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Force password fields to inherit theme */
+  input[type="password"] {
+    font-family: inherit;
+    color: inherit;
+    -webkit-text-security: disc;
+    letter-spacing: 0.1em;
+  }
+  input[type="password"]::-webkit-input-placeholder,
+  input[type="password"]::placeholder {
+    letter-spacing: normal;
+    font-family: inherit;
+  }
+
+  /* ─── Autofill : force theme respect ─── */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px var(--input-autofill-bg) inset !important;
+    -webkit-text-fill-color: var(--text-primary) !important;
+    caret-color: var(--text-primary);
+    transition: background-color 5000s ease-in-out 0s;
+    border-color: var(--input-border);
   }
   
-  /* Global Custom Scrollbar */
+  /* Custom Scrollbar — thin 4px like brouillon */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 4px;
+    height: 4px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background-color: hsl(var(--border));
+    background-color: hsl(var(--border) / 0.4);
     border-radius: 10px;
+    transition: background-color 0.2s;
   }
   ::-webkit-scrollbar-thumb:hover {
     background-color: hsl(var(--muted-foreground) / 0.5);
@@ -134,8 +186,8 @@
     scrollbar-color: hsl(var(--border)) transparent;
   }
   .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 4px;
+    height: 4px;
   }
   .scrollbar-thin::-webkit-scrollbar-track {
     background: transparent;
@@ -147,16 +199,23 @@
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background-color: hsl(var(--muted-foreground));
   }
+
+  /* Glass effect */
   .glass {
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     background: hsl(var(--card) / 0.8);
   }
+
+  /* Gradient mesh */
   .gradient-mesh {
     background-image:
       radial-gradient(at 0% 0%, hsl(var(--primary) / 0.08) 0px, transparent 50%),
       radial-gradient(at 100% 0%, hsl(var(--chart-4) / 0.06) 0px, transparent 50%),
       radial-gradient(at 100% 100%, hsl(var(--chart-2) / 0.05) 0px, transparent 50%);
   }
+
+  /* Core animations */
   .animate-fade-in {
     animation: fadeIn 0.4s ease-out;
   }
@@ -164,10 +223,19 @@
     animation: slideUp 0.4s ease-out;
   }
   .animate-scale-in {
-    animation: scaleIn 0.2s ease-out;
+    animation: scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .animate-fade-up {
+    animation: fadeUp 0.3s ease-out;
+  }
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  .animate-pulse-glow {
+    animation: pulseGlow 3s ease-in-out infinite;
   }
 
-  /* Young DRC Utilities */
+  /* ─── Young DRC Utilities ─── */
   .glass-card {
     @apply backdrop-blur-xl border bg-[var(--glass-bg)] border-[var(--glass-border)] shadow-xl;
   }
@@ -182,18 +250,67 @@
   .neon-text-blue {
     text-shadow: 0 0 10px rgba(0, 127, 255, 0.5);
   }
+  .neon-text-yellow {
+    text-shadow: 0 0 10px rgba(59, 130, 246, 0.35);
+  }
   .rdc-gradient-text {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-[#007FFF] via-[#F7D618] to-[#005BBB];
     background-size: 200% 200%;
     animation: gradient-x 5s ease infinite;
   }
+
+  /* Shimmer backgrounds */
   .shimmer-bg {
     background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
     background-size: 700px 100%;
     animation: shimmer 1.6s linear infinite;
   }
+  .dark .shimmer-bg {
+    background: linear-gradient(90deg, #18181B 25%, #27272A 50%, #18181B 75%);
+    background-size: 700px 100%;
+    animation: shimmer 1.6s linear infinite;
+  }
+  .shimmer-bg-dark {
+    background: linear-gradient(90deg, #18181B 25%, #27272A 50%, #18181B 75%);
+    background-size: 700px 100%;
+    animation: shimmer 1.6s linear infinite;
+  }
+
+  /* ─── Gradient Utilities (from brouillon) ─── */
+  .gradient-brand {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  }
+  .gradient-gold {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+  }
+  .gradient-fab {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%);
+  }
+  .gradient-fluid-blue {
+    background: linear-gradient(-45deg, #0f172a, #1d4ed8, #2563eb, #1e3a8f, #0f172a);
+    background-size: 300% 300%;
+    animation: fluidGradient 8s ease infinite;
+  }
+
+  /* ─── Story Ring (brouillon) ─── */
+  .story-ring {
+    background: linear-gradient(135deg, #f59e0b, #3b82f6, #10b981);
+  }
+  .story-ring-unseen {
+    background: linear-gradient(135deg, #fbbf24, #2563eb, #059669);
+  }
+
+  /* No scrollbar */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
+/* ─── Keyframes ─── */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -203,6 +320,53 @@
   to { opacity: 1; transform: translateY(0); }
 }
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes fadeUp {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes springBounce {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+@keyframes shimmer {
+  0% { background-position: -700px 0; }
+  100% { background-position: 700px 0; }
+}
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.4; filter: blur(2px); }
+  50% { opacity: 1; filter: blur(0px); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes fluidGradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+@keyframes pulseRing {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+@keyframes heartBurst {
+  0% { transform: scale(0.8); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+@keyframes shine {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
 }

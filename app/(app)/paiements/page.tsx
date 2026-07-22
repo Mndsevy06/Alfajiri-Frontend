@@ -147,7 +147,7 @@ export default function PaiementsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
           >
-            <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+            <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
                 <div className="flex flex-col overflow-hidden w-full">
                   <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">
@@ -185,7 +185,7 @@ export default function PaiementsPage() {
 
       <div className="space-y-3">
         {/* Action Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1 relative">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-[var(--border-default)]/50 mb-1 relative">
           {/* Info gauche */}
           <div className="text-xs text-muted-foreground font-medium">
             {filteredPayments.length} opération{filteredPayments.length > 1 ? 's' : ''}
@@ -230,11 +230,11 @@ export default function PaiementsPage() {
         </div>
 
         {/* Main Table */}
-        <GlassCard glow={false} className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
+        <GlassCard glow={false} className="border-[var(--border-default)]/50 shadow-lg bg-[var(--bg-secondary)]/40 backdrop-blur-xl">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
-                <TableRow className="hover:bg-transparent border-white/5">
+                <TableRow className="hover:bg-transparent border-[var(--border-default)]/30">
                   <TableHead>Date</TableHead>
                   <TableHead>Référence</TableHead>
                   <TableHead>Type</TableHead>
@@ -259,7 +259,7 @@ export default function PaiementsPage() {
                   </TableRow>
                 ) : (
                   filteredPayments.map((payment) => (
-                    <TableRow key={payment.id} className="hover:bg-white/5 transition-colors border-white/5">
+                    <TableRow key={payment.id} className="hover:bg-[var(--bg-secondary)] transition-colors border-[var(--border-default)]/30">
                       <TableCell className="font-medium">{payment.date}</TableCell>
                       <TableCell className="text-muted-foreground">{payment.reference}</TableCell>
                       <TableCell>
@@ -302,7 +302,7 @@ export default function PaiementsPage() {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[700px] border-white/10 bg-background/95 backdrop-blur-xl p-5">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto border-[var(--border-default)]/50 bg-[var(--bg-primary)]/95 backdrop-blur-xl p-5">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
               <CreditCard className="h-5 w-5 text-primary" />

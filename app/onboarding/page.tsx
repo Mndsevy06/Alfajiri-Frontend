@@ -23,6 +23,9 @@ import {
 } from '@/components/ui/select';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { toast } from 'sonner';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
+import { fetchWithAuth } from '@/lib/api';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -47,7 +50,7 @@ export default function OnboardingPage() {
     exerciceEnCours: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (step === 1) {
       if (!formData.name || !formData.status || !formData.adresse) {
@@ -67,12 +70,44 @@ export default function OnboardingPage() {
         return;
       }
       setLoading(true);
-      setTimeout(() => {
+      try {
+        const newDossier = await fetchWithAuth('/parametres/dossiers/', {
+          method: 'POST',
+          body: JSON.stringify({
+            raisonSociale: formData.name,
+            sigle: formData.sigle,
+            statutJuridique: formData.status,
+            adresse: formData.adresse,
+            ville: formData.ville,
+            pays: formData.pays,
+            telephone: formData.telephone,
+            email: formData.email,
+            rccm: formData.rccm,
+            idNat: formData.idNat,
+            nImpot: formData.nImpot,
+            devise: formData.currency,
+            exerciceEnCours: formData.exerciceEnCours,
+            dateDebut: formData.dateStart,
+            dateFin: formData.dateEnd,
+          })
+        });
+
+        if (newDossier && newDossier.id) {
+          localStorage.setItem('activeEntiteId', newDossier.id);
+        }
+
         toast.success('Configuration terminée', {
           description: 'Votre environnement de travail est prêt.',
         });
+        
         router.push('/dashboard');
-      }, 1500);
+        router.refresh();
+      } catch (error) {
+        console.error(error);
+        toast.error('Erreur lors de la création de l\'entité');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -162,10 +197,15 @@ export default function OnboardingPage() {
                       <SelectValue placeholder="Sélectionnez un statut" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="EI">Entreprise Individuelle (EI) / Établissement</SelectItem>
                       <SelectItem value="SARL">SARL (Société à Responsabilité Limitée)</SelectItem>
                       <SelectItem value="SA">SA (Société Anonyme)</SelectItem>
                       <SelectItem value="SAS">SAS (Société par Actions Simplifiée)</SelectItem>
-                      <SelectItem value="Ets">Établissement (Ets)</SelectItem>
+                      <SelectItem value="SNC">SNC (Société en Nom Collectif)</SelectItem>
+                      <SelectItem value="SCS">SCS (Société en Commandite Simple)</SelectItem>
+                      <SelectItem value="GIE">GIE (Groupement d'Intérêt Économique)</SelectItem>
+                      <SelectItem value="SCOOP">Société Coopérative (SCOOP)</SelectItem>
+                      <SelectItem value="Succursale">Succursale</SelectItem>
                       <SelectItem value="Autre">Autre</SelectItem>
                     </SelectContent>
                   </Select>
@@ -210,13 +250,19 @@ export default function OnboardingPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="telephone" className="text-xs font-semibold">Téléphone</Label>
-                    <Input
-                      id="telephone"
-                      placeholder="+243 ..."
-                      value={formData.telephone}
-                      onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
-                      className="h-10 bg-background/60 focus-visible:bg-background transition-colors border-white/10 text-sm"
-                    />
+                    <div className="relative">
+                      <PhoneInput
+                        id="telephone"
+                        international
+                        defaultCountry="CD"
+                        value={formData.telephone}
+                        onChange={(val: any) => setFormData({ ...formData, telephone: val || '' })}
+                        className="h-10 bg-background/60 focus-within:bg-background transition-colors border border-white/10 text-sm rounded-md px-3 flex items-center [&_.PhoneInputCountry]:mr-3 [&_.PhoneInputCountryIcon]:h-5 [&_.PhoneInputCountryIcon]:w-7 [&_.PhoneInputCountryIcon]:shadow-sm"
+                        numberInputProps={{
+                          className: "flex-1 bg-transparent border-none outline-none focus:ring-0 text-sm placeholder:text-muted-foreground w-full"
+                        }}
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-xs font-semibold">Email</Label>

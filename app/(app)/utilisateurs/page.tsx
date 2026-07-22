@@ -23,7 +23,8 @@ import {
   ScrollText,
   Filter,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Building2,
 } from 'lucide-react';
 import { AuditView } from './audit-view';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -72,6 +73,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { fetchWithAuth } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { useEntite } from '@/lib/entite-context';
 
 type User = {
   id: string;
@@ -81,6 +83,7 @@ type User = {
   site: string;
   is_active: boolean;
   password?: string;
+  dossiers?: string[];
 };
 
 const ROLES = ['Agent', 'Comptable', 'Chef Comptable', 'Directeur', 'Auditeur', 'Super Admin'];
@@ -302,8 +305,8 @@ function PermissionsMatrix({ onBack }: { onBack: () => void }) {
   return (
     <div className="space-y-3 animate-fade-in">
       {/* Action bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1">
-        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50 shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-[var(--border-default)]/50 mb-1">
+        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-[var(--border-default)]/50 shrink-0">
           <button
             onClick={onBack}
             className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all text-muted-foreground hover:text-foreground')}
@@ -334,7 +337,7 @@ function PermissionsMatrix({ onBack }: { onBack: () => void }) {
 
       {/* Mini stats */}
       <div className="grid grid-cols-3 gap-1 sm:gap-2">
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Rôles Configurés</span>
@@ -345,7 +348,7 @@ function PermissionsMatrix({ onBack }: { onBack: () => void }) {
             </div>
           </CardContent>
         </GlassCard>
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Permissions totales</span>
@@ -356,7 +359,7 @@ function PermissionsMatrix({ onBack }: { onBack: () => void }) {
             </div>
           </CardContent>
         </GlassCard>
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Modules couverts</span>
@@ -378,7 +381,7 @@ function PermissionsMatrix({ onBack }: { onBack: () => void }) {
             'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
             activeRole === null
               ? 'bg-foreground text-background border-foreground'
-              : 'bg-muted/50 text-muted-foreground border-border/50 hover:border-foreground/30'
+              : 'bg-muted/50 text-muted-foreground border-[var(--border-default)]/50 hover:border-foreground/30'
           )}
         >
           Tous les rôles
@@ -404,11 +407,11 @@ function PermissionsMatrix({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* Permissions Table */}
-      <GlassCard glow={false} className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
+      <GlassCard glow={false} className="border-[var(--border-default)]/50 shadow-lg bg-[var(--bg-secondary)]/40 backdrop-blur-xl">
         <CardContent className="p-0 overflow-x-auto scrollbar-thin">
           <table className="w-full text-sm" style={{ minWidth: `${displayRoles.length * 120 + 300}px` }}>
             <thead>
-              <tr className="border-b border-border/50 bg-muted/30">
+              <tr className="border-b border-[var(--border-default)]/50 bg-muted/30">
                 <th className="text-left py-3.5 px-4 font-semibold text-muted-foreground w-[300px]">
                   Ressource / Action
                 </th>
@@ -492,6 +495,7 @@ function PermissionsMatrix({ onBack }: { onBack: () => void }) {
 // ---------------------------------------------------------------------------
 
 function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissions' | 'audit', setActiveTab: (t: 'users' | 'permissions' | 'audit') => void }) {
+  const { entites } = useEntite();
   const [users, setUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
@@ -501,7 +505,7 @@ function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissi
   
   // Dialog states
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [dialogMode, setDialogMode] = useState<'edit' | 'role' | 'password'>('edit');
+  const [dialogMode, setDialogMode] = useState<'edit' | 'role' | 'password' | 'dossiers'>('edit');
   
   // Form state
   const [form, setForm] = useState<Partial<User>>({});
@@ -544,7 +548,10 @@ function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissi
   const inactiveUsers = users.filter(u => !u.is_active).length;
 
   const openEditDialog = (user: User) => {
-    setForm(user);
+    setForm({
+      ...user,
+      dossiers: user.dossiers || []
+    });
     setDialogMode('edit');
     setIsDialogOpen(true);
   };
@@ -558,6 +565,16 @@ function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissi
   const openPasswordDialog = (user: User) => {
     setForm({ id: user.id });
     setDialogMode('password');
+    setIsDialogOpen(true);
+  };
+
+  const openDossiersDialog = (user: User) => {
+    setForm({
+      id: user.id,
+      nom: user.nom,
+      dossiers: user.dossiers || []
+    });
+    setDialogMode('dossiers');
     setIsDialogOpen(true);
   };
 
@@ -615,6 +632,13 @@ function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissi
         });
         setUsers(users.map(u => u.id === form.id ? data : u));
         toast.success('Rôle mis à jour avec succès');
+      } else if (dialogMode === 'dossiers') {
+        const data = await fetchWithAuth(`/users/${form.id}/`, {
+          method: 'PATCH',
+          body: JSON.stringify({ dossiers: form.dossiers })
+        });
+        setUsers(users.map(u => u.id === form.id ? data : u));
+        toast.success('Dossiers assignés avec succès');
       } else if (dialogMode === 'password') {
         // Change password
         if (!form.password) {
@@ -637,7 +661,7 @@ function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissi
   };
 
   const handleCreate = () => {
-    setForm({ role: 'Agent', site: 'Lubumbashi', is_active: true, password: '' });
+    setForm({ role: 'Agent', site: 'Lubumbashi', is_active: true, password: '', dossiers: [] });
     setDialogMode('edit');
     setIsDialogOpen(true);
   };
@@ -659,7 +683,7 @@ function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissi
     <div className="space-y-3">
       {/* Stats Cards */}
       <div className="grid grid-cols-3 gap-1 sm:gap-2">
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Total Utilisateurs</span>
@@ -671,7 +695,7 @@ function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissi
           </CardContent>
         </GlassCard>
         
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Actifs</span>
@@ -683,7 +707,7 @@ function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissi
           </CardContent>
         </GlassCard>
 
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Inactifs</span>
@@ -697,9 +721,9 @@ function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissi
       </div>
 
       {/* Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1 relative">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-[var(--border-default)]/50 mb-1 relative">
         {/* Toggle (gauche) */}
-        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50 shrink-0">
+        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-[var(--border-default)]/50 shrink-0">
           <button onClick={() => setActiveTab('users')} className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all', activeTab === 'users' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground')}>
             <Users className="w-3.5 h-3.5" /> Utilisateurs
           </button>
@@ -756,7 +780,7 @@ function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissi
                 <div className="space-y-1.5">
                   <Label className="text-xs">Rôle</Label>
                   <Select value={roleFilter} onValueChange={setRoleFilter}>
-                    <SelectTrigger className="h-8 text-xs border-white/10 bg-white/5">
+                    <SelectTrigger className="h-8 text-xs border-[var(--border-default)]/50 bg-white/5">
                       <SelectValue placeholder="Tous les rôles" />
                     </SelectTrigger>
                     <SelectContent>
@@ -771,7 +795,7 @@ function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissi
                 <div className="space-y-1.5">
                   <Label className="text-xs">Statut</Label>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="h-8 text-xs border-white/10 bg-white/5">
+                    <SelectTrigger className="h-8 text-xs border-[var(--border-default)]/50 bg-white/5">
                       <SelectValue placeholder="Tous les statuts" />
                     </SelectTrigger>
                     <SelectContent>
@@ -797,12 +821,12 @@ function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissi
         </div>
       </div>
 
-      <GlassCard glow={false} className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
+      <GlassCard glow={false} className="border-[var(--border-default)]/50 shadow-lg bg-[var(--bg-secondary)]/40 backdrop-blur-xl">
         <CardContent className="p-0">
           <div className="rounded-md border-0">
             <Table>
               <TableHeader>
-                <TableRow className="hover:bg-transparent border-white/5">
+                <TableRow className="hover:bg-transparent border-[var(--border-default)]/30">
                   <TableHead>Utilisateur</TableHead>
                   <TableHead>Rôle</TableHead>
                   <TableHead>Site</TableHead>
@@ -825,7 +849,7 @@ function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissi
                   </TableRow>
                 ) : (
                   filteredUsers.map((user) => (
-                    <TableRow key={user.id} className="hover:bg-white/5 border-white/5 transition-colors">
+                    <TableRow key={user.id} className="hover:bg-[var(--bg-secondary)] border-[var(--border-default)]/30 transition-colors">
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold shrink-0 ${user.is_active ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
@@ -838,7 +862,7 @@ function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissi
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="font-medium border-white/10 bg-white/5">
+                        <Badge variant="outline" className="font-medium border-[var(--border-default)]/50 bg-white/5">
                           {user.role}
                         </Badge>
                       </TableCell>
@@ -869,11 +893,15 @@ function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissi
                                 <MoreHorizontal className="h-4 w-4" />
                               </NeonButton>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-[200px] bg-background/95 backdrop-blur-xl border-white/10">
+                            <DropdownMenuContent align="end" className="w-[200px] bg-[var(--bg-primary)]/95 backdrop-blur-xl border-[var(--border-default)]/50">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuItem onClick={() => openEditDialog(user)} className="cursor-pointer">
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Modifier informations
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openDossiersDialog(user)} className="cursor-pointer">
+                                <Building2 className="mr-2 h-4 w-4 text-primary" />
+                                Assigner les dossiers
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => openRoleDialog(user)} className="cursor-pointer">
                                 <ShieldAlert className="mr-2 h-4 w-4" />
@@ -902,7 +930,7 @@ function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissi
       </GlassCard>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-[500px] rounded-xl border-white/10 bg-background/95 backdrop-blur-xl">
+        <DialogContent className="w-[95vw] sm:max-w-[500px] rounded-xl border-[var(--border-default)]/50 bg-[var(--bg-primary)]/95 backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle>
               {dialogMode === 'edit' && (form.id ? 'Modifier l\'utilisateur' : 'Ajouter un utilisateur')}
@@ -956,6 +984,33 @@ function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissi
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="grid gap-2">
+                  <Label>Dossiers (Entités) assignés</Label>
+                  <div className="grid grid-cols-2 gap-2 border border-[var(--border-default)]/30 rounded-lg p-3 bg-white/5 max-h-[140px] overflow-y-auto">
+                    {entites.map((entite) => {
+                      const isChecked = (form.dossiers || []).includes(entite.id);
+                      return (
+                        <label key={entite.id} className="flex items-center gap-2 text-xs cursor-pointer hover:text-white transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              const newDossiers = e.target.checked
+                                ? [...(form.dossiers || []), entite.id]
+                                : (form.dossiers || []).filter((id: string) => id !== entite.id);
+                              setForm({ ...form, dossiers: newDossiers });
+                            }}
+                            className="h-3.5 w-3.5 rounded border-white/20 bg-white/5 text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                          />
+                          <span className="truncate">{entite.raisonSociale}</span>
+                        </label>
+                      );
+                    })}
+                    {entites.length === 0 && (
+                      <p className="text-xs text-muted-foreground col-span-2 text-center py-2">Aucun dossier configuré</p>
+                    )}
+                  </div>
+                </div>
               </>
             )}
 
@@ -991,6 +1046,38 @@ function UsersView({ activeTab, setActiveTab }: { activeTab: 'users' | 'permissi
                 <p className="text-sm text-muted-foreground mt-2">
                   Ce mot de passe remplacera l'ancien pour cet utilisateur.
                 </p>
+              </div>
+            )}
+
+            {dialogMode === 'dossiers' && (
+              <div className="grid gap-4">
+                <p className="text-xs text-muted-foreground">
+                  Sélectionnez les dossiers (entités) auxquels <strong>{form.nom || 'cet utilisateur'}</strong> aura accès.
+                </p>
+                <div className="grid grid-cols-1 gap-2 border border-[var(--border-default)]/30 rounded-lg p-3 bg-white/5 max-h-[200px] overflow-y-auto">
+                  {entites.map((entite) => {
+                    const isChecked = (form.dossiers || []).includes(entite.id);
+                    return (
+                      <label key={entite.id} className="flex items-center gap-2.5 text-sm cursor-pointer hover:text-white transition-colors py-1">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            const newDossiers = e.target.checked
+                              ? [...(form.dossiers || []), entite.id]
+                              : (form.dossiers || []).filter((id: string) => id !== entite.id);
+                            setForm({ ...form, dossiers: newDossiers });
+                          }}
+                          className="h-4 w-4 rounded border-white/20 bg-white/5 text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                        />
+                        <span className="truncate">{entite.raisonSociale}</span>
+                      </label>
+                    );
+                  })}
+                  {entites.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-2">Aucun dossier configuré</p>
+                  )}
+                </div>
               </div>
             )}
           </div>

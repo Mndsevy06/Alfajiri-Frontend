@@ -90,6 +90,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { TiersFormModal } from '@/components/tiers-form-modal';
 
 type View = 'saisie' | 'valide';
 
@@ -109,6 +110,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
   const [TIERS, setTiers] = useState<any[]>([]);
   const [savedBrouillards, setSavedBrouillards] = useState<Ecriture[]>([]);
   const [editingBrouillonId, setEditingBrouillonId] = useState<string | null>(null);
+  const [isTiersModalOpen, setIsTiersModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -141,18 +143,36 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
 
   }, []);
 
+
+
   const handleTerrainToJournal = async (op: any) => {
-    // Determine account based on nature or type
     let compte = '';
     let libelleCompte = '';
     
-    // Quick heuristic based on nature
-    if (op.nature.toLowerCase().includes('carburant')) { compte = '611'; libelleCompte = 'Carburant'; }
-    else if (op.nature.toLowerCase().includes('transport')) { compte = '612'; libelleCompte = 'Transport'; }
-    else if (op.nature.toLowerCase().includes('douane')) { compte = '64'; libelleCompte = 'Frais de douane'; }
-    else if (op.nature.toLowerCase().includes('mission')) { compte = '65'; libelleCompte = 'Frais de mission'; }
+    const opNature = op.nature.toLowerCase();
+    const matchedCompte = PLAN_COMPTABLE.find(c => 
+      c.libelle.toLowerCase() === opNature ||
+      c.libelle.toLowerCase().includes(opNature) ||
+      opNature.includes(c.libelle.toLowerCase())
+    );
+    
+    if (matchedCompte) {
+      compte = matchedCompte.numero;
+      libelleCompte = matchedCompte.libelle;
+    } else {
+      if (opNature.includes('carburant')) { compte = '611'; libelleCompte = 'Carburant'; }
+      else if (opNature.includes('transport')) { compte = '612'; libelleCompte = 'Transport'; }
+      else if (opNature.includes('douane')) { compte = '64'; libelleCompte = 'Frais de douane'; }
+      else if (opNature.includes('mission')) { compte = '65'; libelleCompte = 'Frais de mission'; }
+    }
     
     try {
+      // Fetch file if it exists
+      let fileObj = null;
+      if (op.fichier) {
+        fileObj = op.fichier;
+      }
+
       // Mark as integrated in DB
       await fetchWithAuth(`/terrain/operations/${op.id}/`, {
         method: 'PATCH',
@@ -168,6 +188,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
           libelle: op.nature,
           debit: op.typeOp === 'depense' ? op.montant : 0,
           credit: op.typeOp === 'recette' ? op.montant : 0,
+          fichier: fileObj
         },
         ...lignes
       ]);
@@ -203,7 +224,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
   }, [journal, date, JOURNAUX]);
   
   // Lignes d'écriture (étendue localement pour gérer le fichier)
-  const [lignes, setLignes] = useState<(LigneEcriture & { fichier?: File | null })[]>([]);
+  const [lignes, setLignes] = useState<(LigneEcriture & { fichier?: File | string | null })[]>([]);
 
   const [openConfig, setOpenConfig] = useState(false);
   const [openNewLine, setOpenNewLine] = useState(false);
@@ -231,6 +252,8 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
           nature: op.nature,
           date: op.date_creation,
           photo: op.has_photo,
+          fichier: op.fichier,
+          saisieParNom: op.saisie_par_nom,
           notes: op.notes,
           statut: op.statut
         }));
@@ -258,8 +281,9 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
   const [nlCredit, setNlCredit] = useState('');
   const [nlCentreCout, setNlCentreCout] = useState('');
   const [nlTiersAuxiliaire, setNlTiersAuxiliaire] = useState('');
-  const [nlFichier, setNlFichier] = useState<File | null>(null);
+  const [nlFichier, setNlFichier] = useState<File | string | null>(null);
   const [openCompte, setOpenCompte] = useState(false);
+  const [editingLigneId, setEditingLigneId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Search and filter state
@@ -320,7 +344,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
     }
 
     const newLigne: any = {
-      id: Math.random().toString(),
+      id: editingLigneId || Math.random().toString(),
       date: new Date().toISOString().split('T')[0],
       compte: nlCompte,
       libelleCompte: compteInfo ? compteInfo.libelle : '',
@@ -332,7 +356,12 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
       tiers_auxiliaire: nlTiersAuxiliaire || null
     };
 
-    setLignes([...lignes, newLigne]);
+    if (editingLigneId) {
+      setLignes(lignes.map(l => l.id === editingLigneId ? newLigne : l));
+    } else {
+      setLignes([...lignes, newLigne]);
+    }
+    
     setNlCompte('');
     setNlLibelle('');
     setNlDebit('');
@@ -340,30 +369,55 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
     setNlCentreCout('');
     setNlTiersAuxiliaire('');
     setNlFichier(null);
+    setEditingLigneId(null);
     if (fileRef.current) fileRef.current.value = '';
     setOpenNewLine(false);
     setCurrentPage(1);
+  };
+
+  const handleEditLigne = (ligne: any) => {
+    setNlCompte(ligne.compte);
+    setNlLibelle(ligne.libelle);
+    setNlDebit(ligne.debit ? ligne.debit.toString() : '');
+    setNlCredit(ligne.credit ? ligne.credit.toString() : '');
+    setNlCentreCout(ligne.centre_cout || '');
+    setNlTiersAuxiliaire(ligne.tiers_auxiliaire || '');
+    setNlFichier(ligne.fichier || null);
+    setEditingLigneId(ligne.id);
+    setOpenNewLine(true);
   };
 
   const removeLigne = (id: string) => {
     setLignes(lignes.filter((l) => l.id !== id));
   };
 
-  const handleEditBrouillon = (brouillon: Ecriture) => {
+  const handleEditBrouillon = async (brouillon: Ecriture) => {
     setJournal(brouillon.journal as JournalCode);
     setDate(brouillon.date);
     setLibelle(brouillon.libelle);
     setNumeroEcriture(brouillon.numero);
     setNumeroPiece(brouillon.piece || `PC-${brouillon.numero}`);
     
-    const loadedLignes = brouillon.lignes.map((l: any) => ({
-      ...l,
-      id: l.id || Math.random().toString()
-    }));
+    // Load lines and fetch files
+    const loadedLignes = brouillon.lignes.map((l: any) => {
+      return {
+        ...l,
+        id: l.id || Math.random().toString(),
+        fichier: l.fichier
+      };
+    });
+    
     setLignes(loadedLignes);
     setEditingBrouillonId(brouillon.id);
     setOpenBrouillons(false);
   };
+
+  const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
 
   const handleSave = async (valider: boolean) => {
     if (!hasLignes) {
@@ -393,6 +447,37 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
     const num = `${journal}-${new Date().getFullYear()}-${String(journalInfo.dernierNumero + 1).padStart(5, '0')}`;
     
     try {
+      const lignesData = await Promise.all(lignes.map(async (l) => {
+        let fichier_base64 = null;
+        let fichier_nom = null;
+        let fichier_url = null;
+        if (l.fichier) {
+            if (l.fichier instanceof File) {
+                try {
+                    fichier_base64 = await toBase64(l.fichier);
+                    fichier_nom = l.fichier.name;
+                } catch (e) {
+                    console.error("Erreur de conversion du fichier", e);
+                }
+            } else if (typeof l.fichier === 'string') {
+                fichier_url = l.fichier;
+            }
+        }
+        return {
+          date: l.date,
+          compte: l.compte,
+          libelleCompte: l.libelleCompte,
+          libelle: l.libelle,
+          debit: l.debit,
+          credit: l.credit,
+          centre_cout: l.centre_cout || null,
+          tiers_auxiliaire: l.tiers_auxiliaire || null,
+          fichier_base64,
+          fichier_nom,
+          fichier_url
+        };
+      }));
+
       const ecritureData = {
         numero: numeroEcriture || num,
         piece: numeroPiece || `PC-${num}`,
@@ -400,14 +485,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
         date: date,
         libelle: libelle,
         statut: valider ? 'valide' : 'brouillard',
-        lignes: lignes.map(l => ({
-          date: l.date,
-          compte: l.compte,
-          libelleCompte: l.libelleCompte,
-          libelle: l.libelle,
-          debit: l.debit,
-          credit: l.credit
-        }))
+        lignes: lignesData
       };
 
       await fetchWithAuth(editingBrouillonId ? `/saisie/ecritures/${editingBrouillonId}/` : '/saisie/ecritures/', {
@@ -451,7 +529,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
       {/* Statistiques Section + Toggle Saisie/Journal à droite */}
       <div className="flex items-start gap-2">
         <div className="grid grid-cols-4 gap-1 sm:gap-2 flex-1">
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Débits</span>
@@ -463,7 +541,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
           </CardContent>
         </Card>
         
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Crédits</span>
@@ -475,7 +553,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
           </CardContent>
         </Card>
 
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Équilibre</span>
@@ -494,7 +572,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
           </CardContent>
         </Card>
 
-        <Card className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Brouillons</span>
@@ -509,10 +587,10 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
       </div>
 
       {/* Barre d'actions et Informations de l'en-tête (Sur la même ligne, sans fond) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1 relative">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-[var(--border-default)]/50 mb-1 relative">
         
         {/* Toggle Saisie / Journal (A gauche) */}
-        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50 shrink-0">
+        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-[var(--border-default)]/50 shrink-0">
           <button
             onClick={() => setView('saisie')}
             className={cn(
@@ -613,15 +691,29 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
           </Popover>
 
           {/* Bouton Nouvelle Ligne (Icône seule) */}
-          <Dialog open={openNewLine} onOpenChange={setOpenNewLine}>
+          <Dialog open={openNewLine} onOpenChange={(open) => {
+            if (!open) {
+              setEditingLigneId(null);
+            }
+            setOpenNewLine(open);
+          }}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg shadow-sm hover:bg-accent group" title="Nouvelle Ligne">
+              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg shadow-sm hover:bg-accent group" title="Nouvelle Ligne" onClick={() => {
+                setNlCompte('');
+                setNlLibelle('');
+                setNlDebit('');
+                setNlCredit('');
+                setNlCentreCout('');
+                setNlTiersAuxiliaire('');
+                setNlFichier(null);
+                setEditingLigneId(null);
+              }}>
                 <Plus className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle>Ajouter une ligne au journal</DialogTitle>
+                <DialogTitle>{editingLigneId ? "Modifier la ligne" : "Ajouter une ligne au journal"}</DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2 flex flex-col">
@@ -734,9 +826,12 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
 
                       {compteInfo?.requiert_auxiliaire && (
                         <div className="space-y-2">
-                          <Label className="flex items-center gap-2">
-                            Tiers / Auxiliaire <span className="text-destructive">*</span>
-                          </Label>
+                          <div className="flex items-center justify-between">
+                            <Label className="flex items-center gap-2">
+                              Tiers / Auxiliaire <span className="text-destructive">*</span>
+                            </Label>
+                            <button type="button" onClick={() => setIsTiersModalOpen(true)} className="text-[10px] text-primary hover:underline font-semibold">+ Nouveau</button>
+                          </div>
                           <Select value={nlTiersAuxiliaire} onValueChange={setNlTiersAuxiliaire}>
                             <SelectTrigger>
                               <SelectValue placeholder="Sélectionner un tiers" />
@@ -759,7 +854,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
                   );
                 })()}
 
-                <div className="space-y-2 pt-2 border-t border-border/50">
+                <div className="space-y-2 pt-2 border-t border-[var(--border-default)]/50">
                   <Label>Pièce Jointe (Optionnel)</Label>
                   <div className="flex items-center gap-3">
                     <input type="file" ref={fileRef} className="hidden" onChange={handleFileChange} />
@@ -773,12 +868,12 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
                       </Button>
                     )}
                   </div>
-                  {nlFichier && <p className="text-xs text-muted-foreground truncate">{nlFichier.name}</p>}
+                  {nlFichier && <p className="text-xs text-muted-foreground truncate">{nlFichier instanceof File ? nlFichier.name : 'Justificatif existant'}</p>}
                 </div>
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setOpenNewLine(false)}>Annuler</Button>
-                <Button onClick={handleAddLigne}>Ajouter la ligne</Button>
+                <Button onClick={handleAddLigne}>{editingLigneId ? "Enregistrer les modifications" : "Ajouter la ligne"}</Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -941,6 +1036,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
                   <TableHeader>
                     <TableRow>
                       <TableHead>Date</TableHead>
+                      <TableHead>Saisi par</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Nature / Source</TableHead>
                       <TableHead className="text-right">Montant (USD)</TableHead>
@@ -952,6 +1048,9 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
                       <TableRow key={op.id}>
                         <TableCell className="text-xs">
                           {new Date(op.date).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {op.saisieParNom || 'Agent'}
                         </TableCell>
                         <TableCell>
                           <Badge variant={op.typeOp === 'recette' ? 'default' : 'secondary'} className={op.typeOp === 'recette' ? 'bg-success hover:bg-success/90' : ''}>
@@ -1081,8 +1180,8 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
 
           {/* Dialog Document Preview */}
           <Dialog open={showReceiptPreview} onOpenChange={setShowReceiptPreview}>
-            <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-muted/20 border-border/50">
-              <div className="flex items-center justify-between p-4 bg-background border-b border-border/50 shadow-sm">
+            <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-muted/20 border-[var(--border-default)]/50">
+              <div className="flex items-center justify-between p-4 bg-background border-b border-[var(--border-default)]/50 shadow-sm">
                 <div className="flex items-center gap-2">
                   <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                     <Camera className="h-4 w-4 text-primary" />
@@ -1098,16 +1197,30 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
               </div>
               <div className="p-4 flex justify-center bg-muted/30">
                 <div className="relative rounded-lg overflow-hidden border border-border shadow-sm max-h-[60vh] flex items-center justify-center bg-white w-full">
-                  {/* Utilisation d'une image générique de facture comme démonstration du justificatif */}
-                  <img 
-                    src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&q=80" 
-                    alt="Justificatif" 
-                    className="max-w-full max-h-[60vh] object-contain"
-                  />
+                  {selectedTerrainOp?.fichier ? (
+                    <img 
+                      src={(() => {
+                        let url = selectedTerrainOp.fichier;
+                        if (url.startsWith('/')) {
+                          const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace('/api', '');
+                          url = baseUrl + url;
+                        }
+                        return url;
+                      })()}
+                      alt="Justificatif" 
+                      className="max-w-full max-h-[60vh] object-contain"
+                    />
+                  ) : (
+                    <img 
+                      src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&q=80" 
+                      alt="Justificatif (Démo)" 
+                      className="max-w-full max-h-[60vh] object-contain opacity-50 grayscale"
+                    />
+                  )}
                   <div className="absolute inset-0 ring-1 ring-inset ring-black/10 rounded-lg pointer-events-none"></div>
                 </div>
               </div>
-              <div className="p-3 bg-background border-t border-border/50 flex justify-end gap-2">
+              <div className="p-3 bg-background border-t border-[var(--border-default)]/50 flex justify-end gap-2">
                 <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setShowReceiptPreview(false)}>Retour aux détails</Button>
                 <Button size="sm" className="h-8 text-xs" variant="secondary">
                   <Download className="h-3.5 w-3.5 mr-1.5" />
@@ -1180,7 +1293,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
       </div>
 
       {/* Tableau du Journal */}
-      <Card className="border-border/50 shadow-sm overflow-hidden">
+      <Card className="border-[var(--border-default)]/50 shadow-sm overflow-hidden">
         <CardContent className="p-0">
           <Table>
             <TableHeader className="bg-muted/30">
@@ -1202,7 +1315,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
                     <TableCell className="text-center font-mono text-xs text-muted-foreground">{ligne.date}</TableCell>
                     <TableCell className="text-center font-mono text-xs text-muted-foreground">{numeroPiece}</TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="secondary" className="font-mono bg-background shadow-sm border-border/50">{ligne.compte}</Badge>
+                      <Badge variant="secondary" className="font-mono bg-background shadow-sm border-[var(--border-default)]/50">{ligne.compte}</Badge>
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex flex-col items-center">
@@ -1223,10 +1336,19 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
                             variant="ghost" 
                             size="icon" 
                             className="h-8 w-8 text-primary hover:bg-primary/10" 
-                            title={`Voir: ${ligne.fichier.name}`}
+                            title={ligne.fichier instanceof File ? `Voir: ${ligne.fichier.name}` : "Voir le justificatif"}
                             onClick={() => {
-                              const url = URL.createObjectURL(ligne.fichier!);
-                              window.open(url, '_blank');
+                              let url = "";
+                              if (ligne.fichier instanceof File) {
+                                url = URL.createObjectURL(ligne.fichier);
+                              } else if (typeof ligne.fichier === 'string') {
+                                url = ligne.fichier;
+                                if (url.startsWith('/')) {
+                                  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api').replace('/api', '');
+                                  url = baseUrl + url;
+                                }
+                              }
+                              if (url) window.open(url, '_blank');
                             }}
                           >
                             <FileIcon className="h-4 w-4" />
@@ -1235,14 +1357,26 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
                       )}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                        onClick={() => removeLigne(ligne.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-primary hover:bg-primary/10"
+                          onClick={() => handleEditLigne(ligne)}
+                          title="Modifier"
+                        >
+                          <PencilLine className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                          onClick={() => removeLigne(ligne.id)}
+                          title="Supprimer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -1258,7 +1392,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-border/50 p-4 bg-muted/10">
+            <div className="flex items-center justify-between border-t border-[var(--border-default)]/50 p-4 bg-muted/10">
               <p className="text-xs text-muted-foreground">
                 Affichage de {(currentPage - 1) * itemsPerPage + 1} à {Math.min(currentPage * itemsPerPage, filteredLignes.length)} sur {filteredLignes.length} lignes
               </p>
@@ -1289,6 +1423,22 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
           )}
         </CardContent>
       </Card>
+
+      <TiersFormModal 
+        open={isTiersModalOpen} 
+        onOpenChange={setIsTiersModalOpen}
+        onSuccess={async (newTiers) => {
+          if (newTiers && newTiers.code) {
+            setNlTiersAuxiliaire(newTiers.code);
+          }
+          try {
+            const data = await fetchWithAuth('/plan_comptable/tiers/');
+            setTiers(data);
+          } catch (e) {
+            console.error(e);
+          }
+        }}
+      />
     </div>
   );
 }
@@ -1585,10 +1735,10 @@ function ValideView({ setView, view }: { setView: (v: View) => void; view: View 
       </div>
 
       {/* Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1.5 border-b border-border/50 mb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1.5 border-b border-[var(--border-default)]/50 mb-2">
         
         {/* Toggle Saisie / Journal (A gauche) */}
-        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50 shrink-0">
+        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-[var(--border-default)]/50 shrink-0">
           <button
             onClick={() => setView('saisie')}
             className={cn(
@@ -1693,7 +1843,7 @@ function ValideView({ setView, view }: { setView: (v: View) => void; view: View 
         </div>
       </div>
 
-      <Card className="border-border/50 shadow-sm overflow-hidden">
+      <Card className="border-[var(--border-default)]/50 shadow-sm overflow-hidden">
         <CardContent className="p-0">
         <Table>
           <TableHeader className="bg-muted/30">
@@ -1720,7 +1870,7 @@ function ValideView({ setView, view }: { setView: (v: View) => void; view: View 
                 <TableCell className="text-center text-xs text-muted-foreground">{formatDate(ligne.dateEcriture)}</TableCell>
                 <TableCell className="text-center">
                   <div className="flex flex-col items-center">
-                    <Badge variant="secondary" className="font-mono bg-background shadow-sm border-border/50">{ligne.compte}</Badge>
+                    <Badge variant="secondary" className="font-mono bg-background shadow-sm border-[var(--border-default)]/50">{ligne.compte}</Badge>
                   </div>
                 </TableCell>
                 <TableCell className="text-center">
@@ -1756,7 +1906,7 @@ function ValideView({ setView, view }: { setView: (v: View) => void; view: View 
 
         {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-border/50 p-3 bg-muted/10">
+          <div className="flex items-center justify-between border-t border-[var(--border-default)]/50 p-3 bg-muted/10">
             <p className="text-xs text-muted-foreground">
               Affichage de {(currentPage - 1) * itemsPerPage + 1} à {Math.min(currentPage * itemsPerPage, allLines.length)} sur {allLines.length} lignes
             </p>

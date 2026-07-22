@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -183,7 +183,7 @@ function DeclarationsView({ activeTab, setActiveTab }: { activeTab: 'declaration
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
           >
-            <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+            <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
                 <div className="flex flex-col overflow-hidden w-full">
                   <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">{kpi.title}</span>
@@ -199,9 +199,9 @@ function DeclarationsView({ activeTab, setActiveTab }: { activeTab: 'declaration
       </div>
 
       {/* Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1.5 relative">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-[var(--border-default)]/50 mb-1.5 relative">
         {/* Toggle (gauche) */}
-        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50 shrink-0">
+        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-[var(--border-default)]/50 shrink-0">
           <button onClick={() => setActiveTab('declarations')} className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all', activeTab === 'declarations' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground')}>
             <FileSignature className="w-3.5 h-3.5" /> Déclarations
           </button>
@@ -218,7 +218,7 @@ function DeclarationsView({ activeTab, setActiveTab }: { activeTab: 'declaration
               placeholder="Rechercher..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 h-8 w-8 text-xs bg-transparent border-border transition-all duration-300 focus:w-[150px] hover:w-[150px] focus:bg-background/50 rounded-full cursor-pointer focus:cursor-text" 
+              className="pl-8 h-8 w-8 text-xs bg-transparent border-border transition-all duration-300 focus:w-[150px] hover:w-[150px] focus:bg-[var(--bg-secondary)]/40 rounded-full cursor-pointer focus:cursor-text" 
             />
           </div>
           <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg shadow-sm hover:bg-accent group" onClick={() => setIsDialogOpen(true)} title="Générer Déclaration">
@@ -227,11 +227,11 @@ function DeclarationsView({ activeTab, setActiveTab }: { activeTab: 'declaration
         </div>
       </div>
 
-        <GlassCard glow={false} className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
+        <GlassCard glow={false} className="border-[var(--border-default)]/50 shadow-lg bg-[var(--bg-secondary)]/40 backdrop-blur-xl">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
-                <TableRow className="hover:bg-transparent border-white/5">
+                <TableRow className="hover:bg-transparent border-[var(--border-default)]/30">
                   <TableHead>Référence</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Période</TableHead>
@@ -248,7 +248,7 @@ function DeclarationsView({ activeTab, setActiveTab }: { activeTab: 'declaration
                   <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucune déclaration trouvée.</TableCell></TableRow>
                 ) : (
                   filtered.map((dec) => (
-                    <TableRow key={dec.id} className="hover:bg-white/5 border-white/5">
+                    <TableRow key={dec.id} className="hover:bg-[var(--bg-secondary)] border-[var(--border-default)]/30">
                       <TableCell className="font-medium text-muted-foreground">{dec.id}</TableCell>
                       <TableCell className="font-semibold">{dec.type_declaration}</TableCell>
                       <TableCell>{dec.periode}</TableCell>
@@ -283,7 +283,7 @@ function DeclarationsView({ activeTab, setActiveTab }: { activeTab: 'declaration
         </GlassCard>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto rounded-xl border-white/10 bg-background/95 backdrop-blur-xl">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto rounded-xl border-[var(--border-default)]/50 bg-[var(--bg-primary)]/95 backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle>Générer une Déclaration</DialogTitle>
             <DialogDescription>
@@ -446,9 +446,9 @@ function RetenuesView({ activeTab, setActiveTab }: { activeTab: 'declarations' |
   return (
     <div className="space-y-1.5">
       {/* Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1.5 relative">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-[var(--border-default)]/50 mb-1.5 relative">
         {/* Toggle (gauche) */}
-        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50 shrink-0">
+        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-[var(--border-default)]/50 shrink-0">
           <button onClick={() => setActiveTab('declarations')} className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all', activeTab === 'declarations' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground')}>
             <FileSignature className="w-3.5 h-3.5" /> Déclarations
           </button>
@@ -465,7 +465,7 @@ function RetenuesView({ activeTab, setActiveTab }: { activeTab: 'declarations' |
               placeholder="Rechercher..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="pl-8 h-8 w-8 text-xs bg-transparent border-border transition-all duration-300 focus:w-[150px] hover:w-[150px] focus:bg-background/50 rounded-full cursor-pointer focus:cursor-text" 
+              className="pl-8 h-8 w-8 text-xs bg-transparent border-border transition-all duration-300 focus:w-[150px] hover:w-[150px] focus:bg-[var(--bg-secondary)]/40 rounded-full cursor-pointer focus:cursor-text" 
             />
           </div>
           <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg shadow-sm hover:bg-accent group" onClick={() => setIsDialogOpen(true)} title="Saisir Retenue">
@@ -474,11 +474,11 @@ function RetenuesView({ activeTab, setActiveTab }: { activeTab: 'declarations' |
         </div>
       </div>
 
-      <GlassCard glow={false} className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
+      <GlassCard glow={false} className="border-[var(--border-default)]/50 shadow-lg bg-[var(--bg-secondary)]/40 backdrop-blur-xl">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow className="hover:bg-transparent border-white/5">
+              <TableRow className="hover:bg-transparent border-[var(--border-default)]/30">
                 <TableHead>Référence</TableHead>
                 <TableHead>Tiers</TableHead>
                 <TableHead>Type de Retenue</TableHead>
@@ -495,7 +495,7 @@ function RetenuesView({ activeTab, setActiveTab }: { activeTab: 'declarations' |
                 <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucune retenue trouvée.</TableCell></TableRow>
               ) : (
                 filtered.map((ret) => (
-                  <TableRow key={ret.id} className="hover:bg-white/5 border-white/5">
+                  <TableRow key={ret.id} className="hover:bg-[var(--bg-secondary)] border-[var(--border-default)]/30">
                     <TableCell className="font-medium text-muted-foreground">{ret.id}</TableCell>
                     <TableCell className="font-semibold">{ret.tiers_nom}</TableCell>
                     <TableCell>
@@ -527,7 +527,7 @@ function RetenuesView({ activeTab, setActiveTab }: { activeTab: 'declarations' |
       </GlassCard>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto rounded-xl border-white/10 bg-background/95 backdrop-blur-xl">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto rounded-xl border-[var(--border-default)]/50 bg-[var(--bg-primary)]/95 backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle>Saisir une Retenue</DialogTitle>
             <DialogDescription>

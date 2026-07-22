@@ -170,9 +170,9 @@ export default function PlanComptablePage() {
       return nodes
         .map((node) => {
           const matches =
-            node.numero.toLowerCase().includes(term) ||
-            node.libelle.toLowerCase().includes(term) ||
-            (node.tiers?.nom.toLowerCase().includes(term) ?? false);
+            (node.numero?.toLowerCase() || '').includes(term) ||
+            (node.libelle?.toLowerCase() || '').includes(term) ||
+            (node.tiers?.nom?.toLowerCase() || '').includes(term);
           const childMatches = node.children ? filterNode(node.children) : [];
           if (matches || childMatches.length > 0) {
             return { ...node, children: childMatches, expanded: true };

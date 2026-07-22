@@ -14,8 +14,14 @@ import {
   Users, 
   Wallet,
   Briefcase,
-  Eye
+  Eye,
+  Download,
+  Image as ImageIcon
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -87,6 +93,7 @@ function EmployesView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'pa
   const [typeContrat, setTypeContrat] = useState('');
   const [salaireBase, setSalaireBase] = useState('');
   const [contratFile, setContratFile] = useState<File | null>(null);
+  const [photoProfilFile, setPhotoProfilFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadEmployes = async () => {
@@ -126,6 +133,7 @@ function EmployesView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'pa
       if (typeContrat) formData.append('type_contrat', typeContrat);
       if (salaireBase) formData.append('salaire_base', salaireBase);
       if (contratFile) formData.append('contrat_fichier', contratFile);
+      if (photoProfilFile) formData.append('photo_profil', photoProfilFile);
       
       await fetchWithAuth('/plan_comptable/tiers/', {
         method: 'POST',
@@ -143,6 +151,7 @@ function EmployesView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'pa
       setTypeContrat('');
       setSalaireBase('');
       setContratFile(null);
+      setPhotoProfilFile(null);
       
       loadEmployes();
     } catch (error) {
@@ -155,10 +164,66 @@ function EmployesView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'pa
 
   const filtered = employes.filter(e => e.nom.toLowerCase().includes(searchTerm.toLowerCase()));
 
+  const exportEmployes = () => {
+    if (filtered.length === 0) {
+      toast.error('Aucune donnée à télécharger');
+      return;
+    }
+    const data = filtered.map(emp => ({
+      Code: emp.code,
+      Nom: emp.nom,
+      Email: emp.email || '',
+      Téléphone: emp.telephone || '',
+      Poste: emp.poste || 'Employé standard',
+      Statut: emp.statut || 'Actif',
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Employes");
+    XLSX.writeFile(wb, "Liste_Employes.xlsx");
+    toast.success('Liste exportée avec succès en Excel');
+  };
+
+  const exportEmployesPDF = () => {
+    if (filtered.length === 0) {
+      toast.error('Aucune donnée à télécharger');
+      return;
+    }
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("Liste des Employés", 14, 15);
+    
+    const tableData = filtered.map(emp => [
+      emp.code,
+      emp.nom,
+      emp.telephone || '-',
+      emp.poste || 'Employé standard',
+      emp.statut || 'Actif'
+    ]);
+
+    autoTable(doc, {
+      startY: 25,
+      head: [['Code', 'Nom Complet', 'Téléphone', 'Poste', 'Statut']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [41, 128, 185] }
+    });
+
+    doc.save("Liste_Employes.pdf");
+    toast.success('Liste exportée avec succès en PDF');
+  };
+
+  const getAvatarUrl = (photoUrl: string) => {
+    if (!photoUrl) return '';
+    return photoUrl.startsWith('http')
+      ? photoUrl
+      : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000'}${photoUrl.startsWith('/') ? '' : '/'}${photoUrl}`;
+  };
+
   return (
     <div className="space-y-1.5">
       <div className="grid grid-cols-4 gap-1 sm:gap-2">
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Total Employés</span>
@@ -169,7 +234,7 @@ function EmployesView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'pa
             </div>
           </CardContent>
         </GlassCard>
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Masse Salariale</span>
@@ -180,7 +245,7 @@ function EmployesView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'pa
             </div>
           </CardContent>
         </GlassCard>
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Recrutements</span>
@@ -191,7 +256,7 @@ function EmployesView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'pa
             </div>
           </CardContent>
         </GlassCard>
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Départs</span>
@@ -205,9 +270,9 @@ function EmployesView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'pa
       </div>
 
       {/* Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1 relative">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-[var(--border-default)]/50 mb-1 relative">
         {/* Toggle (gauche) */}
-        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50 shrink-0">
+        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-[var(--border-default)]/50 shrink-0">
           <button onClick={() => setActiveTab('employes')} className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all', activeTab === 'employes' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground')}>
             <Users className="w-3.5 h-3.5" /> Employés
           </button>
@@ -224,20 +289,38 @@ function EmployesView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'pa
               placeholder="Rechercher un employé..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 h-8 w-8 text-xs bg-transparent border-border transition-all duration-300 focus:w-[200px] hover:w-[200px] focus:bg-background/50 rounded-full cursor-pointer focus:cursor-text"
+              className="pl-8 h-8 w-8 text-xs bg-transparent border-border transition-all duration-300 focus:w-[200px] hover:w-[200px] focus:bg-[var(--bg-secondary)]/40 rounded-full cursor-pointer focus:cursor-text"
             />
           </div>
-          <NeonButton size="icon" className="h-8 w-8 rounded-lg shadow-sm" onClick={() => setIsNewEmployeOpen(true)} title="Nouvel Employé">
-            <Plus className="w-3.5 h-3.5" />
-          </NeonButton>
-        </div>
+            <NeonButton size="icon" className="h-8 w-8 rounded-lg shadow-sm" onClick={() => setIsNewEmployeOpen(true)} title="Nouvel Employé">
+              <Plus className="w-3.5 h-3.5" />
+            </NeonButton>
+            <div className="w-px h-6 bg-border mx-1" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <NeonButton variant="outline" size="icon" className="h-8 w-8 rounded-lg shadow-sm hover:bg-accent group" title="Exporter">
+                  <Download className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                </NeonButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem onClick={exportEmployesPDF} className="cursor-pointer">
+                  <FileText className="h-4 w-4 mr-2 text-rose-400" />
+                  Export PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportEmployes} className="cursor-pointer">
+                  <Calculator className="h-4 w-4 mr-2 text-emerald-400" />
+                  Export Excel
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
       </div>
 
-      <GlassCard glow={false} className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
+      <GlassCard glow={false} className="border-[var(--border-default)]/50 shadow-lg bg-[var(--bg-secondary)]/40 backdrop-blur-xl">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow className="hover:bg-transparent border-white/5">
+              <TableRow className="hover:bg-transparent border-[var(--border-default)]/30">
                 <TableHead>Code</TableHead>
                 <TableHead>Nom complet</TableHead>
                 <TableHead>Contact</TableHead>
@@ -253,10 +336,14 @@ function EmployesView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'pa
                 <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun employé trouvé.</TableCell></TableRow>
               ) : (
                 filtered.map((emp) => (
-                  <TableRow key={emp.code} className="hover:bg-white/5 border-white/5">
+                  <TableRow key={emp.code} className="hover:bg-[var(--bg-secondary)] border-[var(--border-default)]/30">
                     <TableCell className="font-medium text-muted-foreground">{emp.code}</TableCell>
                     <TableCell className="font-bold flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs">{emp.nom.charAt(0)}</div>
+                      {emp.photo_profil ? (
+                        <img src={getAvatarUrl(emp.photo_profil)} alt={emp.nom} className="w-8 h-8 rounded-full object-cover border border-border" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs">{emp.nom.charAt(0)}</div>
+                      )}
                       {emp.nom}
                     </TableCell>
                     <TableCell>
@@ -289,7 +376,7 @@ function EmployesView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'pa
 
       {/* Détails Employé Dialog */}
       <Dialog open={!!selectedEmploye} onOpenChange={(open) => !open && setSelectedEmploye(null)}>
-        <DialogContent className="max-w-[92vw] sm:max-w-[500px] rounded-xl border-white/10 bg-background/95 backdrop-blur-xl">
+        <DialogContent className="max-w-[92vw] sm:max-w-[500px] rounded-xl border-[var(--border-default)]/50 bg-[var(--bg-primary)]/95 backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle>Détails de l'employé</DialogTitle>
             <DialogDescription className="hidden">Détails et informations de l'employé sélectionné</DialogDescription>
@@ -297,9 +384,13 @@ function EmployesView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'pa
           {selectedEmploye && (
             <div className="space-y-4 pt-4">
               <div className="flex items-center gap-4 border-b border-border pb-4">
-                <div className="w-16 h-16 rounded-full bg-primary/20 text-primary flex items-center justify-center text-2xl font-bold">
-                  {selectedEmploye.nom.charAt(0)}
-                </div>
+                {selectedEmploye.photo_profil ? (
+                  <img src={getAvatarUrl(selectedEmploye.photo_profil)} alt={selectedEmploye.nom} className="w-16 h-16 rounded-full object-cover border border-border" />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-primary/20 text-primary flex items-center justify-center text-2xl font-bold">
+                    {selectedEmploye.nom.charAt(0)}
+                  </div>
+                )}
                 <div>
                   <h3 className="text-xl font-bold">{selectedEmploye.nom}</h3>
                   <p className="text-sm text-muted-foreground">{selectedEmploye.code}</p>
@@ -334,19 +425,36 @@ function EmployesView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'pa
       </Dialog>
       
       <Dialog open={isNewEmployeOpen} onOpenChange={setIsNewEmployeOpen}>
-        <DialogContent className="max-w-[92vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto rounded-xl border-white/10 bg-background/95 backdrop-blur-xl">
+        <DialogContent className="max-w-[92vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto rounded-xl border-[var(--border-default)]/50 bg-[var(--bg-primary)]/95 backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle>Ajouter un nouvel employé</DialogTitle>
             <DialogDescription className="hidden">Formulaire de création d'un nouvel employé</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateEmploye} className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="nom">Nom complet <span className="text-destructive">*</span></Label>
-              <Input id="nom" value={nom} onChange={e => setNom(e.target.value)} required placeholder="Ex: Jean Dupont" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="jean@alphajiri.com" />
+            <div className="flex flex-col sm:flex-row gap-4 items-start">
+              <div className="flex-1 space-y-4 w-full">
+                <div className="space-y-2">
+                  <Label htmlFor="nom">Nom complet <span className="text-destructive">*</span></Label>
+                  <Input id="nom" value={nom} onChange={e => setNom(e.target.value)} required placeholder="Ex: Jean Dupont" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="jean@alphajiri.com" />
+                </div>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center border-2 border-dashed border-border overflow-hidden">
+                  {photoProfilFile ? (
+                    <img src={URL.createObjectURL(photoProfilFile)} className="w-full h-full object-cover" alt="Aperçu" />
+                  ) : (
+                    <ImageIcon className="w-8 h-8 text-muted-foreground/50" />
+                  )}
+                </div>
+                <Label htmlFor="photo_profil" className="cursor-pointer text-xs text-primary hover:underline font-medium">
+                  Ajouter une photo
+                </Label>
+                <input id="photo_profil" type="file" accept="image/*" className="hidden" onChange={e => setPhotoProfilFile(e.target.files?.[0] || null)} />
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="tel">Téléphone</Label>
@@ -432,6 +540,63 @@ function PaieView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'paie',
     return matchSearch && matchPeriode;
   });
 
+  const exportBulletins = () => {
+    if (filteredBulletins.length === 0) {
+      toast.error('Aucune donnée à télécharger');
+      return;
+    }
+    const data = filteredBulletins.map(b => ({
+      'Période': b.periode,
+      'Employé': b.employe_nom,
+      'Salaire Brut': (parseFloat(b.salaire_base) + parseFloat(b.heures_sup) + (b.primes?.reduce((s: number, p: any) => s + parseFloat(p.montant), 0) || 0)).toFixed(2),
+      'Charges Sociales': parseFloat(b.cnss_employe).toFixed(2),
+      'Impôts': parseFloat(b.ipr).toFixed(2),
+      'Net à Payer': parseFloat(b.net_a_payer).toFixed(2),
+      'Statut': b.statut
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Bulletins");
+    XLSX.writeFile(wb, `Bulletins_${filterMois}.xlsx`);
+    toast.success('Liste des bulletins exportée avec succès en Excel');
+  };
+
+  const exportBulletinsPDF = () => {
+    if (filteredBulletins.length === 0) {
+      toast.error('Aucune donnée à télécharger');
+      return;
+    }
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text(`Liste des Bulletins de Paie - ${filterMois}`, 14, 15);
+    
+    const tableData = filteredBulletins.map(b => [
+      b.periode,
+      b.employe_nom,
+      (parseFloat(b.salaire_base) + parseFloat(b.heures_sup) + (b.primes?.reduce((s: number, p: any) => s + parseFloat(p.montant), 0) || 0)).toFixed(2),
+      parseFloat(b.net_a_payer).toFixed(2),
+      b.statut
+    ]);
+
+    autoTable(doc, {
+      startY: 25,
+      head: [['Période', 'Employé', 'Salaire Brut', 'Net à Payer', 'Statut']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [41, 128, 185] }
+    });
+
+    doc.save(`Bulletins_${filterMois}.pdf`);
+    toast.success('Liste des bulletins exportée avec succès en PDF');
+  };
+
+  const getAvatarUrl = (photoUrl: string) => {
+    if (!photoUrl) return '';
+    return photoUrl.startsWith('http')
+      ? photoUrl
+      : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000'}${photoUrl.startsWith('/') ? '' : '/'}${photoUrl}`;
+  };
+
   // Calculate KPIs
   const totalBrut = filteredBulletins.reduce((acc, curr) => acc + parseFloat(curr.salaire_base || 0) + parseFloat(curr.heures_sup || 0) + (curr.primes?.reduce((s: number, p: any) => s + parseFloat(p.montant), 0) || 0), 0);
   const totalSocial = filteredBulletins.reduce((acc, curr) => acc + parseFloat(curr.cnss_employe || 0), 0);
@@ -481,7 +646,7 @@ function PaieView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'paie',
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
           >
-            <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+            <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
                 <div className="flex flex-col overflow-hidden w-full">
                   <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">{kpi.title}</span>
@@ -497,9 +662,9 @@ function PaieView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'paie',
       </div>
 
       {/* Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1 relative">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-[var(--border-default)]/50 mb-1 relative">
         {/* Toggle (gauche) */}
-        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50 shrink-0">
+        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-[var(--border-default)]/50 shrink-0">
           <button onClick={() => setActiveTab('employes')} className={cn('flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-all', activeTab === 'employes' ? 'bg-blue-600 shadow-sm text-white' : 'text-muted-foreground hover:text-foreground')}>
             <Users className="w-3.5 h-3.5" /> Employés
           </button>
@@ -546,14 +711,33 @@ function PaieView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'paie',
           <NeonButton size="icon" onClick={() => setIsDialogOpen(true)} className="h-8 w-8 rounded-lg shadow-sm" title="Nouveau bulletin">
             <Plus className="h-3.5 w-3.5" />
           </NeonButton>
+          <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <NeonButton variant="outline" size="icon" className="h-8 w-8 rounded-lg shadow-sm group" title="Exporter">
+                <Download className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+              </NeonButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem onClick={exportBulletinsPDF} className="cursor-pointer">
+                <FileText className="h-4 w-4 mr-2 text-rose-400" />
+                Export PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportBulletins} className="cursor-pointer">
+                <Calculator className="h-4 w-4 mr-2 text-emerald-400" />
+                Export Excel
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      <GlassCard glow={false} className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
+      <GlassCard glow={false} className="border-[var(--border-default)]/50 shadow-lg bg-[var(--bg-secondary)]/40 backdrop-blur-xl">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow className="hover:bg-transparent border-white/5">
+              <TableRow className="hover:bg-transparent border-[var(--border-default)]/30">
                   <TableHead>Période</TableHead>
                   <TableHead>Employé</TableHead>
                   <TableHead className="text-right">Salaire Brut</TableHead>
@@ -578,9 +762,16 @@ function PaieView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'paie',
                   </TableRow>
                 ) : (
                   filteredBulletins.map((bulletin) => (
-                    <TableRow key={bulletin.id} className="hover:bg-white/5 transition-colors border-white/5">
+                    <TableRow key={bulletin.id} className="hover:bg-[var(--bg-secondary)] transition-colors border-[var(--border-default)]/30">
                       <TableCell className="font-medium text-muted-foreground">{bulletin.periode}</TableCell>
-                      <TableCell className="font-semibold">{bulletin.employe_nom}</TableCell>
+                      <TableCell className="font-semibold flex items-center gap-3">
+                        {bulletin.employe_photo_profil ? (
+                          <img src={getAvatarUrl(bulletin.employe_photo_profil)} alt={bulletin.employe_nom} className="w-8 h-8 rounded-full object-cover border border-border" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs">{bulletin.employe_nom.charAt(0)}</div>
+                        )}
+                        {bulletin.employe_nom}
+                      </TableCell>
                       <TableCell className="text-right">
                         {(parseFloat(bulletin.salaire_base) + parseFloat(bulletin.heures_sup) + (bulletin.primes?.reduce((s: number, p: any) => s + parseFloat(p.montant), 0) || 0)).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
                       </TableCell>
@@ -609,8 +800,8 @@ function PaieView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'paie',
         </GlassCard>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-[95vw] md:max-w-[800px] lg:max-w-[1000px] border-white/10 bg-background/95 backdrop-blur-xl p-0 overflow-hidden max-h-[90vh] flex flex-col">
-          <DialogHeader className="px-6 py-4 border-b border-white/10 shrink-0">
+        <DialogContent className="max-w-[95vw] md:max-w-[800px] lg:max-w-[1000px] border-[var(--border-default)]/50 bg-[var(--bg-primary)]/95 backdrop-blur-xl p-0 overflow-hidden max-h-[90vh] flex flex-col">
+          <DialogHeader className="px-6 py-4 border-b border-[var(--border-default)]/50 shrink-0">
             <DialogTitle className="flex items-center gap-2 text-xl">
               <Calculator className="h-5 w-5 text-primary" />
               Saisie d'un Bulletin de Paie

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import {
@@ -202,7 +202,7 @@ export default function RapprochementPage() {
     <div className="space-y-6 animate-fade-in pb-8">
       {/* Saisie-style Statistics Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-        <GlassCard className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow" glow={false}>
+        <GlassCard className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow" glow={false}>
           <div className="p-3 sm:p-4 flex items-center justify-between gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase tracking-widest truncate">Lignes Relevé</span>
@@ -214,7 +214,7 @@ export default function RapprochementPage() {
           </div>
         </GlassCard>
 
-        <GlassCard className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow" glow={false}>
+        <GlassCard className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow" glow={false}>
           <div className="p-3 sm:p-4 flex items-center justify-between gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase tracking-widest truncate">Lignes Compta</span>
@@ -226,7 +226,7 @@ export default function RapprochementPage() {
           </div>
         </GlassCard>
 
-        <GlassCard className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow" glow={false}>
+        <GlassCard className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow" glow={false}>
           <div className="p-3 sm:p-4 flex items-center justify-between gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase tracking-widest truncate">Total Relevé</span>
@@ -238,7 +238,7 @@ export default function RapprochementPage() {
           </div>
         </GlassCard>
 
-        <GlassCard className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow" glow={false}>
+        <GlassCard className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow" glow={false}>
           <div className="p-3 sm:p-4 flex items-center justify-between gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase tracking-widest truncate">Total Compta</span>
@@ -310,7 +310,7 @@ export default function RapprochementPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Relevé Bancaire */}
         <GlassCard glow={false} className="flex flex-col h-[600px] border-t border-t-white/5 shadow-xl hover:shadow-primary/5 transition-shadow">
-          <div className="p-4 sm:p-5 border-b border-border/50 flex items-center justify-between bg-gradient-to-b from-primary/5 to-transparent rounded-t-2xl">
+          <div className="p-4 sm:p-5 border-b border-[var(--border-default)]/50 flex items-center justify-between bg-gradient-to-b from-primary/5 to-transparent rounded-t-2xl">
             <div>
               <h2 className="font-bold text-foreground text-lg flex items-center gap-2">
                 <Landmark className="w-5 h-5 text-primary" />
@@ -337,7 +337,7 @@ export default function RapprochementPage() {
                     'flex items-center gap-3 p-3.5 rounded-xl border transition-all cursor-pointer group',
                     isSelected 
                       ? 'border-primary/50 bg-primary/10 shadow-[0_0_15px_rgba(99,102,241,0.1)]' 
-                      : 'border-white/5 bg-background/40 hover:bg-white/5 hover:border-white/10'
+                      : 'border-[var(--border-default)]/30 bg-[var(--bg-secondary)]/40 hover:bg-[var(--bg-secondary)] hover:border-[var(--border-default)]/50'
                   )}
                   onClick={() => toggleSelectReleve(r.id)}
                 >
@@ -368,7 +368,7 @@ export default function RapprochementPage() {
 
         {/* Comptabilité */}
         <GlassCard glow={false} className="flex flex-col h-[600px] border-t border-t-white/5 shadow-xl hover:shadow-chart-4/5 transition-shadow">
-          <div className="p-4 sm:p-5 border-b border-border/50 flex items-center justify-between bg-gradient-to-b from-chart-4/5 to-transparent rounded-t-2xl">
+          <div className="p-4 sm:p-5 border-b border-[var(--border-default)]/50 flex items-center justify-between bg-gradient-to-b from-chart-4/5 to-transparent rounded-t-2xl">
             <div>
               <h2 className="font-bold text-foreground text-lg flex items-center gap-2">
                 <FileText className="w-5 h-5 text-chart-4" />
@@ -398,7 +398,7 @@ export default function RapprochementPage() {
                     'flex items-center gap-3 p-3.5 rounded-xl border transition-all cursor-pointer group',
                     isSelected 
                       ? 'border-chart-4/50 bg-chart-4/10 shadow-[0_0_15px_rgba(163,230,53,0.1)]' 
-                      : 'border-white/5 bg-background/40 hover:bg-white/5 hover:border-white/10'
+                      : 'border-[var(--border-default)]/30 bg-[var(--bg-secondary)]/40 hover:bg-[var(--bg-secondary)] hover:border-[var(--border-default)]/50'
                   )}
                   onClick={() => toggleSelectCompta(c.id)}
                 >
@@ -430,7 +430,7 @@ export default function RapprochementPage() {
 
       {/* OD Generator Card */}
       <GlassCard glow={false} className="border-t border-t-white/5 shadow-xl overflow-hidden">
-        <div className="p-5 border-b border-border/50 bg-gradient-to-r from-warning/10 via-background to-background">
+        <div className="p-5 border-b border-[var(--border-default)]/50 bg-gradient-to-r from-warning/10 via-background to-background">
           <h2 className="font-bold text-foreground text-lg flex items-center gap-2">
             <Link2 className="w-5 h-5 text-warning" />
             Opérations bancaires seules - Générer une OD
@@ -487,7 +487,7 @@ export default function RapprochementPage() {
                 id="compte"
                 value={odCompte}
                 onChange={(e) => setOdCompte(e.target.value)}
-                className="font-mono text-lg h-12 bg-background/50"
+                className="font-mono text-lg h-12 bg-[var(--bg-secondary)]/40"
                 autoFocus
                 placeholder="627..."
               />

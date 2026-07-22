@@ -14,6 +14,7 @@ import {
   PieChart,
   ArrowRight,
   Check,
+  Calendar,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { GlassCard, Button as NeonButton } from '@/components/ui/Layout';
@@ -24,6 +25,14 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectGroup,
+  SelectLabel,
+} from '@/components/ui/select';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -53,6 +62,36 @@ const CLOTURE_STEPS_TEMPLATE = [
 import { fetchWithAuth } from '@/lib/api';
 import { useEffect } from 'react';
 
+function PeriodeSelect({ periode, setPeriode }: { periode: string, setPeriode: (val: string) => void }) {
+  return (
+    <Select value={periode} onValueChange={setPeriode}>
+      <SelectTrigger className="h-8 w-8 p-0 flex items-center justify-center rounded-lg shadow-sm border border-input bg-background hover:bg-accent group [&>svg]:hidden" title="Sélectionner une période">
+        <div className="flex items-center justify-center w-full h-full">
+          <Calendar className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+        </div>
+      </SelectTrigger>
+      <SelectContent align="end">
+        <SelectGroup>
+          <SelectLabel>Périodes Prédéfinies</SelectLabel>
+          <SelectItem value="2025-07">Juillet 2025</SelectItem>
+          <SelectItem value="2025-08">Août 2025</SelectItem>
+          <SelectItem value="2025-09">Septembre 2025</SelectItem>
+          <SelectItem value="2025-10">Octobre 2025</SelectItem>
+          <SelectItem value="2025-11">Novembre 2025</SelectItem>
+          <SelectItem value="2025-12">Décembre 2025</SelectItem>
+          <SelectItem value="2026-01">Janvier 2026</SelectItem>
+          <SelectItem value="2026-02">Février 2026</SelectItem>
+          <SelectItem value="2026-03">Mars 2026</SelectItem>
+          <SelectItem value="2026-04">Avril 2026</SelectItem>
+          <SelectItem value="2026-05">Mai 2026</SelectItem>
+          <SelectItem value="2026-06">Juin 2026</SelectItem>
+          <SelectItem value="2026-07">Juillet 2026</SelectItem>
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+  );
+}
+
 export default function EtatsFinanciersPage() {
   const [steps, setSteps] = useState(CLOTURE_STEPS_TEMPLATE.map(s => ({ ...s, done: false })));
   const [activeTab, setActiveTab] = useState('bilan');
@@ -61,7 +100,7 @@ export default function EtatsFinanciersPage() {
   const [tafire, setTafire] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const periodeStr = '2025-07'; // TODO: Rendre dynamique via un sélecteur
+  const [periodeStr, setPeriodeStr] = useState('2025-07');
 
   useEffect(() => {
     setLoading(true);
@@ -359,7 +398,7 @@ export default function EtatsFinanciersPage() {
   return (
     <div className="space-y-1 animate-fade-in -mt-2 lg:-mt-4">
       <div className="grid grid-cols-3 gap-1 sm:gap-2">
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Total Actif Net</span>
@@ -374,7 +413,7 @@ export default function EtatsFinanciersPage() {
           </CardContent>
         </GlassCard>
 
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Total Passif</span>
@@ -389,7 +428,7 @@ export default function EtatsFinanciersPage() {
           </CardContent>
         </GlassCard>
 
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Resultat Net</span>
@@ -410,8 +449,8 @@ export default function EtatsFinanciersPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1">
-          <TabsList className="flex items-center h-auto gap-1 p-1 rounded-md bg-muted/50 border border-border/50">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-[var(--border-default)]/50 mb-1">
+          <TabsList className="flex items-center h-auto gap-1 p-1 rounded-md bg-muted/50 border border-[var(--border-default)]/50">
             <TabsTrigger value="bilan" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all">
               <Scale className="h-3.5 w-3.5" />
               Bilan
@@ -427,6 +466,7 @@ export default function EtatsFinanciersPage() {
           </TabsList>
           
           <div className="flex items-center gap-2 shrink-0">
+            <PeriodeSelect periode={periodeStr} setPeriode={setPeriodeStr} />
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -544,7 +584,7 @@ export default function EtatsFinanciersPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Actif card — style rapprochement bancaire */}
             <GlassCard glow={false} className="flex flex-col border-t border-t-white/5 shadow-xl hover:shadow-primary/5 transition-shadow">
-              <div className="p-4 sm:p-5 border-b border-border/50 flex items-center justify-between bg-gradient-to-b from-primary/5 to-transparent rounded-t-2xl">
+              <div className="p-4 sm:p-5 border-b border-[var(--border-default)]/50 flex items-center justify-between bg-gradient-to-b from-primary/5 to-transparent rounded-t-2xl">
                 <div>
                   <h2 className="font-bold text-foreground text-lg flex items-center gap-2">
                     <Scale className="w-5 h-5 text-primary" />
@@ -570,7 +610,7 @@ export default function EtatsFinanciersPage() {
                   <TableBody>
                     {bilan && ['actif_immobilise', 'actif_circulant', 'tresorerie_actif'].map((category) => (
                       bilan.actif[category]?.map((r: any) => (
-                        <TableRow key={r.poste} className="hover:bg-primary/5 border-white/5">
+                        <TableRow key={r.poste} className="hover:bg-primary/5 border-[var(--border-default)]/30">
                           <TableCell className="font-mono text-xs text-muted-foreground">{r.poste}</TableCell>
                           <TableCell className="font-medium">{r.libelle}</TableCell>
                           <TableCell className="text-right font-mono">{formatCurrency(Math.abs(r.montant))}</TableCell>
@@ -596,7 +636,7 @@ export default function EtatsFinanciersPage() {
 
             {/* Passif card — style rapprochement comptabilité */}
             <GlassCard glow={false} className="flex flex-col border-t border-t-white/5 shadow-xl hover:shadow-chart-4/5 transition-shadow">
-              <div className="p-4 sm:p-5 border-b border-border/50 flex items-center justify-between bg-gradient-to-b from-chart-4/5 to-transparent rounded-t-2xl">
+              <div className="p-4 sm:p-5 border-b border-[var(--border-default)]/50 flex items-center justify-between bg-gradient-to-b from-chart-4/5 to-transparent rounded-t-2xl">
                 <div>
                   <h2 className="font-bold text-foreground text-lg flex items-center gap-2">
                     <PieChart className="w-5 h-5 text-chart-4" />
@@ -620,7 +660,7 @@ export default function EtatsFinanciersPage() {
                   <TableBody>
                     {bilan && ['capitaux_propres', 'dettes_financieres', 'passif_circulant', 'tresorerie_passif'].map((category) => (
                       bilan.passif[category]?.map((r: any) => (
-                        <TableRow key={r.poste} className="hover:bg-chart-4/5 border-white/5">
+                        <TableRow key={r.poste} className="hover:bg-chart-4/5 border-[var(--border-default)]/30">
                           <TableCell className="font-mono text-xs text-muted-foreground">{r.poste}</TableCell>
                           <TableCell className="font-medium">{r.libelle}</TableCell>
                           <TableCell className="text-right font-mono font-semibold text-chart-4">{formatCurrency(r.montant)}</TableCell>

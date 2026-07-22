@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Building2,
   Palette,
@@ -26,7 +26,9 @@ import {
   Sparkles,
   Eye,
   EyeOff,
+  Users,
 } from 'lucide-react';
+import { fetchWithAuth } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { GlassCard, Button as NeonButton } from '@/components/ui/Layout';
 
@@ -102,7 +104,7 @@ export default function ParametresPage() {
     <div className="space-y-3 animate-fade-in">
       {/* Mini stat cards */}
       <div className="grid grid-cols-3 gap-1 sm:gap-2">
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Dossiers actifs</span>
@@ -113,7 +115,7 @@ export default function ParametresPage() {
             </div>
           </CardContent>
         </GlassCard>
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Dernier backup</span>
@@ -124,7 +126,7 @@ export default function ParametresPage() {
             </div>
           </CardContent>
         </GlassCard>
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Statut systeme</span>
@@ -138,7 +140,7 @@ export default function ParametresPage() {
       </div>
 
       {/* Tab bar — same pill style as users/permissions */}
-      <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50 flex-wrap">
+      <div className="flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-[var(--border-default)]/50 flex-wrap">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -160,7 +162,7 @@ export default function ParametresPage() {
       {activeTab === 'dossiers' && (
         <div className="space-y-3">
           {dossiers.map((d) => (
-            <GlassCard glow={false} key={d.id} className="border-white/10 shadow-sm hover:shadow-md transition-all group">
+            <GlassCard glow={false} key={d.id} className="border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-all group">
               <CardContent className="p-4 sm:p-5">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div className="space-y-4 flex-1">
@@ -213,7 +215,7 @@ export default function ParametresPage() {
       {/* ── APPARENCE ─────────────────────────────────────────── */}
       {activeTab === 'apparence' && (
         <div className="space-y-3">
-          <GlassCard glow={false} className="border-white/10 shadow-sm">
+          <GlassCard glow={false} className="border-[var(--border-default)]/50 shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
@@ -290,7 +292,7 @@ export default function ParametresPage() {
       {/* ── NOTIFICATIONS ─────────────────────────────────────── */}
       {activeTab === 'notifications' && (
         <div className="space-y-3">
-          <GlassCard glow={false} className="border-white/10 shadow-sm">
+          <GlassCard glow={false} className="border-[var(--border-default)]/50 shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
@@ -349,7 +351,7 @@ export default function ParametresPage() {
       {/* ── TAUX DE CHANGE ────────────────────────────────────── */}
       {activeTab === 'taux-change' && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between py-1 border-b border-border/50">
+          <div className="flex items-center justify-between py-1 border-b border-[var(--border-default)]/50">
             <div className="text-xs text-muted-foreground font-medium">
               {TAUX_DATA.length} devise{TAUX_DATA.length > 1 ? 's' : ''} · Reference USD
             </div>
@@ -357,12 +359,12 @@ export default function ParametresPage() {
               <Plus className="h-3.5 w-3.5" />
             </NeonButton>
           </div>
-          <GlassCard glow={false} className="border-white/10 shadow-sm">
+          <GlassCard glow={false} className="border-[var(--border-default)]/50 shadow-sm">
             <CardContent className="p-0">
               <div className="overflow-x-auto rounded-lg">
                 <table className="w-full text-sm whitespace-nowrap">
                   <thead className="bg-muted/30">
-                    <tr className="border-b border-border/50">
+                    <tr className="border-b border-[var(--border-default)]/50">
                       <th className="text-left py-3.5 px-4 font-semibold text-muted-foreground">Devise</th>
                       <th className="text-left py-3.5 px-4 font-semibold text-muted-foreground">Taux (1 USD =)</th>
                       <th className="text-left py-3.5 px-4 font-semibold text-muted-foreground">Evolution</th>
@@ -436,7 +438,7 @@ export default function ParametresPage() {
             </Badge>
           </div>
 
-          <GlassCard glow={false} className="border-white/10 shadow-sm">
+          <GlassCard glow={false} className="border-[var(--border-default)]/50 shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
@@ -521,7 +523,7 @@ export default function ParametresPage() {
             <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/30 shrink-0">Securise</Badge>
           </div>
 
-          <GlassCard glow={false} className="border-white/10 shadow-sm">
+          <GlassCard glow={false} className="border-[var(--border-default)]/50 shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary">

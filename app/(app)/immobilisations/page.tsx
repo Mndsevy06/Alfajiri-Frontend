@@ -308,7 +308,7 @@ export default function ImmobilisationsPage() {
     <div className="space-y-3 animate-fade-in">
       {/* Stats */}
       <div className="grid grid-cols-4 gap-1 sm:gap-2">
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Valeur d'acquisition</span>
@@ -320,7 +320,7 @@ export default function ImmobilisationsPage() {
           </CardContent>
         </GlassCard>
 
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Cumul amortissements</span>
@@ -332,7 +332,7 @@ export default function ImmobilisationsPage() {
           </CardContent>
         </GlassCard>
 
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">VNC totale</span>
@@ -344,7 +344,7 @@ export default function ImmobilisationsPage() {
           </CardContent>
         </GlassCard>
 
-        <GlassCard glow={false} className="bg-background/40 backdrop-blur-sm border-white/10 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Dotation annuelle</span>
@@ -358,12 +358,7 @@ export default function ImmobilisationsPage() {
       </div>
 
       {/* Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-1 border-b border-border/50 mb-1 relative">
-        {/* Info gauche */}
-        <div className="text-xs text-muted-foreground font-medium">
-          {immos.length} immobilisation{immos.length > 1 ? 's' : ''} enregistrée{immos.length > 1 ? 's' : ''}
-        </div>
-
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-2 py-1 border-b border-[var(--border-default)]/50 mb-1 relative">
         {/* Boutons icônes (droite) */}
         <div className="flex items-center gap-2 shrink-0">
           <div className="relative group">
@@ -372,7 +367,7 @@ export default function ImmobilisationsPage() {
               placeholder="Rechercher..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 h-8 w-8 text-xs bg-transparent border-border transition-all duration-300 focus:w-[200px] hover:w-[200px] focus:bg-background/50 rounded-full cursor-pointer focus:cursor-text"
+              className="pl-8 h-8 w-8 text-xs bg-transparent border-border transition-all duration-300 focus:w-[200px] hover:w-[200px] focus:bg-[var(--bg-secondary)]/40 rounded-full cursor-pointer focus:cursor-text"
             />
           </div>
 
@@ -403,7 +398,7 @@ export default function ImmobilisationsPage() {
         </div>
       </div>
 
-      <GlassCard glow={false} className="border-white/10 shadow-lg bg-background/50 backdrop-blur-xl">
+      <GlassCard glow={false} className="border-[var(--border-default)]/50 shadow-lg bg-[var(--bg-secondary)]/40 backdrop-blur-xl">
         <CardContent className="p-0">
             <Table>
               <TableHeader>
@@ -417,7 +412,7 @@ export default function ImmobilisationsPage() {
                   <TableHead className="text-right">Cumul Amort.</TableHead>
                   <TableHead className="text-right">VNC</TableHead>
                   <TableHead className="text-center">Amorti à</TableHead>
-                  <TableHead></TableHead>
+                  <TableHead className="text-right"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -442,13 +437,13 @@ export default function ImmobilisationsPage() {
                       <TableCell className="text-right font-mono text-muted-foreground">{formatCurrency(cumulAmort)}</TableCell>
                       <TableCell className="text-right font-mono font-semibold">{formatCurrency(vnc)}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-center gap-2">
                           <Progress value={amortPct} className="h-1.5 w-16" />
                           <span className="text-xs text-muted-foreground">{Math.round(amortPct)}%</span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center justify-end gap-1">
                           <NeonButton variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleSimulate(i)}>
                             <Calculator className="h-3.5 w-3.5" />
                           </NeonButton>
