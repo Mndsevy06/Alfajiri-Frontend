@@ -129,7 +129,7 @@ export default function RestitutionsPage() {
     <div className="space-y-3 animate-fade-in pb-8 -mt-3">
       <div className="animate-fade-in-up space-y-2">
         {view === 'balance' && <BalanceView onDrillDown={(c) => { setDrillCompte(c); setView('grand-livre'); }} balance={balance} loading={loading} periode={periode} setPeriode={setPeriode} viewToggle={<ViewToggle />} />}
-        {view === 'grand-livre' && <GrandLivreView drillCompte={drillCompte} onBack={() => { setDrillCompte(null); setView('balance'); }} grandLivre={grandLivre} planComptable={planComptable} loading={loading} periode={periode} setPeriode={setPeriode} viewToggle={<ViewToggle />} />}
+        {view === 'grand-livre' && <GrandLivreView drillCompte={drillCompte} onBack={() => { setDrillCompte(null); setView('balance'); }} grandLivre={grandLivre} balance={balance} planComptable={planComptable} loading={loading} periode={periode} setPeriode={setPeriode} viewToggle={<ViewToggle />} />}
         {view === 'journaux' && <JournauxView loading={loading} periode={periode} setPeriode={setPeriode} viewToggle={<ViewToggle />} grandLivre={grandLivre} />}
       </div>
     </div>
@@ -359,8 +359,8 @@ function BalanceView({ onDrillDown, balance, loading, periode, setPeriode, viewT
                       <Badge variant="secondary" className="font-mono bg-background shadow-sm border-[var(--border-default)]/50 text-[10px] sm:text-xs px-1.5">{c.compte}</Badge>
                     </TableCell>
                     <TableCell className="text-left font-medium truncate max-w-[150px] sm:max-w-[250px] px-2 py-1.5" title={c.libelle}>{c.libelle}</TableCell>
-                    <TableCell className="text-right font-mono font-medium text-muted-foreground/50 whitespace-nowrap px-2 py-1.5">-</TableCell>
-                    <TableCell className="text-right font-mono font-medium text-muted-foreground/50 whitespace-nowrap px-2 py-1.5">-</TableCell>
+                    <TableCell className="text-right font-mono font-medium text-muted-foreground/80 whitespace-nowrap px-2 py-1.5">{parseFloat(c.solde_ouv_debit) > 0 ? formatCurrency(parseFloat(c.solde_ouv_debit)) : '-'}</TableCell>
+                    <TableCell className="text-right font-mono font-medium text-muted-foreground/80 whitespace-nowrap px-2 py-1.5">{parseFloat(c.solde_ouv_credit) > 0 ? formatCurrency(parseFloat(c.solde_ouv_credit)) : '-'}</TableCell>
                     <TableCell className="text-right font-mono font-medium text-foreground/90 whitespace-nowrap px-2 py-1.5">{debit > 0 ? formatCurrency(debit) : '-'}</TableCell>
                     <TableCell className="text-right font-mono font-medium text-foreground/90 whitespace-nowrap px-2 py-1.5">{credit > 0 ? formatCurrency(credit) : '-'}</TableCell>
                     <TableCell className="text-right font-mono font-bold text-indigo-400 whitespace-nowrap px-2 py-1.5">{soldeD > 0 ? formatCurrency(soldeD) : '-'}</TableCell>
@@ -377,7 +377,7 @@ function BalanceView({ onDrillDown, balance, loading, periode, setPeriode, viewT
   );
 }
 
-function GrandLivreView({ drillCompte, onBack, grandLivre, planComptable, loading, periode, setPeriode, viewToggle }: { drillCompte: any | null; onBack: () => void; grandLivre: any[]; planComptable: CompteComptable[]; loading: boolean; periode: string; setPeriode: (val: string) => void; viewToggle?: React.ReactNode }) {
+function GrandLivreView({ drillCompte, onBack, grandLivre, balance, planComptable, loading, periode, setPeriode, viewToggle }: { drillCompte: any | null; onBack: () => void; grandLivre: any[]; balance: any[]; planComptable: CompteComptable[]; loading: boolean; periode: string; setPeriode: (val: string) => void; viewToggle?: React.ReactNode }) {
   const [selectedCompte, setSelectedCompte] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -401,7 +401,10 @@ function GrandLivreView({ drillCompte, onBack, grandLivre, planComptable, loadin
     );
   }
 
-  //
+  // Obtenir uniquement les comptes qui ont un solde ou un mouvement dans la balance
+  const comptesActifs = useMemo(() => {
+    return grandLivre.filter(gl_compte => balance.some(b => b.compte === gl_compte.compte));
+  }, [grandLivre, balance]);
 
   return (
     <div className="space-y-2">
@@ -485,7 +488,7 @@ function GrandLivreView({ drillCompte, onBack, grandLivre, planComptable, loadin
                   <SelectValue placeholder="Sélectionner un compte..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {grandLivre.map((c) => (
+                  {comptesActifs.map((c) => (
                     <SelectItem key={c.compte} value={c.compte}>
                       <span className="font-mono font-bold mr-2">{c.compte}</span>
                       <span className="text-muted-foreground truncate max-w-[150px] inline-block align-bottom">{c.libelle}</span>

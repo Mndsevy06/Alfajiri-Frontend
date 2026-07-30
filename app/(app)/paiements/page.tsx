@@ -302,7 +302,7 @@ export default function PaiementsPage() {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto border-[var(--border-default)]/50 bg-[var(--bg-primary)]/95 backdrop-blur-xl p-5">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto border-[var(--border-default)]/50 bg-background/95 text-foreground backdrop-blur-xl p-5">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
               <CreditCard className="h-5 w-5 text-primary" />

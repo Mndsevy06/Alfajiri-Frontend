@@ -94,6 +94,50 @@ import { TiersFormModal } from '@/components/tiers-form-modal';
 
 type View = 'saisie' | 'valide';
 
+// ---------------------------------------------------------------------------
+// CompteSearchDropdown – searchable account picker used in NL entry lines
+// ---------------------------------------------------------------------------
+type CompteSearchDropdownProps = {
+  planComptable: CompteType[];
+  selectedCompte: string;
+  onSelect: (num: string) => void;
+  side: 'debit' | 'credit';
+};
+
+function CompteSearchDropdown({ planComptable, selectedCompte, onSelect, side }: CompteSearchDropdownProps) {
+  const accentClass = side === 'debit'
+    ? 'font-mono bg-blue-500/10 text-blue-600 px-1 rounded text-[10px]'
+    : 'font-mono bg-emerald-500/10 text-emerald-600 px-1 rounded text-[10px]';
+
+  return (
+    <Command filter={(value, search) => value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0}>
+      <CommandInput placeholder="Rechercher un compte…" className="h-9 text-xs" />
+      <CommandList>
+        <CommandEmpty>Aucun compte trouvé.</CommandEmpty>
+        <CommandGroup>
+          {planComptable
+            .filter((c) => c.mouvementable)
+            .map((compte) => (
+              <CommandItem
+                key={compte.numero}
+                value={`${compte.numero} ${compte.libelle}`}
+                onSelect={() => onSelect(compte.numero)}
+                className="flex items-center gap-2 text-xs cursor-pointer"
+              >
+                <Check
+                  className={cn('h-3 w-3 shrink-0', selectedCompte === compte.numero ? 'opacity-100' : 'opacity-0')}
+                />
+                <span className={accentClass}>{compte.numero}</span>
+                <span className="truncate">{compte.libelle}</span>
+              </CommandItem>
+            ))}
+        </CommandGroup>
+      </CommandList>
+    </Command>
+  );
+}
+
+
 export default function SaisiePage() {
   const [view, setView] = useState<View>('saisie');
 
@@ -111,6 +155,8 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
   const [savedBrouillards, setSavedBrouillards] = useState<Ecriture[]>([]);
   const [editingBrouillonId, setEditingBrouillonId] = useState<string | null>(null);
   const [isTiersModalOpen, setIsTiersModalOpen] = useState(false);
+  // Tracks which NlEntry line should receive the new tiers code after the modal closes
+  const [tiersModalTarget, setTiersModalTarget] = useState<{ side: 'debit' | 'credit'; id: string } | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -173,11 +219,8 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
         fileObj = op.fichier;
       }
 
-      // Mark as integrated in DB
-      await fetchWithAuth(`/terrain/operations/${op.id}/`, {
-        method: 'PATCH',
-        body: JSON.stringify({ statut: 'integre' })
-      });
+      // Remove immediate marking as integrated here
+      // We will do it in handleSave instead
 
       setLignes([
         {
@@ -188,7 +231,8 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
           libelle: op.nature,
           debit: op.typeOp === 'depense' ? op.montant : 0,
           credit: op.typeOp === 'recette' ? op.montant : 0,
-          fichier: fileObj
+          fichier: fileObj,
+          terrain_op_id: op.id
         },
         ...lignes
       ]);
@@ -223,8 +267,8 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
     }
   }, [journal, date, JOURNAUX]);
   
-  // Lignes d'écriture (étendue localement pour gérer le fichier)
-  const [lignes, setLignes] = useState<(LigneEcriture & { fichier?: File | string | null })[]>([]);
+  // Lignes d'écriture (étendue localement pour gérer le fichier et le lien avec terrain)
+  const [lignes, setLignes] = useState<(LigneEcriture & { fichier?: File | string | null, terrain_op_id?: any })[]>([]);
 
   const [openConfig, setOpenConfig] = useState(false);
   const [openNewLine, setOpenNewLine] = useState(false);
@@ -274,17 +318,37 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
     return true;
   });
 
-  // New ligne state
-  const [nlCompte, setNlCompte] = useState('');
+  // ── Multi-compte state ──────────────────────────────────────────────────
+  type NlEntry = { id: string; compte: string; montant: string; centreCout: string; tiersAux: string; openPopover: boolean };
+  const makeEntry = (): NlEntry => ({ id: Math.random().toString(36).slice(2), compte: '', montant: '', centreCout: '', tiersAux: '', openPopover: false });
+
   const [nlLibelle, setNlLibelle] = useState('');
-  const [nlDebit, setNlDebit] = useState('');
-  const [nlCredit, setNlCredit] = useState('');
-  const [nlCentreCout, setNlCentreCout] = useState('');
-  const [nlTiersAuxiliaire, setNlTiersAuxiliaire] = useState('');
   const [nlFichier, setNlFichier] = useState<File | string | null>(null);
-  const [openCompte, setOpenCompte] = useState(false);
+  const [nlDebitLines, setNlDebitLines] = useState<NlEntry[]>([makeEntry()]);
+  const [nlCreditLines, setNlCreditLines] = useState<NlEntry[]>([makeEntry()]);
   const [editingLigneId, setEditingLigneId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // helpers debit lines
+  const updateDebitLine = (id: string, patch: Partial<NlEntry>) =>
+    setNlDebitLines(prev => prev.map(l => l.id === id ? { ...l, ...patch } : l));
+  const addDebitLine = () => setNlDebitLines(prev => [...prev, makeEntry()]);
+  const removeDebitLine = (id: string) => setNlDebitLines(prev => prev.filter(l => l.id !== id));
+
+  // helpers credit lines
+  const updateCreditLine = (id: string, patch: Partial<NlEntry>) =>
+    setNlCreditLines(prev => prev.map(l => l.id === id ? { ...l, ...patch } : l));
+  const addCreditLine = () => setNlCreditLines(prev => [...prev, makeEntry()]);
+  const removeCreditLine = (id: string) => setNlCreditLines(prev => prev.filter(l => l.id !== id));
+
+  const resetNlForm = () => {
+    setNlLibelle('');
+    setNlFichier(null);
+    setNlDebitLines([makeEntry()]);
+    setNlCreditLines([makeEntry()]);
+    setEditingLigneId(null);
+    if (fileRef.current) fileRef.current.value = '';
+  };
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -314,74 +378,63 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setNlFichier(file);
-    }
+    if (file) setNlFichier(file);
   };
 
   const handleAddLigne = () => {
-    if (!nlCompte) {
-      toast.error("Veuillez sélectionner un compte");
-      return;
-    }
-    const d = parseFloat(nlDebit || '0');
-    const c = parseFloat(nlCredit || '0');
-    if (d === 0 && c === 0) {
-      toast.error("Veuillez saisir un montant au débit ou au crédit");
-      return;
-    }
-    
-    const compteInfo = PLAN_COMPTABLE.find(c => c.numero === nlCompte);
-    
-    if (compteInfo?.analytique_obligatoire && !nlCentreCout) {
-      toast.error("Le centre de coût est obligatoire pour ce compte");
+    const validDebit = nlDebitLines.filter(l => l.compte && parseFloat(l.montant || '0') > 0);
+    const validCredit = nlCreditLines.filter(l => l.compte && parseFloat(l.montant || '0') > 0);
+
+    if (validDebit.length === 0 && validCredit.length === 0) {
+      toast.error('Ajoutez au moins un compte avec un montant');
       return;
     }
 
-    if (compteInfo?.requiert_auxiliaire && !nlTiersAuxiliaire) {
-      toast.error("Le tiers / auxiliaire est obligatoire pour ce compte");
-      return;
-    }
-
-    const newLigne: any = {
-      id: editingLigneId || Math.random().toString(),
-      date: new Date().toISOString().split('T')[0],
-      compte: nlCompte,
-      libelleCompte: compteInfo ? compteInfo.libelle : '',
-      libelle: nlLibelle || (compteInfo ? compteInfo.libelle : ''),
-      debit: d,
-      credit: c,
-      fichier: nlFichier,
-      centre_cout: nlCentreCout || null,
-      tiers_auxiliaire: nlTiersAuxiliaire || null
-    };
+    const today = new Date().toISOString().split('T')[0];
+    const newLignes: any[] = [
+      ...validDebit.map(l => {
+        const info = PLAN_COMPTABLE.find(c => c.numero === l.compte);
+        return { id: Math.random().toString(36).slice(2), date: today, compte: l.compte, libelleCompte: info?.libelle || '', libelle: nlLibelle || info?.libelle || '', debit: parseFloat(l.montant), credit: 0, fichier: nlFichier, centre_cout: l.centreCout || null, tiers_auxiliaire: l.tiersAux || null };
+      }),
+      ...validCredit.map(l => {
+        const info = PLAN_COMPTABLE.find(c => c.numero === l.compte);
+        return { id: Math.random().toString(36).slice(2), date: today, compte: l.compte, libelleCompte: info?.libelle || '', libelle: nlLibelle || info?.libelle || '', debit: 0, credit: parseFloat(l.montant), fichier: nlFichier, centre_cout: l.centreCout || null, tiers_auxiliaire: l.tiersAux || null };
+      }),
+    ];
 
     if (editingLigneId) {
-      setLignes(lignes.map(l => l.id === editingLigneId ? newLigne : l));
+      // En mode édition : remplace la ligne existante par la première entrée valide
+      const replacement = newLignes[0];
+      if (replacement) {
+        replacement.id = editingLigneId;
+        setLignes(prev => {
+          const updated = prev.map(l => l.id === editingLigneId ? { ...replacement, terrain_op_id: l.terrain_op_id } : l);
+          if (newLignes.length > 1) {
+            return [...updated, ...newLignes.slice(1)];
+          }
+          return updated;
+        });
+      }
     } else {
-      setLignes([...lignes, newLigne]);
+      setLignes(prev => [...prev, ...newLignes]);
     }
-    
-    setNlCompte('');
-    setNlLibelle('');
-    setNlDebit('');
-    setNlCredit('');
-    setNlCentreCout('');
-    setNlTiersAuxiliaire('');
-    setNlFichier(null);
-    setEditingLigneId(null);
-    if (fileRef.current) fileRef.current.value = '';
+
+    resetNlForm();
     setOpenNewLine(false);
     setCurrentPage(1);
+    toast.success(`${newLignes.length} ligne${newLignes.length > 1 ? 's' : ''} ajoutée${newLignes.length > 1 ? 's' : ''}`);
   };
 
   const handleEditLigne = (ligne: any) => {
-    setNlCompte(ligne.compte);
+    resetNlForm();
+    if (ligne.debit > 0) {
+      setNlDebitLines([{ id: ligne.id, compte: ligne.compte, montant: ligne.debit.toString(), centreCout: ligne.centre_cout || '', tiersAux: ligne.tiers_auxiliaire || '', openPopover: false }]);
+      setNlCreditLines([makeEntry()]);
+    } else {
+      setNlCreditLines([{ id: ligne.id, compte: ligne.compte, montant: ligne.credit.toString(), centreCout: ligne.centre_cout || '', tiersAux: ligne.tiers_auxiliaire || '', openPopover: false }]);
+      setNlDebitLines([makeEntry()]);
+    }
     setNlLibelle(ligne.libelle);
-    setNlDebit(ligne.debit ? ligne.debit.toString() : '');
-    setNlCredit(ligne.credit ? ligne.credit.toString() : '');
-    setNlCentreCout(ligne.centre_cout || '');
-    setNlTiersAuxiliaire(ligne.tiers_auxiliaire || '');
     setNlFichier(ligne.fichier || null);
     setEditingLigneId(ligne.id);
     setOpenNewLine(true);
@@ -492,6 +545,19 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
         method: editingBrouillonId ? 'PUT' : 'POST',
         body: JSON.stringify(ecritureData)
       });
+
+      // Mettre à jour le statut des opérations terrain si nécessaire
+      const terrainIds = lignes.map(l => l.terrain_op_id).filter(Boolean);
+      for (const tId of terrainIds) {
+        try {
+          await fetchWithAuth(`/terrain/operations/${tId}/`, {
+            method: 'PATCH',
+            body: JSON.stringify({ statut: 'integre' })
+          });
+        } catch (e) {
+          console.error("Erreur mise à jour terrain", e);
+        }
+      }
 
       if (!valider) {
         // Refresh brouillards
@@ -614,24 +680,24 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
         </div>
 
         {/* Informations de l'en-tête active (Centré) */}
-        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 text-xs font-medium text-muted-foreground hidden lg:flex whitespace-nowrap pointer-events-none">
+        <div className="flex-1 flex items-center justify-center gap-x-3 gap-y-1 text-xs font-medium text-muted-foreground hidden lg:flex flex-wrap px-4 pointer-events-none">
           {libelle ? (
             <>
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 whitespace-nowrap">
                 <Tag className="h-3.5 w-3.5" /> 
                 Journal: <strong className="text-foreground">{journal}</strong>
               </span>
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 whitespace-nowrap">
                 <Calendar className="h-3.5 w-3.5" /> 
                 Date: <strong className="text-foreground">{date}</strong>
               </span>
-              <span className="flex items-center gap-1 truncate max-w-[200px] xl:max-w-[300px]">
-                <FileText className="h-3.5 w-3.5" /> 
-                Libellé: <strong className="text-foreground">{libelle}</strong>
+              <span className="flex items-start sm:items-center gap-1 break-words whitespace-normal text-left sm:text-center">
+                <FileText className="h-3.5 w-3.5 shrink-0 mt-0.5 sm:mt-0" /> 
+                <span>Libellé: <strong className="text-foreground">{libelle}</strong></span>
               </span>
             </>
           ) : (
-            <span className="italic opacity-70">Configuration d'en-tête non définie</span>
+            <span className="italic opacity-70 text-center">Configuration d'en-tête non définie</span>
           )}
         </div>
 
@@ -692,191 +758,289 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
 
           {/* Bouton Nouvelle Ligne (Icône seule) */}
           <Dialog open={openNewLine} onOpenChange={(open) => {
-            if (!open) {
-              setEditingLigneId(null);
-            }
+            if (!open) { resetNlForm(); }
             setOpenNewLine(open);
           }}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg shadow-sm hover:bg-accent group" title="Nouvelle Ligne" onClick={() => {
-                setNlCompte('');
-                setNlLibelle('');
-                setNlDebit('');
-                setNlCredit('');
-                setNlCentreCout('');
-                setNlTiersAuxiliaire('');
-                setNlFichier(null);
-                setEditingLigneId(null);
-              }}>
+              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg shadow-sm hover:bg-accent group" title="Nouvelle Ligne" onClick={() => resetNlForm()}>
                 <Plus className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[620px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{editingLigneId ? "Modifier la ligne" : "Ajouter une ligne au journal"}</DialogTitle>
+                <DialogTitle className="flex items-center gap-2 text-base">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    {editingLigneId ? <PencilLine className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                  </span>
+                  {editingLigneId ? "Modifier la ligne" : "Nouvelle écriture comptable"}
+                </DialogTitle>
+                <DialogDescription className="text-xs">
+                  Renseignez le libellé, puis ajoutez autant de comptes que nécessaire au débit et au crédit.
+                </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2 flex flex-col">
-                  <Label>Compte Comptable</Label>
-                  <Popover open={openCompte} onOpenChange={setOpenCompte}>
-                    <PopoverTrigger asChild>
+
+              <div className="flex flex-col gap-4 py-2">
+
+                {/* 1. Libellé + Pièce Justificative — EN HAUT */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate block" title="Libellé de l'écriture">Libellé de l'écriture</Label>
+                    <Input
+                      placeholder="Ex: Facture fournisseur ABC..."
+                      value={nlLibelle}
+                      onChange={(e) => setNlLibelle(e.target.value)}
+                      className="h-10"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pièce Justificative</Label>
+                    <div className="flex items-center gap-1.5">
+                      <input type="file" ref={fileRef} className="hidden" onChange={handleFileChange} />
                       <Button
+                        type="button"
                         variant="outline"
-                        role="combobox"
-                        aria-expanded={openCompte}
-                        className="justify-between w-full font-normal"
+                        onClick={() => fileRef.current?.click()}
+                        className={cn(
+                          "flex-1 h-10 border-dashed text-xs gap-1.5 truncate",
+                          nlFichier && "border-primary/50 bg-primary/5 text-primary"
+                        )}
                       >
-                        {nlCompte
-                          ? (() => {
-                              const selected = PLAN_COMPTABLE.find((c) => c.numero === nlCompte);
-                              return selected ? `${selected.numero} - ${selected.libelle}` : "Sélectionner un compte";
-                            })()
-                          : "Sélectionner un compte (recherche...)"}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        <Paperclip className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">
+                          {nlFichier
+                            ? (nlFichier instanceof File ? nlFichier.name : 'Justificatif existant')
+                            : 'Joindre un fichier...'}
+                        </span>
                       </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[450px] p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Rechercher par numéro ou libellé..." />
-                        <CommandList>
-                          <CommandEmpty>Aucun compte trouvé.</CommandEmpty>
-                          <CommandGroup>
-                            {PLAN_COMPTABLE.map((c) => (
-                              <CommandItem
-                                key={c.numero}
-                                value={`${c.numero} ${c.libelle}`}
-                                onSelect={() => {
-                                  setNlCompte(c.numero);
-                                  setOpenCompte(false);
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    nlCompte === c.numero ? "opacity-100" : "opacity-0"
-                                  )}
+                      {nlFichier && (
+                        <Button type="button" variant="ghost" size="icon" className="h-10 w-10 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => { setNlFichier(null); if (fileRef.current) fileRef.current.value = ''; }}>
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Débit / Crédit — deux colonnes avec règles métier */}
+                <div className="grid grid-cols-2 gap-3">
+
+                  {/* ── Colonne DÉBIT — comptes à sens débit ou neutre */}
+                  <div className="rounded-xl border-2 border-blue-500/30 bg-blue-500/[0.03] p-3 flex flex-col gap-2">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <div className="h-5 w-5 rounded-full bg-blue-500/15 flex items-center justify-center shrink-0">
+                        <TrendingDown className="h-3 w-3 text-blue-500" />
+                      </div>
+                      <span className="text-xs font-bold uppercase tracking-wider text-blue-500">Débit</span>
+                      <span className="ml-auto text-[10px] font-mono font-semibold text-blue-500">
+                        {nlDebitLines.reduce((s,l)=>s+parseFloat(l.montant||'0'),0).toLocaleString('fr-FR',{minimumFractionDigits:2})}
+                      </span>
+                    </div>
+
+                    {nlDebitLines.map((entry) => {
+                      const compteInfo = PLAN_COMPTABLE.find(c => c.numero === entry.compte);
+                      return (
+                        <div key={entry.id} className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1">
+                            <Popover open={entry.openPopover} onOpenChange={(v) => updateDebitLine(entry.id, { openPopover: v })}>
+                              <PopoverTrigger asChild>
+                                <Button variant="outline" size="sm" className={cn("flex-1 h-8 justify-between font-normal text-xs px-2 min-w-0 overflow-hidden", !entry.compte && "text-muted-foreground")}>
+                                  <span className="flex items-center gap-1.5 min-w-0 overflow-hidden">
+                                    {entry.compte
+                                      ? (() => { const s = PLAN_COMPTABLE.find(c => c.numero === entry.compte); return s
+                                          ? <><span className="font-mono bg-blue-500/10 text-blue-600 px-1 rounded text-[10px] shrink-0">{s.numero}</span><span className="truncate text-xs">{s.libelle}</span></>
+                                          : <span className="truncate">{entry.compte}</span>; })()
+                                      : <><Search className="h-3 w-3 shrink-0"/>Choisir un compte</>}
+                                  </span>
+                                  <ChevronsUpDown className="h-3 w-3 opacity-40 shrink-0 ml-1" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-[360px] p-0" align="start" side="bottom">
+                                <CompteSearchDropdown
+                                  planComptable={PLAN_COMPTABLE}
+                                  selectedCompte={entry.compte}
+                                  onSelect={(num) => updateDebitLine(entry.id, { compte: num, openPopover: false })}
+                                  side="debit"
                                 />
-                                <span className="font-mono text-muted-foreground mr-2">{c.numero}</span>
-                                {c.libelle}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Libellé de la ligne</Label>
-                  <Input placeholder="Libellé spécifique (optionnel)" value={nlLibelle} onChange={(e) => setNlLibelle(e.target.value)} />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Débit</Label>
-                    <Input 
-                      type="number" 
-                      placeholder="0.00" 
-                      value={nlDebit} 
-                      onChange={(e) => { setNlDebit(e.target.value); setNlCredit(''); }} 
-                      disabled={(() => {
-                        const compte = PLAN_COMPTABLE.find(c => c.numero === nlCompte);
-                        return compte?.sens_normal === 'credit';
-                      })()}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Crédit</Label>
-                    <Input 
-                      type="number" 
-                      placeholder="0.00" 
-                      value={nlCredit} 
-                      onChange={(e) => { setNlCredit(e.target.value); setNlDebit(''); }} 
-                      disabled={(() => {
-                        const compte = PLAN_COMPTABLE.find(c => c.numero === nlCompte);
-                        return compte?.sens_normal === 'debit';
-                      })()}
-                    />
-                  </div>
-                </div>
-
-                {(() => {
-                  const compteInfo = PLAN_COMPTABLE.find(c => c.numero === nlCompte);
-                  return (
-                    <>
-                      {compteInfo?.analytique_obligatoire && (
-                        <div className="space-y-2">
-                          <Label className="flex items-center gap-2">
-                            Centre de Coût <span className="text-destructive">*</span>
-                          </Label>
-                          <Select value={nlCentreCout} onValueChange={setNlCentreCout}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Sélectionner un centre de coût" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="administration">Administration</SelectItem>
-                              <SelectItem value="production">Production Agricole</SelectItem>
-                              <SelectItem value="logistique">Logistique & Transport</SelectItem>
-                              <SelectItem value="commercial">Commercial</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-
-                      {compteInfo?.requiert_auxiliaire && (
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Label className="flex items-center gap-2">
-                              Tiers / Auxiliaire <span className="text-destructive">*</span>
-                            </Label>
-                            <button type="button" onClick={() => setIsTiersModalOpen(true)} className="text-[10px] text-primary hover:underline font-semibold">+ Nouveau</button>
+                              </PopoverContent>
+                            </Popover>
+                            {nlDebitLines.length > 1 && (
+                              <Button type="button" variant="ghost" size="icon" className="h-8 w-7 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => removeDebitLine(entry.id)}>
+                                <X className="h-3 w-3" />
+                              </Button>
+                            )}
                           </div>
-                          <Select value={nlTiersAuxiliaire} onValueChange={setNlTiersAuxiliaire}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Sélectionner un tiers" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {TIERS.map(t => (
-                                <SelectItem key={t.code} value={t.code}>{t.nom}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Input type="number" placeholder="0.00" value={entry.montant}
+                            onChange={e => updateDebitLine(entry.id, { montant: e.target.value })}
+                            className="h-8 text-sm font-bold text-right focus-visible:ring-blue-500/50" />
+                          {/* Champs conditionnels par ligne débit */}
+                          {compteInfo?.analytique_obligatoire && (
+                            <Select value={entry.centreCout || ''} onValueChange={v => updateDebitLine(entry.id, { centreCout: v })}>
+                              <SelectTrigger className="h-7 text-xs border-blue-500/30">
+                                <SelectValue placeholder="Centre de coût *" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="administration">Administration</SelectItem>
+                                <SelectItem value="production">Production Agricole</SelectItem>
+                                <SelectItem value="logistique">Logistique & Transport</SelectItem>
+                                <SelectItem value="commercial">Commercial</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                          {compteInfo?.requiert_auxiliaire && (
+                            <div className="flex items-center gap-1">
+                              <Select value={entry.tiersAux || ''} onValueChange={v => updateDebitLine(entry.id, { tiersAux: v })}>
+                                <SelectTrigger className="h-7 text-xs flex-1 border-blue-500/30">
+                                  <SelectValue placeholder="Tiers / Auxiliaire *" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {TIERS.map(t => <SelectItem key={t.code} value={t.code}>{t.nom}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                              <button type="button" onClick={() => { setTiersModalTarget({ side: 'debit', id: entry.id }); setIsTiersModalOpen(true); }}
+                                className="text-[9px] text-primary hover:underline font-bold shrink-0">+ Nouveau</button>
+                            </div>
+                          )}
+                          {compteInfo?.soumis_tva && (
+                            <div className="flex items-center gap-1 text-[10px] text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded px-2 py-1">
+                              <span>💡</span><span>Compte TVA — pensez à la ligne TVA déductible</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                      
-                      {compteInfo?.soumis_tva && (
-                        <div className="p-3 bg-muted/30 border border-border rounded-lg text-xs text-muted-foreground">
-                          💡 Ce compte est assujetti à la TVA. Assurez-vous d'ajouter une ligne de TVA si nécessaire.
+                      );
+                    })}
+
+                    <button type="button" onClick={addDebitLine}
+                      className="w-full h-7 text-xs text-blue-500 hover:text-blue-600 hover:bg-blue-500/10 border border-dashed border-blue-500/30 rounded-md mt-1 flex items-center justify-center gap-1 transition-colors">
+                      <Plus className="h-3 w-3" /> Ajouter un compte
+                    </button>
+                  </div>
+
+                  {/* ── Colonne CRÉDIT — comptes à sens crédit ou neutre */}
+                  <div className="rounded-xl border-2 border-emerald-500/30 bg-emerald-500/[0.03] p-3 flex flex-col gap-2">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <div className="h-5 w-5 rounded-full bg-emerald-500/15 flex items-center justify-center shrink-0">
+                        <TrendingUp className="h-3 w-3 text-emerald-500" />
+                      </div>
+                      <span className="text-xs font-bold uppercase tracking-wider text-emerald-500">Crédit</span>
+                      <span className="ml-auto text-[10px] font-mono font-semibold text-emerald-500">
+                        {nlCreditLines.reduce((s,l)=>s+parseFloat(l.montant||'0'),0).toLocaleString('fr-FR',{minimumFractionDigits:2})}
+                      </span>
+                    </div>
+
+                    {nlCreditLines.map((entry) => {
+                      const compteInfo = PLAN_COMPTABLE.find(c => c.numero === entry.compte);
+                      return (
+                        <div key={entry.id} className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1">
+                            <Popover open={entry.openPopover} onOpenChange={(v) => updateCreditLine(entry.id, { openPopover: v })}>
+                              <PopoverTrigger asChild>
+                                <Button variant="outline" size="sm" className={cn("flex-1 h-8 justify-between font-normal text-xs px-2 min-w-0 overflow-hidden", !entry.compte && "text-muted-foreground")}>
+                                  <span className="flex items-center gap-1.5 min-w-0 overflow-hidden">
+                                    {entry.compte
+                                      ? (() => { const s = PLAN_COMPTABLE.find(c => c.numero === entry.compte); return s
+                                          ? <><span className="font-mono bg-emerald-500/10 text-emerald-600 px-1 rounded text-[10px] shrink-0">{s.numero}</span><span className="truncate text-xs">{s.libelle}</span></>
+                                          : <span className="truncate">{entry.compte}</span>; })()
+                                      : <><Search className="h-3 w-3 shrink-0"/>Choisir un compte</>}
+                                  </span>
+                                  <ChevronsUpDown className="h-3 w-3 opacity-40 shrink-0 ml-1" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-[360px] p-0" align="start" side="bottom">
+                                <CompteSearchDropdown
+                                  planComptable={PLAN_COMPTABLE}
+                                  selectedCompte={entry.compte}
+                                  onSelect={(num) => updateCreditLine(entry.id, { compte: num, openPopover: false })}
+                                  side="credit"
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            {nlCreditLines.length > 1 && (
+                              <Button type="button" variant="ghost" size="icon" className="h-8 w-7 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => removeCreditLine(entry.id)}>
+                                <X className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                          <Input type="number" placeholder="0.00" value={entry.montant}
+                            onChange={e => updateCreditLine(entry.id, { montant: e.target.value })}
+                            className="h-8 text-sm font-bold text-right focus-visible:ring-emerald-500/50" />
+                          {/* Champs conditionnels par ligne crédit */}
+                          {compteInfo?.analytique_obligatoire && (
+                            <Select value={entry.centreCout || ''} onValueChange={v => updateCreditLine(entry.id, { centreCout: v })}>
+                              <SelectTrigger className="h-7 text-xs border-emerald-500/30">
+                                <SelectValue placeholder="Centre de coût *" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="administration">Administration</SelectItem>
+                                <SelectItem value="production">Production Agricole</SelectItem>
+                                <SelectItem value="logistique">Logistique & Transport</SelectItem>
+                                <SelectItem value="commercial">Commercial</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                          {compteInfo?.requiert_auxiliaire && (
+                            <div className="flex items-center gap-1">
+                              <Select value={entry.tiersAux || ''} onValueChange={v => updateCreditLine(entry.id, { tiersAux: v })}>
+                                <SelectTrigger className="h-7 text-xs flex-1 border-emerald-500/30">
+                                  <SelectValue placeholder="Tiers / Auxiliaire *" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {TIERS.map(t => <SelectItem key={t.code} value={t.code}>{t.nom}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                              <button type="button" onClick={() => { setTiersModalTarget({ side: 'credit', id: entry.id }); setIsTiersModalOpen(true); }}
+                                className="text-[9px] text-primary hover:underline font-bold shrink-0">+ Nouveau</button>
+                            </div>
+                          )}
+                          {compteInfo?.soumis_tva && (
+                            <div className="flex items-center gap-1 text-[10px] text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded px-2 py-1">
+                              <span>💡</span><span>Compte TVA — pensez à la ligne TVA collectée</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </>
+                      );
+                    })}
+
+                    <button type="button" onClick={addCreditLine}
+                      className="w-full h-7 text-xs text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10 border border-dashed border-emerald-500/30 rounded-md mt-1 flex items-center justify-center gap-1 transition-colors">
+                      <Plus className="h-3 w-3" /> Ajouter un compte
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3. Indicateur d'équilibre en temps réel */}
+                {(() => {
+                  const dTotal = nlDebitLines.reduce((s,l)=>s+parseFloat(l.montant||'0'),0);
+                  const cTotal = nlCreditLines.reduce((s,l)=>s+parseFloat(l.montant||'0'),0);
+                  const ecart = Math.abs(dTotal - cTotal);
+                  const ok = ecart < 0.01 && dTotal > 0;
+                  if (dTotal === 0 && cTotal === 0) return null;
+                  return (
+                    <div className={cn("flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium border transition-all",
+                      ok ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-amber-500/10 text-amber-600 border-amber-500/20")}>
+                      <div className="flex items-center gap-1.5">
+                        <Scale className="h-3.5 w-3.5" />
+                        <span>{ok ? "Écriture équilibrée ✓" : `Écart de ${ecart.toLocaleString('fr-FR',{minimumFractionDigits:2})}`}</span>
+                      </div>
+                      <span className="font-mono text-[11px]">
+                        D: {dTotal.toLocaleString('fr-FR',{minimumFractionDigits:2})} · C: {cTotal.toLocaleString('fr-FR',{minimumFractionDigits:2})}
+                      </span>
+                    </div>
                   );
                 })()}
 
-                <div className="space-y-2 pt-2 border-t border-[var(--border-default)]/50">
-                  <Label>Pièce Jointe (Optionnel)</Label>
-                  <div className="flex items-center gap-3">
-                    <input type="file" ref={fileRef} className="hidden" onChange={handleFileChange} />
-                    <Button type="button" variant="outline" onClick={() => fileRef.current?.click()} className="flex-1 border-dashed">
-                      <Paperclip className="h-4 w-4 mr-2" />
-                      {nlFichier ? 'Modifier le fichier' : 'Joindre un fichier justificatif'}
-                    </Button>
-                    {nlFichier && (
-                      <Button type="button" variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => { setNlFichier(null); if (fileRef.current) fileRef.current.value = ''; }}>
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                  {nlFichier && <p className="text-xs text-muted-foreground truncate">{nlFichier instanceof File ? nlFichier.name : 'Justificatif existant'}</p>}
-                </div>
+
               </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setOpenNewLine(false)}>Annuler</Button>
-                <Button onClick={handleAddLigne}>{editingLigneId ? "Enregistrer les modifications" : "Ajouter la ligne"}</Button>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
+                <Button variant="outline" onClick={() => { resetNlForm(); setOpenNewLine(false); }}>Annuler</Button>
+                <Button onClick={handleAddLigne} className="gap-1.5">
+                  {editingLigneId ? <><PencilLine className="h-3.5 w-3.5" />Enregistrer</> : <><Plus className="h-3.5 w-3.5" />Ajouter les lignes</>}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
+
 
           {/* Bouton d'enregistrement vert avec dropdown (déplacé dans la barre d'action) */}
           <DropdownMenu>
@@ -962,7 +1126,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
                   <Input placeholder="Ex: Facture d'achat..." value={libelle} onChange={(e) => setLibelle(e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <Label>N° de l'écriture</Label>
+                  <Label>N° de l'écriture (optionnel)</Label>
                   <Input 
                     value={numeroEcriture} 
                     readOnly
@@ -1299,7 +1463,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
             <TableHeader className="bg-muted/30">
               <TableRow className="hover:bg-transparent">
                 <TableHead className="text-center w-[15%]">Date</TableHead>
-                <TableHead className="text-center w-[15%]">N° Pièce</TableHead>
+                <TableHead className="text-center w-[15%]">N° Écriture</TableHead>
                 <TableHead className="text-center w-[15%]">N° Compte</TableHead>
                 <TableHead className="text-center w-[25%]">Libellé</TableHead>
                 <TableHead className="text-center w-[10%]">Débit</TableHead>
@@ -1313,7 +1477,9 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
                 paginatedLignes.map((ligne) => (
                   <TableRow key={ligne.id} className="group transition-colors hover:bg-muted/20">
                     <TableCell className="text-center font-mono text-xs text-muted-foreground">{ligne.date}</TableCell>
-                    <TableCell className="text-center font-mono text-xs text-muted-foreground">{numeroPiece}</TableCell>
+                    <TableCell className="text-center font-mono text-xs text-muted-foreground">
+                      {numeroEcriture || <span className="italic opacity-50">Non défini</span>}
+                    </TableCell>
                     <TableCell className="text-center">
                       <Badge variant="secondary" className="font-mono bg-background shadow-sm border-[var(--border-default)]/50">{ligne.compte}</Badge>
                     </TableCell>
@@ -1428,8 +1594,13 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
         open={isTiersModalOpen} 
         onOpenChange={setIsTiersModalOpen}
         onSuccess={async (newTiers) => {
-          if (newTiers && newTiers.code) {
-            setNlTiersAuxiliaire(newTiers.code);
+          if (newTiers && newTiers.code && tiersModalTarget) {
+            if (tiersModalTarget.side === 'debit') {
+              updateDebitLine(tiersModalTarget.id, { tiersAux: newTiers.code });
+            } else {
+              updateCreditLine(tiersModalTarget.id, { tiersAux: newTiers.code });
+            }
+            setTiersModalTarget(null);
           }
           try {
             const data = await fetchWithAuth('/plan_comptable/tiers/');
@@ -1482,6 +1653,7 @@ function ValideView({ setView, view }: { setView: (v: View) => void; view: View 
       (l) => l.numero.toLowerCase().includes(q) || 
              l.libelle.toLowerCase().includes(q) || 
              l.compte.toLowerCase().includes(q) ||
+             (l.numero_ligne && l.numero_ligne.toLowerCase().includes(q)) ||
              (l.piece && l.piece.toLowerCase().includes(q)) ||
              (l.libelleEcriture && l.libelleEcriture.toLowerCase().includes(q))
     );
@@ -1556,7 +1728,7 @@ function ValideView({ setView, view }: { setView: (v: View) => void; view: View 
       ligne.libelle,
       ligne.debit > 0 ? formatCurrency(ligne.debit) : '-',
       ligne.credit > 0 ? formatCurrency(ligne.credit) : '-',
-      (ligne.saisiePar || '?').substring(0, 2).toUpperCase()
+      ligne.saisiePar || 'Inconnu'
     ]);
 
     // Ligne des totaux
@@ -1675,7 +1847,7 @@ function ValideView({ setView, view }: { setView: (v: View) => void; view: View 
           <td>${ligne.libelle}</td>
           <td class="text-right">${ligne.debit > 0 ? formatCurrency(ligne.debit) : '-'}</td>
           <td class="text-right">${ligne.credit > 0 ? formatCurrency(ligne.credit) : '-'}</td>
-          <td class="text-center">${(ligne.saisiePar || '?').substring(0, 2).toUpperCase()}</td>
+          <td class="text-center">${ligne.saisiePar || 'Inconnu'}</td>
         </tr>
       `;
     });
@@ -1864,8 +2036,8 @@ function ValideView({ setView, view }: { setView: (v: View) => void; view: View 
                 <TableCell className="text-center">
                   <Badge variant="outline" className="font-mono bg-background shadow-sm">{ligne.numero}</Badge>
                 </TableCell>
-                <TableCell className="text-center text-xs font-mono text-muted-foreground truncate max-w-[100px]" title={ligne.piece}>
-                  {ligne.piece || '-'}
+                <TableCell className="text-center text-xs font-mono text-muted-foreground truncate max-w-[120px]" title={ligne.numero_ligne || ligne.piece}>
+                  {ligne.numero_ligne || ligne.piece || '-'}
                 </TableCell>
                 <TableCell className="text-center text-xs text-muted-foreground">{formatDate(ligne.dateEcriture)}</TableCell>
                 <TableCell className="text-center">
@@ -1885,11 +2057,12 @@ function ValideView({ setView, view }: { setView: (v: View) => void; view: View 
                 <TableCell className="text-center font-mono font-medium text-sm text-foreground/90">
                   {ligne.credit > 0 ? formatCurrency(ligne.credit) : '-'}
                 </TableCell>
-                <TableCell className="text-center text-xs text-muted-foreground">
-                  <div className="flex items-center justify-center gap-1.5" title={ligne.saisiePar || 'Inconnu'}>
-                    <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold text-primary">
+                <TableCell className="text-left text-xs text-muted-foreground">
+                  <div className="flex items-center justify-start gap-2" title={ligne.saisiePar || 'Inconnu'}>
+                    <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold text-primary shrink-0">
                       {ligne.saisiePar ? ligne.saisiePar.substring(0, 2).toUpperCase() : '?'}
                     </div>
+                    <span className="truncate">{ligne.saisiePar || 'Inconnu'}</span>
                   </div>
                 </TableCell>
               </TableRow>

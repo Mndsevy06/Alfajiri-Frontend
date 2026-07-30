@@ -77,7 +77,7 @@ export function BulletinForm({ onSuccess, onCancel }: BulletinFormProps) {
   
   // Retenues
   const [tauxCnss, setTauxCnss] = useState(5); // 5% part employé par défaut RDC
-  const [ipr, setIpr] = useState(0); // Impôt Professionnel sur les Rémunérations
+  const [tauxIpr, setTauxIpr] = useState(15); // Taux IPR moyen/forfaitaire par défaut
   const [avances, setAvances] = useState(0);
   
   // Cotisations Patronales (RDC OHADA standards)
@@ -128,6 +128,9 @@ export function BulletinForm({ onSuccess, onCancel }: BulletinFormProps) {
   
   // Base Imposable nette (Brut imposable - Cotisations sociales déductibles)
   const baseImposableNette = Math.max(0, salaireBrutImposable - cnssEmploye);
+  
+  // IPR (calculé sur la base nette imposable)
+  const ipr = (baseImposableNette * tauxIpr) / 100;
   
   // Le Net à Payer = Salaire Brut Global - Retenues (Sociales + Fiscales + Avances)
   const salaireBrutGlobal = salaireBase + heuresSup + primes.reduce((sum, p) => sum + p.montant, 0);
@@ -545,18 +548,26 @@ export function BulletinForm({ onSuccess, onCancel }: BulletinFormProps) {
                     <h4 className="text-sm font-semibold flex items-center gap-2"><Calculator className="w-4 h-4 text-muted-foreground"/> Fiscal & Avances</h4>
                     <div className="space-y-3">
                       <div className="space-y-1.5">
-                        <Label htmlFor="ipr" className="text-xs">IPR - Impôt Prof. (USD)</Label>
+                        <Label htmlFor="tauxIpr" className="text-xs">Taux IPR (%)</Label>
                         <Input
-                          id="ipr"
+                          id="tauxIpr"
                           type="number"
                           min="0"
-                          step="0.01"
-                          value={ipr || ''}
-                          onChange={e => setIpr(parseFloat(e.target.value) || 0)}
+                          step="0.1"
+                          value={tauxIpr}
+                          onChange={e => setTauxIpr(parseFloat(e.target.value) || 0)}
                           className="h-8"
-                          placeholder="0.00"
                         />
-                        <p className="text-[10px] text-muted-foreground">Base imposable : {baseImposableNette.toFixed(2)} $</p>
+                        <div className="pt-2 border-t border-border/50 text-xs">
+                          <div className="flex justify-between py-1 mt-2">
+                            <span className="text-muted-foreground">Base imposable:</span>
+                            <span className="font-medium">{baseImposableNette.toFixed(2)} $</span>
+                          </div>
+                          <div className="flex justify-between font-medium text-rose-500 py-1">
+                            <span>Montant IPR:</span>
+                            <span>-{ipr.toFixed(2)} $</span>
+                          </div>
+                        </div>
                       </div>
                       
                       <div className="space-y-1.5 pt-1">
@@ -586,53 +597,82 @@ export function BulletinForm({ onSuccess, onCancel }: BulletinFormProps) {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Patronal */}
-                  <div className="space-y-4 bg-muted/20 p-5 rounded-xl border border-border">
-                    <h4 className="text-sm font-semibold">Charges Patronales</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="tauxCnssPatronal" className="text-xs text-muted-foreground">CNSS (%)</Label>
-                        <Input
-                          id="tauxCnssPatronal"
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          value={tauxCnssPatronal}
-                          onChange={e => setTauxCnssPatronal(parseFloat(e.target.value) || 0)}
-                          className="h-8 text-xs"
-                        />
-                        <p className="text-[10px] font-medium text-foreground">{cnssPatronal.toFixed(2)} $</p>
+                  {/* Patronal & Fisc */}
+                  <div className="space-y-4 bg-muted/20 p-5 rounded-xl border border-border flex flex-col">
+                    <h4 className="text-sm font-semibold flex items-center gap-2"><Building2 className="w-4 h-4 text-muted-foreground"/> Charges & Déclarations</h4>
+                    
+                    <div className="space-y-3">
+                      <div className="text-xs font-semibold uppercase text-muted-foreground tracking-wider border-b border-border/50 pb-1">Cotisations Sociales (CNSS / INPP / ONEM)</div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="tauxCnssPatronal" className="text-[10px] text-muted-foreground">CNSS Patronal (%)</Label>
+                          <Input
+                            id="tauxCnssPatronal"
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            value={tauxCnssPatronal}
+                            onChange={e => setTauxCnssPatronal(parseFloat(e.target.value) || 0)}
+                            className="h-7 text-xs"
+                          />
+                          <div className="flex justify-between text-[10px]">
+                            <span className="text-muted-foreground">Patronal:</span>
+                            <span className="font-medium">{cnssPatronal.toFixed(2)} $</span>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="tauxInpp" className="text-[10px] text-muted-foreground">INPP Patronal (%)</Label>
+                          <Input
+                            id="tauxInpp"
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            value={tauxInpp}
+                            onChange={e => setTauxInpp(parseFloat(e.target.value) || 0)}
+                            className="h-7 text-xs"
+                          />
+                          <div className="flex justify-between text-[10px]">
+                            <span className="text-muted-foreground">Patronal:</span>
+                            <span className="font-medium">{inppPatronal.toFixed(2)} $</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="tauxInpp" className="text-xs text-muted-foreground">INPP (%)</Label>
-                        <Input
-                          id="tauxInpp"
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          value={tauxInpp}
-                          onChange={e => setTauxInpp(parseFloat(e.target.value) || 0)}
-                          className="h-8 text-xs"
-                        />
-                        <p className="text-[10px] font-medium text-foreground">{inppPatronal.toFixed(2)} $</p>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="tauxOnem" className="text-[10px] text-muted-foreground">ONEM Patronal (%)</Label>
+                          <Input
+                            id="tauxOnem"
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            value={tauxOnem}
+                            onChange={e => setTauxOnem(parseFloat(e.target.value) || 0)}
+                            className="h-7 text-xs"
+                          />
+                          <div className="flex justify-between text-[10px]">
+                            <span className="text-muted-foreground">Patronal:</span>
+                            <span className="font-medium">{onemPatronal.toFixed(2)} $</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col justify-end pb-1 text-xs">
+                          <div className="flex justify-between border-t border-border pt-1">
+                            <span className="font-semibold">Total Patronal:</span>
+                            <span className="font-bold">{totalChargesPatronales.toFixed(2)} $</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="space-y-1.5 w-1/2 pr-2">
-                      <Label htmlFor="tauxOnem" className="text-xs text-muted-foreground">ONEM (%)</Label>
-                      <Input
-                        id="tauxOnem"
-                        type="number"
-                        min="0"
-                        step="0.1"
-                        value={tauxOnem}
-                        onChange={e => setTauxOnem(parseFloat(e.target.value) || 0)}
-                        className="h-8 text-xs"
-                      />
-                      <p className="text-[10px] font-medium text-foreground">{onemPatronal.toFixed(2)} $</p>
                     </div>
 
-                    <div className="pt-3 border-t border-border mt-2">
-                      <p className="text-xs font-semibold">Total Patronal: {totalChargesPatronales.toFixed(2)} $</p>
+                    <div className="space-y-2 pt-2 mt-auto">
+                      <div className="text-xs font-semibold uppercase text-muted-foreground tracking-wider border-b border-border/50 pb-1">Retenues Fiscales (Fisc / DGI)</div>
+                      <div className="flex justify-between items-center text-xs bg-rose-500/10 text-rose-600 p-2 rounded-md border border-rose-500/20">
+                        <span className="font-medium">IPR ({tauxIpr}%)</span>
+                        <span className="font-bold">{ipr.toFixed(2)} $</span>
+                      </div>
+                      <div className="text-[9px] text-muted-foreground italic">
+                        *L'IPR est déduit du salaire mais doit être reversé au fisc par l'employeur.
+                      </div>
                     </div>
                   </div>
 

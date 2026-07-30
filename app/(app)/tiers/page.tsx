@@ -216,7 +216,7 @@ export default function TiersPage() {
                         <td className="py-3.5 px-4">
                           <div className="flex flex-col gap-0.5">
                             {t.telephone && <span className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" /> {t.telephone}</span>}
-                            {t.email && <span className="text-xs text-muted-foreground flex items-center gap-1"><Mail className="h-3 w-3 truncate max-w-[120px]" title={t.email} /> {t.email}</span>}
+                            {t.email && <span className="text-xs text-muted-foreground flex items-center gap-1" title={t.email}><Mail className="h-3 w-3 truncate max-w-[120px]" /> {t.email}</span>}
                             {!t.telephone && !t.email && <span className="text-xs text-muted-foreground opacity-50">-</span>}
                           </div>
                         </td>

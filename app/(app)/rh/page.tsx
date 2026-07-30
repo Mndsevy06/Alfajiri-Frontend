@@ -376,7 +376,7 @@ function EmployesView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'pa
 
       {/* Détails Employé Dialog */}
       <Dialog open={!!selectedEmploye} onOpenChange={(open) => !open && setSelectedEmploye(null)}>
-        <DialogContent className="max-w-[92vw] sm:max-w-[500px] rounded-xl border-[var(--border-default)]/50 bg-[var(--bg-primary)]/95 backdrop-blur-xl">
+        <DialogContent className="max-w-[92vw] sm:max-w-[500px] rounded-xl border-[var(--border-default)]/50 bg-background/95 text-foreground backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle>Détails de l'employé</DialogTitle>
             <DialogDescription className="hidden">Détails et informations de l'employé sélectionné</DialogDescription>
@@ -425,7 +425,7 @@ function EmployesView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'pa
       </Dialog>
       
       <Dialog open={isNewEmployeOpen} onOpenChange={setIsNewEmployeOpen}>
-        <DialogContent className="max-w-[92vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto rounded-xl border-[var(--border-default)]/50 bg-[var(--bg-primary)]/95 backdrop-blur-xl">
+        <DialogContent className="max-w-[92vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto rounded-xl border-[var(--border-default)]/50 bg-background/95 text-foreground backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle>Ajouter un nouvel employé</DialogTitle>
             <DialogDescription className="hidden">Formulaire de création d'un nouvel employé</DialogDescription>
@@ -800,7 +800,7 @@ function PaieView({ activeTab, setActiveTab }: { activeTab: 'employes' | 'paie',
         </GlassCard>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-[95vw] md:max-w-[800px] lg:max-w-[1000px] border-[var(--border-default)]/50 bg-[var(--bg-primary)]/95 backdrop-blur-xl p-0 overflow-hidden max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-[95vw] md:max-w-[800px] lg:max-w-[1000px] border-[var(--border-default)]/50 bg-background/95 text-foreground backdrop-blur-xl p-0 overflow-hidden max-h-[90vh] flex flex-col">
           <DialogHeader className="px-6 py-4 border-b border-[var(--border-default)]/50 shrink-0">
             <DialogTitle className="flex items-center gap-2 text-xl">
               <Calculator className="h-5 w-5 text-primary" />

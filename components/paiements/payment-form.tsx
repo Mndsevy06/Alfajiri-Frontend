@@ -451,7 +451,7 @@ export function PaymentForm({ onSuccess, onCancel }: PaymentFormProps) {
       />
 
       <AlertDialog open={showWarning} onOpenChange={setShowWarning}>
-        <AlertDialogContent className="border-[var(--border-default)]/50 bg-[var(--bg-primary)]/95 backdrop-blur-xl">
+        <AlertDialogContent className="border-[var(--border-default)]/50 bg-background/95 text-foreground backdrop-blur-xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-rose-500 flex items-center gap-2">
               <Wallet className="h-5 w-5" />

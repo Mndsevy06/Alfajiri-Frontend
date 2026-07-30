@@ -421,7 +421,7 @@ export default function ImmobilisationsPage() {
                   const cumulAmort = Number(i.cumulAmortissement);
                   const vnc = Number(i.vnc);
                   const amortPct = valeurAcq > 0 ? (cumulAmort / valeurAcq) * 100 : 0;
-                  const site = SITES.find((s) => s.id === i.site);
+                  const site = SITES.find((s) => s.id === i.site || s.label === i.site);
                   return (
                     <TableRow key={i.id} className="group">
                       <TableCell className="font-mono font-medium">{i.code}</TableCell>
@@ -518,7 +518,7 @@ export default function ImmobilisationsPage() {
                       className="justify-between"
                     >
                       {form.site
-                        ? sites.find((s) => s.label === form.site)?.label || form.site
+                        ? sites.find((s) => s.id === form.site)?.label || form.site
                         : "Sélectionner ou saisir un site..."}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </NeonButton>
@@ -554,7 +554,7 @@ export default function ImmobilisationsPage() {
                               key={s.id}
                               value={s.label}
                               onSelect={() => {
-                                setForm({ ...form, site: s.label });
+                                setForm({ ...form, site: s.id });
                                 setSiteOpen(false);
                                 setSiteSearch('');
                               }}
@@ -562,7 +562,7 @@ export default function ImmobilisationsPage() {
                               <Check
                                 className={cn(
                                   "mr-2 h-4 w-4",
-                                  form.site === s.label ? "opacity-100" : "opacity-0"
+                                  form.site === s.id ? "opacity-100" : "opacity-0"
                                 )}
                               />
                               {s.label}

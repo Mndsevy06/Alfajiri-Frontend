@@ -82,6 +82,7 @@ export type LigneEcriture = {
   centre_cout?: string;
   tiers_auxiliaire?: string;
   piece?: string;
+  numero_ligne?: string;
 };
 
 export type Ecriture = {
@@ -174,11 +175,11 @@ export type Immobilisation = {
   dateAcquisition: string;
   valeurAcquisition: number;
   duree: number;
-  methode: 'lineaire' | 'degressive';
+  methode: 'lineaire' | 'degressive' | 'exceptionnelle' | 'unites_oeuvre';
   cumulAmortissement: number;
   vnc: number;
   dotationAnnuelle: number;
-  site: Site;
+  site: string;
 };
 
 export type AuditEntry = {
