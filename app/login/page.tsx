@@ -52,7 +52,7 @@ export default function LoginPage() {
       toast.success('Connexion reussie', {
         description: `Bienvenue, ${email}`,
       });
-      router.push('/dashboard');
+      window.location.href = '/dashboard';
     } catch (error: any) {
       toast.error('Erreur de connexion', {
         description: error.message || 'Une erreur est survenue',

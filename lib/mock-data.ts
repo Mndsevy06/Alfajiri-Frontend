@@ -40,6 +40,7 @@ export const DOSSIERS: Dossier[] = [
     exerciceEnCours: '2025',
     dateDebut: '2025-01-01',
     dateFin: '2025-12-31',
+    compteClient: '411100001',
   },
   {
     id: 'd2',
@@ -58,6 +59,7 @@ export const DOSSIERS: Dossier[] = [
     exerciceEnCours: '2025',
     dateDebut: '2025-01-01',
     dateFin: '2025-12-31',
+    compteClient: '411100002',
   },
   {
     id: 'd3',
@@ -76,6 +78,7 @@ export const DOSSIERS: Dossier[] = [
     exerciceEnCours: '2025',
     dateDebut: '2025-01-01',
     dateFin: '2025-12-31',
+    compteFournisseur: '401100001',
   },
 ];
 

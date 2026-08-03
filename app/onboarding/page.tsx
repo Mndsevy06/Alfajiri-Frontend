@@ -48,6 +48,8 @@ export default function OnboardingPage() {
     dateEnd: '',
     currency: '',
     exerciceEnCours: '',
+    typeCompte: '',
+    numeroCompte: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,6 +91,8 @@ export default function OnboardingPage() {
             exerciceEnCours: formData.exerciceEnCours,
             dateDebut: formData.dateStart,
             dateFin: formData.dateEnd,
+            compteClient: formData.typeCompte === 'client' ? '411' : '',
+            compteFournisseur: formData.typeCompte === 'fournisseur' ? '401' : '',
           })
         });
 
@@ -169,7 +173,7 @@ export default function OnboardingPage() {
                         placeholder="TransAfrique"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="pl-10 h-10 bg-background/60 focus-visible:bg-background transition-colors border-white/10 text-sm"
+                        className="pl-10 h-10 bg-background/60 focus-visible:bg-background transition-colors border-input text-sm"
                       />
                     </div>
                   </div>
@@ -181,7 +185,7 @@ export default function OnboardingPage() {
                         placeholder="TACT"
                         value={formData.sigle}
                         onChange={(e) => setFormData({ ...formData, sigle: e.target.value })}
-                        className="h-10 bg-background/60 focus-visible:bg-background transition-colors border-white/10 text-sm"
+                        className="h-10 bg-background/60 focus-visible:bg-background transition-colors border-input text-sm"
                       />
                     </div>
                   </div>
@@ -193,7 +197,7 @@ export default function OnboardingPage() {
                     value={formData.status}
                     onValueChange={(value) => setFormData({ ...formData, status: value })}
                   >
-                    <SelectTrigger className="h-10 bg-background/60 border-white/10 text-sm">
+                    <SelectTrigger className="h-10 bg-background/60 border-input text-sm">
                       <SelectValue placeholder="Sélectionnez un statut" />
                     </SelectTrigger>
                     <SelectContent>
@@ -219,7 +223,7 @@ export default function OnboardingPage() {
                       placeholder="Avenue du Ciment 42, Lubumbashi..."
                       value={formData.adresse}
                       onChange={(e) => setFormData({ ...formData, adresse: e.target.value })}
-                      className="h-10 bg-background/60 focus-visible:bg-background transition-colors border-white/10 text-sm"
+                      className="h-10 bg-background/60 focus-visible:bg-background transition-colors border-input text-sm"
                     />
                   </div>
                 </div>
@@ -232,7 +236,7 @@ export default function OnboardingPage() {
                       placeholder="Ex: Lubumbashi"
                       value={formData.ville}
                       onChange={(e) => setFormData({ ...formData, ville: e.target.value })}
-                      className="h-10 bg-background/60 focus-visible:bg-background transition-colors border-white/10 text-sm"
+                      className="h-10 bg-background/60 focus-visible:bg-background transition-colors border-input text-sm"
                     />
                   </div>
                   <div className="space-y-2">
@@ -242,7 +246,7 @@ export default function OnboardingPage() {
                       placeholder="Ex: RDC"
                       value={formData.pays}
                       onChange={(e) => setFormData({ ...formData, pays: e.target.value })}
-                      className="h-10 bg-background/60 focus-visible:bg-background transition-colors border-white/10 text-sm"
+                      className="h-10 bg-background/60 focus-visible:bg-background transition-colors border-input text-sm"
                     />
                   </div>
                 </div>
@@ -257,7 +261,7 @@ export default function OnboardingPage() {
                         defaultCountry="CD"
                         value={formData.telephone}
                         onChange={(val: any) => setFormData({ ...formData, telephone: val || '' })}
-                        className="h-10 bg-background/60 focus-within:bg-background transition-colors border border-white/10 text-sm rounded-md px-3 flex items-center [&_.PhoneInputCountry]:mr-3 [&_.PhoneInputCountryIcon]:h-5 [&_.PhoneInputCountryIcon]:w-7 [&_.PhoneInputCountryIcon]:shadow-sm"
+                        className="h-10 bg-background/60 focus-within:bg-background transition-colors border border-input text-sm rounded-md px-3 flex items-center [&_.PhoneInputCountry]:mr-3 [&_.PhoneInputCountryIcon]:h-5 [&_.PhoneInputCountryIcon]:w-7 [&_.PhoneInputCountryIcon]:shadow-sm"
                         numberInputProps={{
                           className: "flex-1 bg-transparent border-none outline-none focus:ring-0 text-sm placeholder:text-muted-foreground w-full"
                         }}
@@ -272,7 +276,7 @@ export default function OnboardingPage() {
                       placeholder="contact@entreprise.com"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="h-10 bg-background/60 focus-visible:bg-background transition-colors border-white/10 text-sm"
+                      className="h-10 bg-background/60 focus-visible:bg-background transition-colors border-input text-sm"
                     />
                   </div>
                 </div>
@@ -296,7 +300,7 @@ export default function OnboardingPage() {
                       placeholder="RCC/CD/HKT/2023/B-0142"
                       value={formData.rccm}
                       onChange={(e) => setFormData({ ...formData, rccm: e.target.value })}
-                      className="h-10 bg-background/60 focus-visible:bg-background transition-colors border-white/10 text-sm"
+                      className="h-10 bg-background/60 focus-visible:bg-background transition-colors border-input text-sm"
                     />
                   </div>
                 </div>
@@ -309,7 +313,7 @@ export default function OnboardingPage() {
                       placeholder="01-N8-K7400-X-2023"
                       value={formData.idNat}
                       onChange={(e) => setFormData({ ...formData, idNat: e.target.value })}
-                      className="h-10 bg-background/60 focus-visible:bg-background transition-colors border-white/10 text-sm"
+                      className="h-10 bg-background/60 focus-visible:bg-background transition-colors border-input text-sm"
                     />
                   </div>
                 </div>
@@ -322,7 +326,7 @@ export default function OnboardingPage() {
                       placeholder="A0142891Z"
                       value={formData.nImpot}
                       onChange={(e) => setFormData({ ...formData, nImpot: e.target.value })}
-                      className="h-10 bg-background/60 focus-visible:bg-background transition-colors border-white/10 text-sm"
+                      className="h-10 bg-background/60 focus-visible:bg-background transition-colors border-input text-sm"
                     />
                   </div>
                 </div>
@@ -346,7 +350,7 @@ export default function OnboardingPage() {
                       placeholder="Ex: 2025"
                       value={formData.exerciceEnCours}
                       onChange={(e) => setFormData({ ...formData, exerciceEnCours: e.target.value })}
-                      className="h-10 bg-background/60 focus-visible:bg-background transition-colors border-white/10 text-sm"
+                      className="h-10 bg-background/60 focus-visible:bg-background transition-colors border-input text-sm"
                     />
                   </div>
                 </div>
@@ -361,7 +365,7 @@ export default function OnboardingPage() {
                         type="date"
                         value={formData.dateStart}
                         onChange={(e) => setFormData({ ...formData, dateStart: e.target.value })}
-                        className="pl-10 h-10 bg-background/60 focus-visible:bg-background transition-colors border-white/10 text-sm"
+                        className="pl-10 h-10 bg-background/60 focus-visible:bg-background transition-colors border-input text-sm"
                       />
                     </div>
                   </div>
@@ -374,7 +378,7 @@ export default function OnboardingPage() {
                         type="date"
                         value={formData.dateEnd}
                         onChange={(e) => setFormData({ ...formData, dateEnd: e.target.value })}
-                        className="pl-10 h-10 bg-background/60 focus-visible:bg-background transition-colors border-white/10 text-sm"
+                        className="pl-10 h-10 bg-background/60 focus-visible:bg-background transition-colors border-input text-sm"
                       />
                     </div>
                   </div>
@@ -388,7 +392,7 @@ export default function OnboardingPage() {
                       value={formData.currency}
                       onValueChange={(value) => setFormData({ ...formData, currency: value })}
                     >
-                      <SelectTrigger className="pl-10 h-10 bg-background/60 border-white/10 text-sm">
+                      <SelectTrigger className="pl-10 h-10 bg-background/60 border-input text-sm">
                         <SelectValue placeholder="Sélectionnez une devise" />
                       </SelectTrigger>
                       <SelectContent>
@@ -398,6 +402,22 @@ export default function OnboardingPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Compte</Label>
+                  <Select
+                    value={formData.typeCompte}
+                    onValueChange={(value) => setFormData({ ...formData, typeCompte: value })}
+                  >
+                    <SelectTrigger className="h-10 bg-background/60 border-input text-sm">
+                      <SelectValue placeholder="Sélectionnez un compte" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="client">Compte Client (411)</SelectItem>
+                      <SelectItem value="fournisseur">Compte Fournisseur (401)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </motion.div>
             )}

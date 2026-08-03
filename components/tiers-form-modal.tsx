@@ -193,9 +193,6 @@ export function TiersFormModal({ open, onOpenChange, onSuccess, defaultType, all
                 <SelectContent>
                   {(!allowedTypes || allowedTypes.includes('client')) && <SelectItem value="client">Client</SelectItem>}
                   {(!allowedTypes || allowedTypes.includes('fournisseur')) && <SelectItem value="fournisseur">Fournisseur</SelectItem>}
-                  {(!allowedTypes || allowedTypes.includes('personnel')) && <SelectItem value="personnel">Personnel</SelectItem>}
-                  {(!allowedTypes || allowedTypes.includes('etat')) && <SelectItem value="etat">État & Organismes</SelectItem>}
-                  {(!allowedTypes || allowedTypes.includes('associe')) && <SelectItem value="associe">Associé</SelectItem>}
                 </SelectContent>
               </Select>
             </div>

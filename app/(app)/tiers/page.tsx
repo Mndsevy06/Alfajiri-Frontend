@@ -145,9 +145,6 @@ export default function TiersPage() {
                   <DropdownMenuRadioItem value="all">Tous les tiers</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="client">Clients</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="fournisseur">Fournisseurs</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="personnel">Personnel</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="etat">État & Organismes</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="associe">Associés</DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>
             </DropdownMenu>

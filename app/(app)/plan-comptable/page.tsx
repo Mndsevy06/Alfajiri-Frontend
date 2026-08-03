@@ -286,22 +286,18 @@ export default function PlanComptablePage() {
   const exportToExcel = () => {
     try {
       const dataToExport = getExportData().map(c => ({
-        'Numéro': c.numero,
-        'Libellé': '  '.repeat(c.depth) + c.libelle,
-        'Classe': c.classe,
-        'Nature': c.type === 'general' ? 'Général' : 'Auxiliaire',
-        'Compte Parent': c.parent || '-',
-        'Lettrable': c.lettrable ? 'Oui' : 'Non',
-        'Tiers Rattaché': c.tiers?.type || '-',
-        'Solde Débit': c.soldeDebit || 0,
-        'Solde Crédit': c.soldeCredit || 0
+        'NUMERO DE COMPTE': c.numero,
+        'compte': '  '.repeat(c.depth) + c.libelle,
+        'tiers ratacher': c.tiers?.type || '-',
+        'solde debit': c.soldeDebit || 0,
+        'solde credit': c.soldeCredit || 0
       }));
 
       const worksheet = XLSX.utils.json_to_sheet(dataToExport);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Plan Comptable");
 
-      const maxWidths = [15, 40, 10, 15, 15, 10, 15, 15, 15];
+      const maxWidths = [20, 50, 20, 15, 15];
       worksheet['!cols'] = maxWidths.map(w => ({ wch: w }));
 
       XLSX.writeFile(workbook, "Plan_Comptable_SYSCOHADA.xlsx");
@@ -325,24 +321,23 @@ export default function PlanComptablePage() {
       const tableData = getExportData().map(c => [
         c.numero,
         '  '.repeat(c.depth) + c.libelle,
-        c.type === 'general' ? 'Général' : 'Auxiliaire',
-        c.parent || '-',
+        c.tiers?.type || '-',
         c.soldeDebit ? formatCurrency(c.soldeDebit) : '-',
         c.soldeCredit ? formatCurrency(c.soldeCredit) : '-'
       ]);
 
       autoTable(doc, {
         startY: 80,
-        head: [['Compte', 'Libellé', 'Nature', 'Parent', 'Débit', 'Crédit']],
+        head: [['NUMERO DE COMPTE', 'compte', 'tiers ratacher', 'solde debit', 'solde credit']],
         body: tableData,
         theme: 'striped',
         headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
         styles: { fontSize: 8, cellPadding: 4 },
         columnStyles: {
-          0: { fontStyle: 'bold', cellWidth: 50 },
+          0: { fontStyle: 'bold', cellWidth: 80 },
           1: { cellWidth: 150 },
-          4: { halign: 'right' },
-          5: { halign: 'right' }
+          3: { halign: 'right' },
+          4: { halign: 'right' }
         },
         didDrawPage: (data) => {
           doc.setFontSize(8);
@@ -825,13 +820,32 @@ export default function PlanComptablePage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="parent">Compte parent</Label>
-              <Select value={form.parent} onValueChange={(v) => setForm({ ...form, parent: v })}>
+              <Label htmlFor="parent">Compte</Label>
+              <Select 
+                value={form.parent} 
+                onValueChange={(v) => {
+                  setForm({ ...form, parent: v });
+                  if (!editingCompte) {
+                    const prefix = v === '411100' ? '4111' : (v === '401100' ? '401' : null);
+                    if (prefix) {
+                      const auxAccounts = rawComptes.filter(c => c.type === 'auxiliaire' && c.numero.startsWith(prefix));
+                      let nextNum = `${prefix}${'1'.padStart(Math.max(6 - prefix.length, 2), '0')}`;
+                      if (auxAccounts.length > 0) {
+                        const maxAcc = auxAccounts.reduce((max, c) => c.numero > max.numero ? c : max, auxAccounts[0]);
+                        const suffix = maxAcc.numero.substring(prefix.length);
+                        const nextSuffix = (parseInt(suffix) + 1).toString().padStart(Math.max(6 - prefix.length, 2), '0');
+                        nextNum = `${prefix}${nextSuffix}`;
+                      }
+                      setForm(prev => ({ ...prev, numero: nextNum, parent: v }));
+                    }
+                  }
+                }}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selectionner un compte parent" />
+                  <SelectValue placeholder="Selectionner un compte" />
                 </SelectTrigger>
                 <SelectContent>
-                  {rawComptes.filter((c) => c.type === 'general').map((c) => (
+                  {rawComptes.filter((c) => c.numero === '411100' || c.numero === '401100').map((c) => (
                     <SelectItem key={c.numero} value={c.numero}>
                       {c.numero} - {c.libelle}
                     </SelectItem>

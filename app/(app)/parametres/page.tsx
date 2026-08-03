@@ -671,6 +671,16 @@ export default function ParametresPage() {
                     <Input value={editingDossier.idNat} onChange={(e) => setEditingDossier({ ...editingDossier, idNat: e.target.value })} className="bg-muted/20 font-mono" />
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Compte Client (411)</Label>
+                    <Input placeholder="ex: 411ENT" value={editingDossier.compteClient || ''} onChange={(e) => setEditingDossier({ ...editingDossier, compteClient: e.target.value })} className="bg-muted/20 font-mono" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Compte Fournisseur (401)</Label>
+                    <Input placeholder="ex: 401ENT" value={editingDossier.compteFournisseur || ''} onChange={(e) => setEditingDossier({ ...editingDossier, compteFournisseur: e.target.value })} className="bg-muted/20 font-mono" />
+                  </div>
+                </div>
               </div>
               <DialogFooter className="pt-2 border-t border-border/30">
                 <DialogClose asChild>

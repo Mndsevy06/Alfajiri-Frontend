@@ -200,12 +200,18 @@ function BalanceView({ onDrillDown, balance, loading, periode, setPeriode, viewT
     });
   }, [filterClass, balance, searchQuery]);
 
-  const totalDebit = comptes.reduce((s, c) => s + parseFloat(c.solde_debit), 0);
-  const totalCredit = comptes.reduce((s, c) => s + parseFloat(c.solde_credit), 0);
-  const totalMvtDebit = comptes.reduce((s, c) => s + parseFloat(c.debit), 0);
-  const totalMvtCredit = comptes.reduce((s, c) => s + parseFloat(c.credit), 0);
+  const isLeaf = (c: any, allComptes: any[]) => {
+    return !allComptes.some(other => other.compte.startsWith(c.compte) && other.compte !== c.compte);
+  };
+  const leafComptes = comptes.filter(c => isLeaf(c, comptes));
+
+  const totalDebit = leafComptes.reduce((s, c) => s + parseFloat(c.solde_debit), 0);
+  const totalCredit = leafComptes.reduce((s, c) => s + parseFloat(c.solde_credit), 0);
+  const totalMvtDebit = leafComptes.reduce((s, c) => s + parseFloat(c.debit), 0);
+  const totalMvtCredit = leafComptes.reduce((s, c) => s + parseFloat(c.credit), 0);
 
   const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
+  const isMvtBalanced = Math.abs(totalMvtDebit - totalMvtCredit) < 0.01;
 
   // Pas de pagination
 
@@ -213,49 +219,49 @@ function BalanceView({ onDrillDown, balance, loading, periode, setPeriode, viewT
     <div className="space-y-2">
       {/* Statistiques Section */}
       <div className="grid grid-cols-4 gap-1 sm:gap-2">
-        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className={cn("bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow", !isMvtBalanced && "animate-pulse border-destructive/50")}>
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Mvt Débit</span>
-              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-primary truncate" title={formatCurrency(totalMvtDebit)}>{formatCurrency(totalMvtDebit)}</span>
+              <span className={cn("text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 truncate", !isMvtBalanced ? "text-destructive" : "text-primary")} title={formatCurrency(totalMvtDebit)}>{formatCurrency(totalMvtDebit)}</span>
             </div>
-            <div className="p-1 sm:p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
+            <div className={cn("p-1 sm:p-1.5 rounded-md shrink-0", !isMvtBalanced ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary")}>
               <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
         </GlassCard>
         
-        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className={cn("bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow", !isMvtBalanced && "animate-pulse border-destructive/50")}>
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Mvt Crédit</span>
-              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-chart-5 truncate" title={formatCurrency(totalMvtCredit)}>{formatCurrency(totalMvtCredit)}</span>
+              <span className={cn("text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 truncate", !isMvtBalanced ? "text-destructive" : "text-chart-5")} title={formatCurrency(totalMvtCredit)}>{formatCurrency(totalMvtCredit)}</span>
             </div>
-            <div className="p-1 sm:p-1.5 rounded-md bg-chart-5/10 text-chart-5 shrink-0">
+            <div className={cn("p-1 sm:p-1.5 rounded-md shrink-0", !isMvtBalanced ? "bg-destructive/10 text-destructive" : "bg-chart-5/10 text-chart-5")}>
               <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
         </GlassCard>
 
-        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className={cn("bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow", !isBalanced && "animate-pulse border-destructive/50")}>
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Solde Débiteur</span>
-              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-blue-400 truncate" title={formatCurrency(totalDebit)}>{formatCurrency(totalDebit)}</span>
+              <span className={cn("text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 truncate", !isBalanced ? "text-destructive" : "text-blue-400")} title={formatCurrency(totalDebit)}>{formatCurrency(totalDebit)}</span>
             </div>
-            <div className="p-1 sm:p-1.5 rounded-md bg-blue-500/10 text-blue-400 shrink-0">
+            <div className={cn("p-1 sm:p-1.5 rounded-md shrink-0", !isBalanced ? "bg-destructive/10 text-destructive" : "bg-blue-500/10 text-blue-400")}>
               <Activity className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
         </GlassCard>
 
-        <GlassCard glow={false} className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
+        <GlassCard glow={false} className={cn("bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow", !isBalanced && "animate-pulse border-destructive/50")}>
           <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
             <div className="flex flex-col overflow-hidden w-full">
               <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Solde Créditeur</span>
-              <span className={cn("text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 truncate", isBalanced ? "text-success" : "text-warning")} title={formatCurrency(totalCredit)}>{formatCurrency(totalCredit)}</span>
+              <span className={cn("text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 truncate", isBalanced ? "text-success" : "text-destructive")} title={formatCurrency(totalCredit)}>{formatCurrency(totalCredit)}</span>
             </div>
-            <div className={cn("p-1 sm:p-1.5 rounded-md shrink-0", isBalanced ? "bg-success/10 text-success" : "bg-warning/10 text-warning")}>
+            <div className={cn("p-1 sm:p-1.5 rounded-md shrink-0", isBalanced ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive")}>
               <Layers className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </CardContent>
@@ -349,22 +355,25 @@ function BalanceView({ onDrillDown, balance, loading, periode, setPeriode, viewT
                 const soldeD = parseFloat(c.solde_debit);
                 const soldeC = parseFloat(c.solde_credit);
                 
+                // Un compte est en anomalie s'il a un solde contraire à son sens normal
+                const isAnomalie = (c.sens_normal === 'debit' && soldeC > 0) || (c.sens_normal === 'credit' && soldeD > 0);
+                
                 return (
                   <TableRow 
                     key={c.compte} 
-                    className="group transition-colors hover:bg-muted/20 cursor-pointer"
+                    className={cn("group transition-colors cursor-pointer", isAnomalie ? "bg-destructive/10 animate-pulse hover:bg-destructive/20" : "hover:bg-muted/20")}
                     onClick={() => onDrillDown(c)}
                   >
                     <TableCell className="text-left font-mono whitespace-nowrap px-2 py-1.5">
-                      <Badge variant="secondary" className="font-mono bg-background shadow-sm border-[var(--border-default)]/50 text-[10px] sm:text-xs px-1.5">{c.compte}</Badge>
+                      <Badge variant="secondary" className={cn("font-mono shadow-sm text-[10px] sm:text-xs px-1.5", isAnomalie ? "bg-destructive text-destructive-foreground border-destructive" : "bg-background border-[var(--border-default)]/50")}>{c.compte}</Badge>
                     </TableCell>
                     <TableCell className="text-left font-medium truncate max-w-[150px] sm:max-w-[250px] px-2 py-1.5" title={c.libelle}>{c.libelle}</TableCell>
                     <TableCell className="text-right font-mono font-medium text-muted-foreground/80 whitespace-nowrap px-2 py-1.5">{parseFloat(c.solde_ouv_debit) > 0 ? formatCurrency(parseFloat(c.solde_ouv_debit)) : '-'}</TableCell>
                     <TableCell className="text-right font-mono font-medium text-muted-foreground/80 whitespace-nowrap px-2 py-1.5">{parseFloat(c.solde_ouv_credit) > 0 ? formatCurrency(parseFloat(c.solde_ouv_credit)) : '-'}</TableCell>
                     <TableCell className="text-right font-mono font-medium text-foreground/90 whitespace-nowrap px-2 py-1.5">{debit > 0 ? formatCurrency(debit) : '-'}</TableCell>
                     <TableCell className="text-right font-mono font-medium text-foreground/90 whitespace-nowrap px-2 py-1.5">{credit > 0 ? formatCurrency(credit) : '-'}</TableCell>
-                    <TableCell className="text-right font-mono font-bold text-indigo-400 whitespace-nowrap px-2 py-1.5">{soldeD > 0 ? formatCurrency(soldeD) : '-'}</TableCell>
-                    <TableCell className="text-right font-mono font-bold text-indigo-400 whitespace-nowrap px-2 py-1.5">{soldeC > 0 ? formatCurrency(soldeC) : '-'}</TableCell>
+                    <TableCell className={cn("text-right font-mono font-bold whitespace-nowrap px-2 py-1.5", isAnomalie && soldeD > 0 ? "text-destructive" : "text-indigo-400")}>{soldeD > 0 ? formatCurrency(soldeD) : '-'}</TableCell>
+                    <TableCell className={cn("text-right font-mono font-bold whitespace-nowrap px-2 py-1.5", isAnomalie && soldeC > 0 ? "text-destructive" : "text-indigo-400")}>{soldeC > 0 ? formatCurrency(soldeC) : '-'}</TableCell>
                   </TableRow>
                 );
               })}
@@ -536,19 +545,22 @@ function GrandLivreView({ drillCompte, onBack, grandLivre, balance, planComptabl
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-center w-[15%]">Date</TableHead>
-                    <TableHead className="text-center w-[10%]">Journal</TableHead>
-                    <TableHead className="text-center w-[15%]">N° Pièce</TableHead>
-                    <TableHead className="text-center w-[40%]">Libellé</TableHead>
-                    <TableHead className="text-center w-[10%]">Débit</TableHead>
-                    <TableHead className="text-center w-[10%]">Crédit</TableHead>
+                    <TableHead className="text-center w-[8%]">Date</TableHead>
+                    <TableHead className="text-center w-[7%]">Journal</TableHead>
+                    <TableHead className="text-center w-[12%]">N° Pièce</TableHead>
+                    <TableHead className="text-left w-[28%]">Libellé</TableHead>
+                    <TableHead className="text-center w-[10%]">Saisi par</TableHead>
+                    <TableHead className="text-center w-[10%]">Date Saisie</TableHead>
+                    <TableHead className="text-center w-[10%]">Validé le</TableHead>
+                    <TableHead className="text-right w-[7.5%]">Débit</TableHead>
+                    <TableHead className="text-right w-[7.5%]">Crédit</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
-                    <TableRow><TableCell colSpan={6} className="h-32 text-center text-muted-foreground">Chargement...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="h-32 text-center text-muted-foreground">Chargement...</TableCell></TableRow>
                   ) : filteredEcritures.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="h-32 text-center text-muted-foreground">Aucune écriture pour ce compte.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="h-32 text-center text-muted-foreground">Aucune écriture pour ce compte.</TableCell></TableRow>
                   ) : (
                     filteredEcritures.map((l: any, i: number) => {
                       const debit = parseFloat(l.debit);
@@ -560,9 +572,23 @@ function GrandLivreView({ drillCompte, onBack, grandLivre, balance, planComptabl
                             <Badge variant="outline" className="font-mono text-[10px] tracking-wider bg-background">{l.journal}</Badge>
                           </TableCell>
                           <TableCell className="text-center font-mono font-medium text-xs text-foreground/80">{l.piece}</TableCell>
-                          <TableCell className="text-center font-medium text-sm text-foreground/90">{l.libelle}</TableCell>
-                          <TableCell className="text-center font-mono font-medium text-sm text-foreground/90">{debit > 0 ? formatCurrency(debit) : '-'}</TableCell>
-                          <TableCell className="text-center font-mono font-medium text-sm text-foreground/90">{credit > 0 ? formatCurrency(credit) : '-'}</TableCell>
+                          <TableCell className="text-left font-medium text-xs text-foreground/90 truncate max-w-[200px]" title={l.libelle}>{l.libelle}</TableCell>
+                          <TableCell className="text-center text-xs font-medium text-muted-foreground">
+                            <span className="flex items-center justify-center gap-1">
+                              <span className="h-4 w-4 rounded-full bg-primary/10 text-[8px] flex items-center justify-center text-primary font-bold">
+                                {l.saisi_par ? l.saisi_par.substring(0, 1).toUpperCase() : 'S'}
+                              </span>
+                              <span className="truncate max-w-[60px]" title={l.saisi_par}>{l.saisi_par}</span>
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center font-mono text-[10px] text-muted-foreground">
+                            {l.saisi_le ? new Date(l.saisi_le).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '-'}
+                          </TableCell>
+                          <TableCell className="text-center font-mono text-[10px] text-muted-foreground">
+                            {l.valide_le ? new Date(l.valide_le).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '-'}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-medium text-sm text-foreground/90">{debit > 0 ? formatCurrency(debit) : '-'}</TableCell>
+                          <TableCell className="text-right font-mono font-medium text-sm text-foreground/90">{credit > 0 ? formatCurrency(credit) : '-'}</TableCell>
                         </TableRow>
                       );
                     })

@@ -48,6 +48,8 @@ export type Dossier = {
   exerciceEnCours: string;
   dateDebut: string;
   dateFin: string;
+  compteClient?: string;
+  compteFournisseur?: string;
 };
 
 export type CompteComptable = {

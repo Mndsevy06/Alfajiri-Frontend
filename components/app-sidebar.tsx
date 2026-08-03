@@ -41,14 +41,9 @@ const NAV_ITEMS = [
   { href: '/tiers', label: 'Tiers & Contacts', icon: Contact, group: 'Comptabilite', requiredPermission: 'compta_read' },
   { href: '/saisie', label: 'Saisie Comptable', icon: PencilLine, group: 'Comptabilite', requiredPermission: 'saisie_create' },
   { href: '/restitutions', label: 'Restitutions', icon: BarChart3, group: 'Comptabilite', requiredPermission: 'restitutions_read' },
-  { href: '/rapprochement', label: 'Rapprochement Bancaire', icon: Landmark, group: 'Comptabilite', requiredPermission: 'rapprochement_read' },
+
   { href: '/terrain', label: 'Saisie Terrain', icon: Smartphone, group: 'Operations', requiredPermission: 'terrain_read' },
-  { href: '/ventes', label: 'Ventes & Facturation', icon: Receipt, group: 'Operations', requiredPermission: 'ventes_read' },
-  { href: '/logistique', label: 'Suivi Logistique', icon: Truck, group: 'Operations', requiredPermission: 'logistique_read' },
-  { href: '/paiements', label: 'Gestion des Paiements', icon: CreditCard, group: 'Operations', requiredPermission: 'paiements_read' },
-  { href: '/immobilisations', label: 'Immobilisations', icon: Building2, group: 'Operations', requiredPermission: 'immo_read' },
-  { href: '/rh', label: 'Paiements RH', icon: Users, group: 'Ressources Humaines', requiredPermission: 'rh_read' },
-  { href: '/fiscalite', label: 'Gestion Fiscale', icon: FileSignature, group: 'Fiscalite & Legal', requiredPermission: 'fisc_read' },
+
   { href: '/etats-financiers', label: 'Etats Financiers OHADA', icon: FileText, group: 'Cloture', requiredPermission: 'etats_financiers_read' },
   { href: '/utilisateurs', label: 'Utilisateurs', icon: Users, group: 'Systeme', requiredPermission: 'users_read' },
   { href: '/notifications', label: 'Notifications', icon: ScrollText, group: 'Systeme', requiredPermission: 'dashboard_read' },
