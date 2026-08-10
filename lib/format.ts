@@ -49,3 +49,13 @@ export function formatShortDate(date: string | Date): string {
     month: 'short',
   }).format(d);
 }
+
+/**
+ * Formate un montant créditeur avec parenthèses (style comptable).
+ * Ex: 1000 → "(1 000,00 USD)"
+ * Utilisé dans la Balance et les exports Excel/PDF.
+ */
+export function formatCredit(value: number, devise = 'USD'): string {
+  if (value <= 0) return '-';
+  return `(${formatCurrency(value, devise)})`;
+}

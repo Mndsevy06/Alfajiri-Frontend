@@ -37,7 +37,7 @@ import { formatCurrency } from '@/lib/format';
 const NATURES_DEPENSE = [
   { value: 'carburant', label: 'Carburant', compte: '611', auxiliaire: '' },
   { value: 'transports', label: 'Transport marchandises', compte: '612', auxiliaire: '' },
-  { value: 'fournisseurs', label: 'Achat fournisseur', compte: '601', auxiliaire: '401-DANGOTE' },
+  { value: 'fournisseurs', label: 'Achat marchandise', compte: '601', auxiliaire: '401-DANGOTE' },
   { value: 'frais', label: 'Frais de mission', compte: '65', auxiliaire: '' },
   { value: 'douane', label: 'Frais de douane', compte: '64', auxiliaire: '' },
   { value: 'salaires', label: 'Avance salaire', compte: '422', auxiliaire: '' },
@@ -54,15 +54,16 @@ const NATURES_DEPENSE = [
 ];
 
 export default function TerrainPage() {
-  const [typeOp, setTypeOp] = useState<'depense' | 'recette'>('depense');
+  const [typeOp, setTypeOp] = useState<'depense' | 'entree'>('depense');
   const [montant, setMontant] = useState('');
   const [nature, setNature] = useState('');
+  const [numeroFacture, setNumeroFacture] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [notes, setNotes] = useState('');
   const [historiqueOpen, setHistoriqueOpen] = useState(false);
   const [historique, setHistorique] = useState<
-    { id: string; typeOp: 'depense' | 'recette'; montant: number; nature: string; date: string; photo: boolean; fichier?: string; notes?: string }[]
+    { id: string; typeOp: 'depense' | 'entree'; montant: number; nature: string; date: string; photo: boolean; fichier?: string; notes?: string; numero_facture?: string }[]
   >([]);
 
   useEffect(() => {
@@ -78,7 +79,8 @@ export default function TerrainPage() {
           date: op.date_creation,
           photo: op.has_photo,
           fichier: op.fichier,
-          notes: op.notes
+          notes: op.notes,
+          numero_facture: op.numero_facture,
         }));
         setHistorique(mapped);
       } catch (error) {
@@ -117,6 +119,10 @@ export default function TerrainPage() {
       toast.error(typeOp === 'depense' ? 'Veuillez sélectionner une nature' : 'Veuillez préciser la source');
       return;
     }
+    if (!numeroFacture.trim()) {
+      toast.error('Le numéro de facture est obligatoire');
+      return;
+    }
     const natureLabel = typeOp === 'depense' ? (NATURES_DEPENSE.find((n) => n.value === nature)?.label || nature) : nature;
     
     try {
@@ -133,6 +139,7 @@ export default function TerrainPage() {
         type_op: typeOp,
         montant: m,
         nature: natureLabel,
+        numero_facture: numeroFacture.trim(),
         has_photo: !!photoFile,
         notes: notes || "",
         fichier_base64,
@@ -152,16 +159,18 @@ export default function TerrainPage() {
         date: savedOp.date_creation,
         photo: savedOp.has_photo,
         fichier: savedOp.fichier,
-        notes: savedOp.notes
+        notes: savedOp.notes,
+        numero_facture: savedOp.numero_facture,
       };
 
       setHistorique([newOp, ...historique]);
       
       toast.success('Saisie enregistrée et envoyée (brouillard)', {
-        description: `${typeOp === 'recette' ? '+' : '-'}${formatCurrency(m)} - ${natureLabel}`,
+        description: `${typeOp === 'entree' ? '+' : '-'}${formatCurrency(m)} - ${natureLabel}`,
       });
       setMontant('');
       setNature('');
+      setNumeroFacture('');
       setPhoto(null);
       setPhotoFile(null);
       setNotes('');
@@ -200,8 +209,8 @@ export default function TerrainPage() {
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className={`font-semibold ${h.typeOp === 'recette' ? 'text-success' : 'text-foreground'}`}>
-                      {h.typeOp === 'recette' ? '+' : '-'}{formatCurrency(h.montant)}
+                    <p className={`font-semibold ${h.typeOp === 'entree' ? 'text-success' : 'text-foreground'}`}>
+                      {h.typeOp === 'entree' ? '+' : '-'}{formatCurrency(h.montant)}
                     </p>
                     {h.photo && (
                       <Badge 
@@ -246,13 +255,13 @@ export default function TerrainPage() {
         <CardContent className="space-y-5">
           <div className="space-y-2">
             <Label>Type d'opération</Label>
-            <Select value={typeOp} onValueChange={(val: 'recette' | 'depense') => { setTypeOp(val); setNature(''); }}>
+            <Select value={typeOp} onValueChange={(val: 'entree' | 'depense') => { setTypeOp(val); setNature(''); }}>
               <SelectTrigger className="h-14 text-base font-medium">
                 <SelectValue placeholder="Type d'opération" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="depense">Dépense</SelectItem>
-                <SelectItem value="recette">Recette</SelectItem>
+                <SelectItem value="entree">Entrée</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -278,21 +287,23 @@ export default function TerrainPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              <Label>Source de la recette</Label>
+              <Label>Source de l&apos;entrée</Label>
               <div className="relative">
                 <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   placeholder="Ex: Client XYZ, Caisse centrale..."
                   value={nature}
-                  onChange={(e) => setNature(e.target.value)}
+                  onChange={(e) => setNature(e.target.value.slice(0, 50))}
                   className="pl-10 h-14 text-base font-medium"
+                  maxLength={50}
                 />
               </div>
+              <p className="text-xs text-muted-foreground text-right">{nature.length}/50</p>
             </div>
           )}
 
           <div className="space-y-2">
-            <Label>{typeOp === 'recette' ? 'Montant reçu (USD)' : 'Montant (USD)'}</Label>
+            <Label>{typeOp === 'entree' ? 'Montant reçu (USD)' : 'Montant (USD)'}</Label>
             <div className="relative">
               <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
@@ -342,13 +353,27 @@ export default function TerrainPage() {
           )}
 
           <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>N° de Facture <span className="text-destructive">*</span></Label>
+            </div>
+            <Input
+              placeholder="Ex: FAC-2026-001, INV-123..."
+              value={numeroFacture}
+              onChange={(e) => setNumeroFacture(e.target.value)}
+              className="h-12 border-primary/30 focus:border-primary"
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label>Notes (optionnel)</Label>
             <Input
               placeholder="Commentaire ou référence..."
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e) => setNotes(e.target.value.slice(0, 50))}
               className="h-12"
+              maxLength={50}
             />
+            <p className="text-xs text-muted-foreground text-right">{notes.length}/50</p>
           </div>
 
           <Button className="w-full h-14 text-lg font-bold shadow-md mt-2" onClick={handleSubmit}>

@@ -25,8 +25,9 @@ import {
   Activity,
   DollarSign,
   TrendingUp,
+  Settings,
+  AlignJustify,
 } from 'lucide-react';
-import Tree from 'react-d3-tree';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,6 +64,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -81,24 +83,93 @@ export default function PlanComptablePage() {
   const [search, setSearch] = useState('');
   const [comptes, setComptes] = useState<CompteNode[]>([]);
   const [rawComptes, setRawComptes] = useState<CompteComptable[]>([]);
-  const [viewMode, setViewMode] = useState<'list' | 'orgchart' | 'kanban'>('list');
+  const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'list_modern' | 'list_excel' | 'list_compact'>('list_modern');
   const containerRef = useRef<HTMLDivElement>(null);
   const [translate, setTranslate] = useState({ x: 400, y: 50 });
+  const [preferences, setPreferences] = useState<any>({});
 
+  const loadPreferences = async () => {
+    try {
+      const data = await fetchWithAuth('/users/me/');
+      const prefs = data.preferences || {};
+      setPreferences(prefs);
+      if (prefs.planComptableViewMode) {
+        setViewMode(prefs.planComptableViewMode);
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des préférences utilisateur', error);
+    }
+  };
 
+  const handleToggleHideParents = async (checked: boolean) => {
+    try {
+      const updatedPrefs = { ...preferences, hideParents: checked };
+      setPreferences(updatedPrefs);
+      
+      await fetchWithAuth('/users/me/', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preferences: updatedPrefs }),
+      });
+      
+      toast.success(checked ? 'Parents masqués' : 'Parents affichés');
+    } catch (error) {
+      toast.error('Erreur lors de la sauvegarde de la préférence');
+    }
+  };
+
+  const handleTogglePreference = async (key: string, value: any, showToast = true) => {
+    try {
+      const updatedPrefs = { ...preferences, [key]: value };
+      setPreferences(updatedPrefs);
+      
+      await fetchWithAuth('/users/me/', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preferences: updatedPrefs }),
+      });
+      
+      if (showToast) {
+        toast.success('Préférence mise à jour');
+      }
+    } catch (error) {
+      if (showToast) {
+        toast.error('Erreur lors de la sauvegarde de la préférence');
+      }
+    }
+  };
+
+  const handleViewModeChange = (mode: 'list_modern' | 'list_excel' | 'list_compact') => {
+    setViewMode(mode);
+    localStorage.setItem('planComptableViewMode', mode);
+    handleTogglePreference('planComptableViewMode', mode, false);
+  };
 
   const loadData = async () => {
     try {
       const data = await fetchWithAuth('/plan_comptable/comptes/');
-      setRawComptes(data);
-      setComptes(buildTree(data));
+      // On s'assure que les comptes sont toujours triés par numéro, même sur le frontend
+      const sortedData = [...data].sort((a: any, b: any) => String(a.numero).localeCompare(String(b.numero)));
+      setRawComptes(sortedData);
+      setComptes(buildTree(sortedData));
     } catch (error) {
       toast.error('Erreur lors du chargement du plan comptable');
     }
   };
 
   useEffect(() => {
-    loadData();
+    const savedView = localStorage.getItem('planComptableViewMode');
+    if (savedView) {
+      setViewMode(savedView as any);
+    }
+    
+    const init = async () => {
+      setLoading(true);
+      await Promise.all([loadData(), loadPreferences()]);
+      setLoading(false);
+    };
+    init();
   }, []);
   const [filterClass, setFilterClass] = useState<string>('all');
   const [statsDialogOpen, setStatsDialogOpen] = useState(false);
@@ -130,6 +201,7 @@ export default function PlanComptablePage() {
     parent: '',
     lettrable: false,
     type: 'auxiliaire' as 'general' | 'auxiliaire',
+    code_poste_etats_financiers: '',
   });
 
   function buildTree(items: CompteComptable[]): CompteNode[] {
@@ -163,8 +235,16 @@ export default function PlanComptablePage() {
     setComptes(toggleExpand(numero));
   };
 
+  const displayTree = useMemo(() => {
+    if (preferences.hideParents) {
+      const leafAccounts = rawComptes.filter(c => c.numero.length >= 6);
+      return buildTree(leafAccounts);
+    }
+    return comptes;
+  }, [comptes, rawComptes, preferences.hideParents]);
+
   const filteredTree = useMemo(() => {
-    if (!search && filterClass === 'all') return comptes;
+    if (!search && filterClass === 'all') return displayTree;
     const term = search.toLowerCase();
     const filterNode = (nodes: CompteNode[]): CompteNode[] => {
       return nodes
@@ -181,25 +261,16 @@ export default function PlanComptablePage() {
         })
         .filter(Boolean) as CompteNode[];
     };
-    let result = filterNode(comptes);
+    let result = filterNode(displayTree);
     if (filterClass !== 'all') {
       result = result.filter((n) => n.classe === filterClass);
     }
     return result;
-  }, [comptes, search, filterClass]);
-
-  useEffect(() => {
-    if (viewMode === 'orgchart' && containerRef.current) {
-      setTranslate({
-        x: containerRef.current.clientWidth / 2,
-        y: 60
-      });
-    }
-  }, [viewMode, filteredTree]);
+  }, [displayTree, search, filterClass]);
 
   const openCreate = () => {
     setEditingCompte(null);
-    setForm({ numero: '', libelle: '', parent: '', lettrable: false, type: 'auxiliaire' });
+    setForm({ numero: '', libelle: '', parent: '', lettrable: false, type: 'auxiliaire', code_poste_etats_financiers: '' });
     setDialogOpen(true);
   };
 
@@ -211,6 +282,7 @@ export default function PlanComptablePage() {
       parent: compte.parent || '',
       lettrable: compte.lettrable,
       type: compte.type,
+      code_poste_etats_financiers: compte.code_poste_etats_financiers || '',
     });
     setDialogOpen(true);
   };
@@ -274,31 +346,40 @@ export default function PlanComptablePage() {
       for (const node of nodes) {
         const { children, expanded, ...rest } = node;
         result.push({ ...rest, depth });
-        if (children && children.length > 0) {
+        if (expanded && children && children.length > 0) {
           result = result.concat(flattenTree(children, depth + 1));
         }
       }
       return result;
     };
-    return flattenTree(comptes);
+    return flattenTree(filteredTree);
   };
 
   const exportToExcel = () => {
     try {
-      const dataToExport = getExportData().map(c => ({
-        'NUMERO DE COMPTE': c.numero,
-        'compte': '  '.repeat(c.depth) + c.libelle,
-        'tiers ratacher': c.tiers?.type || '-',
-        'solde debit': c.soldeDebit || 0,
-        'solde credit': c.soldeCredit || 0
-      }));
+      const activeCols = [
+        { id: 'compte', header: 'NUMERO DE COMPTE', visible: preferences.showCompte !== false, getVal: (c: any) => c.numero, width: 20 },
+        { id: 'nature', header: 'NATURE', visible: preferences.showNature !== false && !preferences.hideParents, getVal: (c: any) => c.type === 'auxiliaire' ? 'Auxiliaire' : 'Général', width: 15 },
+        { id: 'codeAfs', header: 'CODE AFS/EF', visible: preferences.showCodeAfs !== false, getVal: (c: any) => c.code_poste_etats_financiers || '-', width: 20 },
+        { id: 'intitule', header: 'INTITULÉ', visible: preferences.showIntitule !== false, getVal: (c: any) => '  '.repeat(c.depth) + c.libelle, width: 50 },
+        { id: 'details', header: 'TIERS RATTACHÉ', visible: preferences.showDetails !== false, getVal: (c: any) => c.tiers?.type || '-', width: 20 },
+        { id: 'debit', header: 'SOLDE DÉBIT', visible: preferences.showDebit !== false, getVal: (c: any) => c.soldeDebit || 0, width: 15 },
+        { id: 'credit', header: 'SOLDE CRÉDIT', visible: preferences.showCredit !== false, getVal: (c: any) => c.soldeCredit || 0, width: 15 }
+      ].filter(col => col.visible);
+
+      const dataToExport = getExportData().map(c => {
+        const row: any = {};
+        activeCols.forEach(col => {
+          row[col.header] = col.getVal(c);
+        });
+        return row;
+      });
 
       const worksheet = XLSX.utils.json_to_sheet(dataToExport);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Plan Comptable");
 
-      const maxWidths = [20, 50, 20, 15, 15];
-      worksheet['!cols'] = maxWidths.map(w => ({ wch: w }));
+      worksheet['!cols'] = activeCols.map(col => ({ wch: col.width }));
 
       XLSX.writeFile(workbook, "Plan_Comptable_SYSCOHADA.xlsx");
       toast.success('Export Excel réussi');
@@ -318,27 +399,36 @@ export default function PlanComptablePage() {
       doc.setTextColor(100);
       doc.text(`Exporté le : ${new Date().toLocaleDateString('fr-FR')}`, 40, 60);
 
-      const tableData = getExportData().map(c => [
-        c.numero,
-        '  '.repeat(c.depth) + c.libelle,
-        c.tiers?.type || '-',
-        c.soldeDebit ? formatCurrency(c.soldeDebit) : '-',
-        c.soldeCredit ? formatCurrency(c.soldeCredit) : '-'
-      ]);
+      const activeCols = [
+        { id: 'compte', header: 'NUMERO DE COMPTE', visible: preferences.showCompte !== false, getVal: (c: any) => c.numero, width: 70, align: 'left', bold: true },
+        { id: 'nature', header: 'NATURE', visible: preferences.showNature !== false && !preferences.hideParents, getVal: (c: any) => c.type === 'auxiliaire' ? 'Auxiliaire' : 'Général', width: 60, align: 'left', bold: false },
+        { id: 'codeAfs', header: 'CODE AFS/EF', visible: preferences.showCodeAfs !== false, getVal: (c: any) => c.code_poste_etats_financiers || '-', width: 60, align: 'left', bold: false },
+        { id: 'intitule', header: 'INTITULÉ', visible: preferences.showIntitule !== false, getVal: (c: any) => '  '.repeat(c.depth) + c.libelle, width: 130, align: 'left', bold: false },
+        { id: 'details', header: 'TIERS', visible: preferences.showDetails !== false, getVal: (c: any) => c.tiers?.type || '-', width: 60, align: 'left', bold: false },
+        { id: 'debit', header: 'SOLDE DÉBIT', visible: preferences.showDebit !== false, getVal: (c: any) => c.soldeDebit ? formatCurrency(c.soldeDebit) : '-', width: 65, align: 'right', bold: false },
+        { id: 'credit', header: 'SOLDE CRÉDIT', visible: preferences.showCredit !== false, getVal: (c: any) => c.soldeCredit ? formatCurrency(c.soldeCredit) : '-', width: 65, align: 'right', bold: false }
+      ].filter(col => col.visible);
+
+      const tableHeaders = [activeCols.map(col => col.header)];
+      const tableData = getExportData().map(c => activeCols.map(col => col.getVal(c)));
+
+      const columnStyles: any = {};
+      activeCols.forEach((col, idx) => {
+        columnStyles[idx] = {
+          cellWidth: col.width,
+          halign: col.align,
+          fontStyle: col.bold ? 'bold' : 'normal'
+        };
+      });
 
       autoTable(doc, {
         startY: 80,
-        head: [['NUMERO DE COMPTE', 'compte', 'tiers ratacher', 'solde debit', 'solde credit']],
+        head: tableHeaders,
         body: tableData,
         theme: 'striped',
         headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
         styles: { fontSize: 8, cellPadding: 4 },
-        columnStyles: {
-          0: { fontStyle: 'bold', cellWidth: 80 },
-          1: { cellWidth: 150 },
-          3: { halign: 'right' },
-          4: { halign: 'right' }
-        },
+        columnStyles: columnStyles,
         didDrawPage: (data) => {
           doc.setFontSize(8);
           doc.text(`Page ${data.pageNumber}`, data.settings.margin.left, doc.internal.pageSize.height - 20);
@@ -351,6 +441,18 @@ export default function PlanComptablePage() {
       toast.error("Erreur lors de l'export PDF");
     }
   };
+  const gridTemplate = useMemo(() => {
+    const cols = [];
+    if (!preferences.hideParents) cols.push('minmax(192px, 1.5fr)');
+    if (preferences.showCompte !== false) cols.push('minmax(112px, 1fr)');
+    if (preferences.showCodeAfs !== false) cols.push('minmax(96px, 1fr)');
+    if (preferences.showIntitule !== false) cols.push('minmax(300px, 3fr)');
+    if (preferences.showNature !== false) cols.push('minmax(96px, 1fr)');
+    if (preferences.showDetails !== false) cols.push('minmax(128px, 1fr)');
+    if (preferences.showDebit !== false) cols.push('minmax(112px, 1fr)');
+    if (preferences.showCredit !== false) cols.push('minmax(112px, 1fr)');
+    return cols.length > 0 ? cols.join(' ') : '1fr';
+  }, [preferences]);
 
   const renderTreeNode = (node: CompteNode, depth: number = 0, isLastChild: boolean = true, parentLines: boolean[] = []): React.ReactNode => {
     const hasChildren = node.children && node.children.length > 0;
@@ -364,98 +466,126 @@ export default function PlanComptablePage() {
       <div key={node.numero} className="flex flex-col relative">
         <div
           className={cn(
-            'flex items-center py-1.5 group relative hover:bg-muted/30 transition-colors',
-            isAux && 'bg-muted/5'
+            'grid items-stretch group relative min-w-full w-full transition-colors',
+            viewMode === 'list_compact' ? 'py-0.5 px-1.5' : (viewMode === 'list_excel' ? 'py-0 px-0' : 'py-1.5 px-4'),
+            viewMode === 'list_excel' ? 'border-b border-l border-r border-slate-300 dark:border-slate-600 hover:bg-blue-50/80 dark:hover:bg-blue-900/30' : 'hover:bg-muted/80 dark:hover:bg-muted',
+            isAux && viewMode !== 'list_excel' && 'bg-muted/30'
           )}
+          style={{ gridTemplateColumns: gridTemplate }}
         >
-          <div className="flex h-full absolute left-0 top-0 bottom-0 pointer-events-none pl-4">
-            {lines}
-            {depth > 0 && (
-              <div className="w-6 shrink-0 h-1/2 border-l-2 border-b-2 border-primary/30 rounded-bl-md relative top-0" />
-            )}
-          </div>
-
-          <div className="flex-1 min-w-0 flex items-center gap-2" style={{ paddingLeft: `${4 + depth * 24 + (depth > 0 ? 12 : 0)}px` }}>
-            {hasChildren ? (
-              <button
-                onClick={() => handleToggle(node.numero)}
-                className="flex h-5 w-5 items-center justify-center rounded hover:bg-muted shrink-0 text-muted-foreground hover:text-foreground transition-colors z-10 bg-background shadow-sm border border-border/50"
-              >
-                {node.expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-              </button>
-            ) : (
-              <span className="w-5 shrink-0" />
-            )}
-
-            <div className="shrink-0 text-muted-foreground z-10 bg-background rounded-full">
-              {hasChildren ? (
-                node.expanded ? <FolderOpen className="h-4 w-4 text-blue-500 fill-blue-500/20" /> : <Folder className="h-4 w-4 text-blue-500 fill-blue-500/20" />
-              ) : isAux ? (
-                <Users className="h-4 w-4 text-orange-500" />
-              ) : (
-                <FileText className="h-4 w-4 text-slate-400" />
+          {!preferences.hideParents && (
+            <div className="flex h-full absolute left-0 top-0 bottom-0 pointer-events-none pl-4">
+              {lines}
+              {depth > 0 && (
+                <div className="w-6 shrink-0 h-1/2 border-l-2 border-b-2 border-primary/30 rounded-bl-md relative top-0" />
               )}
             </div>
+          )}
 
-            <div
-              className="flex h-5 px-1.5 items-center justify-center rounded text-[10px] font-bold shrink-0 shadow-sm z-10"
-              style={{
-                backgroundColor: `hsl(var(--chart-${((parseInt(node.classe) - 1) % 5) + 1}) / 0.15)`,
-                color: `hsl(var(--chart-${((parseInt(node.classe) - 1) % 5) + 1}))`,
-              }}
-            >
-              {node.classe}
-            </div>
+          {!preferences.hideParents && (
+            <div className={cn("w-full shrink-0 flex items-center gap-2", viewMode === 'list_excel' && "py-1")} style={{ paddingLeft: `${depth * 24}px` }}>
+              {hasChildren ? (
+                <button
+                  onClick={() => handleToggle(node.numero)}
+                  className={cn("flex items-center justify-center rounded hover:bg-muted shrink-0 text-muted-foreground hover:text-foreground transition-colors z-10 bg-background shadow-sm border border-border/50", viewMode === 'list_compact' ? "h-4 w-4" : "h-5 w-5")}
+                >
+                  {node.expanded ? <ChevronDown className={cn(viewMode === 'list_compact' ? "h-3 w-3" : "h-3 w-3")} /> : <ChevronRight className={cn(viewMode === 'list_compact' ? "h-3 w-3" : "h-3 w-3")} />}
+                </button>
+              ) : (
+                <span className={cn("shrink-0", viewMode === 'list_compact' ? "w-4" : "w-5")} />
+              )}
 
-            <span className="font-mono text-sm font-semibold shrink-0 text-foreground/90">{node.numero}</span>
-            <span className="text-sm truncate font-medium text-foreground/80">{node.libelle}</span>
-          </div>
-
-          <div className="w-24 shrink-0 flex items-center z-10">
-            <Badge variant={isAux ? 'secondary' : 'outline'} className={cn("text-[9px] h-4 px-1.5 font-semibold", isAux ? "bg-orange-500/10 text-orange-600 border-orange-200" : "text-muted-foreground border-border/50")}>
-              {isAux ? 'Auxiliaire' : 'Général'}
-            </Badge>
-          </div>
-
-          <div className="w-32 shrink-0 flex flex-col justify-center gap-0.5 z-10">
-            {isAux && node.tiers?.type && (
-              <div className="flex items-center text-[10px] text-muted-foreground">
-                <Users className="h-2.5 w-2.5 mr-1.5" /> <span className="capitalize">{node.tiers.type}</span>
-              </div>
-            )}
-            {node.lettrable && (
-              <div className="flex items-center text-[10px] text-emerald-600 dark:text-emerald-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mr-1.5"></span> Lettrable
-              </div>
-            )}
-            {node.parent && (
-              <div className="flex items-center text-[10px] text-muted-foreground">
-                <span className="font-mono text-[9px] opacity-70 bg-muted px-1 rounded">↗ {node.parent}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="w-28 text-right shrink-0 z-10">
-            <span className="font-mono text-[13px] font-medium text-foreground/90">{node.soldeDebit ? formatCurrency(node.soldeDebit) : '-'}</span>
-          </div>
-          <div className="w-28 text-right shrink-0 z-10">
-            <span className="font-mono text-[13px] font-medium text-foreground/90">{node.soldeCredit ? formatCurrency(node.soldeCredit) : '-'}</span>
-          </div>
-
-          <div className="w-16 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 pr-4 z-10">
-            {isAux && (
-              <>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground bg-background/50" onClick={() => openEdit(node)} title="Modifier ce compte auxiliaire">
-                  <Pencil className="h-3 w-3" />
-                </Button>
-                {!hasChildren && (
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 bg-background/50" onClick={() => confirmDelete(node)} title="Supprimer ce compte">
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+              <div className={cn("flex items-center justify-center shrink-0 text-muted-foreground z-10 bg-background rounded-full", viewMode === 'list_compact' ? "h-4 w-4" : "h-5 w-5")}>
+                {hasChildren ? (
+                  node.expanded ? <FolderOpen className={cn("text-blue-500 fill-blue-500/20", viewMode === 'list_compact' ? "h-3.5 w-3.5" : "h-4 w-4")} /> : <Folder className={cn("text-blue-500 fill-blue-500/20", viewMode === 'list_compact' ? "h-3.5 w-3.5" : "h-4 w-4")} />
+                ) : isAux ? (
+                  <Users className={cn("text-orange-500", viewMode === 'list_compact' ? "h-3.5 w-3.5" : "h-4 w-4")} />
+                ) : (
+                  <FileText className={cn("text-slate-400", viewMode === 'list_compact' ? "h-3.5 w-3.5" : "h-4 w-4")} />
                 )}
-              </>
-            )}
-          </div>
+              </div>
+
+              <div
+                className={cn("flex items-center justify-center rounded font-bold shrink-0 shadow-sm z-10", viewMode === 'list_compact' ? "h-4 px-1 text-[9px]" : "h-5 px-1.5 text-[10px]")}
+                style={{
+                  backgroundColor: `hsl(var(--chart-${((parseInt(node.classe) - 1) % 5) + 1}) / 0.15)`,
+                  color: `hsl(var(--chart-${((parseInt(node.classe) - 1) % 5) + 1}))`,
+                }}
+              >
+                {node.classe}
+              </div>
+            </div>
+          )}
+
+          {preferences.showCompte !== false && (
+            <div className={cn("w-full shrink-0 z-10 pr-2 flex items-center", viewMode === 'list_excel' && "border-r border-slate-300 dark:border-slate-600 px-2 h-full")}>
+              <span className={cn(
+                "font-mono font-semibold",
+                viewMode === 'list_compact' ? 'text-[11px] leading-tight' : 'text-sm',
+                preferences.hideParents && isAux ? "text-orange-500" : "text-foreground/90"
+              )}>
+                {node.numero}
+              </span>
+            </div>
+          )}
+
+          {preferences.showCodeAfs !== false && (
+            <div className={cn("w-full shrink-0 flex items-center z-10", viewMode === 'list_excel' && "border-r border-slate-300 dark:border-slate-600 px-2 h-full")}>
+              {node.code_poste_etats_financiers ? (
+                <Badge variant="outline" className={cn("font-mono bg-blue-500/5 text-blue-600 dark:text-blue-400 border-blue-200/50", viewMode === 'list_compact' ? "text-[9px] px-1 py-0 h-4 leading-none" : "text-[9px]")}>
+                  {node.code_poste_etats_financiers}
+                </Badge>
+              ) : (
+                <span className="text-muted-foreground/30 text-xs">-</span>
+              )}
+            </div>
+          )}
+
+          {preferences.showIntitule !== false && (
+            <div className={cn("w-full shrink-0 z-10 pr-2 min-w-0 flex items-center", viewMode === 'list_excel' && "border-r border-slate-300 dark:border-slate-600 px-2 h-full")}>
+              <span className={cn("block truncate font-medium text-foreground/80", viewMode === 'list_compact' ? 'text-[11px] leading-tight' : 'text-sm')} title={node.libelle}>{node.libelle}</span>
+            </div>
+          )}
+
+          {preferences.showNature !== false && (
+            <div className={cn("w-full shrink-0 flex items-center z-10", viewMode === 'list_excel' && "border-r border-slate-300 dark:border-slate-600 px-2 h-full")}>
+              <Badge variant={isAux ? 'secondary' : 'outline'} className={cn("font-semibold", isAux ? "bg-orange-500/10 text-orange-600 border-orange-200" : "text-muted-foreground border-border/50", viewMode === 'list_compact' ? "text-[9px] h-4 px-1 py-0 leading-none" : "text-[9px] h-4 px-1.5")}>
+                {isAux ? 'Auxiliaire' : 'Général'}
+              </Badge>
+            </div>
+          )}
+
+          {preferences.showDetails !== false && (
+            <div className={cn("w-full shrink-0 flex flex-col justify-center gap-0 z-10", viewMode === 'list_excel' && "border-r border-slate-300 dark:border-slate-600 px-2 h-full")}>
+              {isAux && node.tiers?.type && (
+                <div className={cn("flex items-center text-muted-foreground", viewMode === 'list_compact' ? "text-[9px] leading-tight" : "text-[10px]")}>
+                  <Users className={cn("mr-1", viewMode === 'list_compact' ? "h-2.5 w-2.5" : "h-2.5 w-2.5")} /> <span className="capitalize">{node.tiers.type}</span>
+                </div>
+              )}
+              {node.lettrable && (
+                <div className={cn("flex items-center text-emerald-600 dark:text-emerald-400", viewMode === 'list_compact' ? "text-[9px] leading-tight" : "text-[10px]")}>
+                  <span className="h-1 w-1 rounded-full bg-emerald-500 mr-1"></span> Lettrable
+                </div>
+              )}
+              {node.parent && (
+                <div className={cn("flex items-center text-muted-foreground", viewMode === 'list_compact' ? "text-[9px] leading-tight" : "text-[10px]")}>
+                  <span className={cn("font-mono opacity-70 bg-muted rounded", viewMode === 'list_compact' ? "text-[9px] px-1" : "text-[9px] px-1")}>↗ {node.parent}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {preferences.showDebit !== false && (
+            <div className={cn("w-full text-right shrink-0 z-10 flex items-center justify-end", viewMode === 'list_excel' && "border-r border-slate-300 dark:border-slate-600 px-2 h-full")}>
+              <span className={cn("font-mono font-medium text-foreground/90", viewMode === 'list_compact' ? 'text-[11px] leading-none' : 'text-[13px]')}>{node.soldeDebit ? formatCurrency(node.soldeDebit) : '-'}</span>
+            </div>
+          )}
+          {preferences.showCredit !== false && (
+            <div className={cn("w-full text-right shrink-0 z-10 flex items-center justify-end", viewMode === 'list_excel' && "px-2 py-1 h-full")}>
+              <span className={cn("font-mono font-medium text-foreground/90", viewMode === 'list_compact' ? 'text-[11px] leading-none' : 'text-[13px]')}>{node.soldeCredit ? formatCurrency(node.soldeCredit) : '-'}</span>
+            </div>
+          )}
+
         </div>
 
         {hasChildren && node.expanded && (
@@ -474,178 +604,55 @@ export default function PlanComptablePage() {
     );
   };
 
-  const renderKanbanView = () => {
-    if (filteredTree.length === 0) {
-      return (
-        <div className="text-center py-12 text-muted-foreground bg-card rounded-lg border border-border/50">
-          <BookOpen className="h-10 w-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm font-medium">Aucun compte trouvé pour « {search} »</p>
-        </div>
-      );
-    }
 
-    return (
-      <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar items-start min-h-[60vh]">
-        {filteredTree.map((rootNode) => (
-          <div key={rootNode.numero} className="flex-shrink-0 w-80 bg-muted/20 border border-border/60 shadow-sm rounded-xl flex flex-col max-h-[60vh]">
-            <div className="p-3 border-b border-border/60 bg-muted/40 rounded-t-xl flex items-center justify-between sticky top-0 backdrop-blur-sm z-10">
-              <div className="flex items-center gap-2">
-                <div
-                  className="flex h-6 w-6 items-center justify-center rounded text-xs font-bold shadow-sm"
-                  style={{
-                    backgroundColor: `hsl(var(--chart-${((parseInt(rootNode.classe) - 1) % 5) + 1}) / 0.15)`,
-                    color: `hsl(var(--chart-${((parseInt(rootNode.classe) - 1) % 5) + 1}))`,
-                  }}
-                >
-                  {rootNode.classe}
-                </div>
-                <h3 className="font-semibold text-sm text-foreground/90 truncate max-w-[180px]" title={rootNode.libelle}>{rootNode.libelle}</h3>
-              </div>
-              <Badge variant="secondary" className="text-xs bg-background shadow-sm border border-border/50">{rootNode.children?.length || 0}</Badge>
-            </div>
-
-            <div className="p-2.5 overflow-y-auto flex-1 flex flex-col gap-2.5 custom-scrollbar">
-              {rootNode.children?.map((child) => (
-                <Card key={child.numero} className="shadow-sm border-border/50 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer group bg-background/90 hover:bg-background">
-                  <div className="p-3 space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2">
-                        {child.type === 'auxiliaire' ? <Users className="h-4 w-4 text-orange-500" /> : <Folder className="h-4 w-4 text-blue-500 fill-blue-500/10" />}
-                        <span className="font-mono text-sm font-bold text-foreground/90">{child.numero}</span>
-                      </div>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {child.type === 'auxiliaire' && (
-                          <>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted" onClick={() => openEdit(child)} title="Modifier ce compte auxiliaire">
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                            {(!child.children || child.children.length === 0) && (
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10 bg-muted/50 hover:bg-muted" onClick={(e) => { e.stopPropagation(); confirmDelete(child); }} title="Supprimer ce compte">
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-xs font-medium text-muted-foreground leading-tight line-clamp-2" title={child.libelle}>{child.libelle}</p>
-                    {(child.soldeDebit > 0 || child.soldeCredit > 0) && (
-                      <div className="flex items-center justify-between pt-2.5 border-t border-border/40 mt-1">
-                        {child.soldeDebit > 0 && <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">D: {formatCurrency(child.soldeDebit)}</span>}
-                        {child.soldeCredit > 0 && <span className="text-xs font-medium text-rose-600 dark:text-rose-400">C: {formatCurrency(child.soldeCredit)}</span>}
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              ))}
-              {(!rootNode.children || rootNode.children.length === 0) && (
-                <div className="text-center py-6 text-muted-foreground text-xs opacity-60">
-                  Aucun compte
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  const renderOrgChart = () => {
-    const formatNode = (node: CompteNode): any => {
-      return {
-        name: node.numero,
-        attributes: {
-          libelle: node.libelle,
-          classe: node.classe,
-          type: node.type,
-          soldeDebit: node.soldeDebit,
-          soldeCredit: node.soldeCredit,
-        },
-        children: node.children?.map(formatNode) || []
-      };
-    };
-
-    const treeData = {
-      name: "Plan Comptable",
-      attributes: { libelle: "SYSCOHADA", classe: "0", type: "general" },
-      children: filteredTree.map(formatNode)
-    };
-
-    const renderCustomNodeElement = ({ nodeDatum, toggleNode }: any) => {
-      const isRoot = nodeDatum.name === "Plan Comptable";
-      const isAux = nodeDatum.attributes?.type === 'auxiliaire';
-      const hasChildren = nodeDatum.children && nodeDatum.children.length > 0;
-      const isCollapsed = nodeDatum.__rd3t.collapsed;
-      const classNum = parseInt(nodeDatum.attributes?.classe) || 1;
-
-      return (
-        <g>
-          <foreignObject x="-80" y="-30" width="160" height="70">
-            <div
-              className={cn(
-                "relative flex flex-col p-2 bg-card border border-border/50 rounded-lg shadow-sm hover:shadow-md hover:border-primary/40 transition-all cursor-pointer w-[160px] h-[65px] group",
-                isAux ? "border-t-4 border-t-orange-500" : isRoot ? "border-t-4 border-t-slate-800 dark:border-t-slate-200" : `border-t-4`
-              )}
-              style={!isAux && !isRoot ? { borderTopColor: `hsl(var(--chart-${((classNum - 1) % 5) + 1}))` } : undefined}
-              onClick={toggleNode}
-            >
-              <div className="flex items-center justify-between mb-0.5">
-                <span className="font-bold text-xs text-foreground/90 font-mono tracking-tight truncate pr-1">{nodeDatum.name}</span>
-                {isAux && <span className="text-[8px] font-bold px-1 py-0.5 rounded bg-orange-500/10 text-orange-600 uppercase shrink-0">Aux</span>}
-              </div>
-              <p className="text-[9px] leading-tight text-muted-foreground line-clamp-2 font-medium group-hover:text-foreground/80 transition-colors">
-                {nodeDatum.attributes?.libelle}
-              </p>
-
-              {hasChildren && (
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-background border border-border text-foreground hover:bg-muted shadow-sm rounded-full h-5 w-5 flex items-center justify-center transition-colors z-10">
-                  <ChevronDown className={cn("h-3 w-3 text-primary transition-transform", !isCollapsed && "rotate-180")} />
-                </div>
-              )}
-
-              {hasChildren && isCollapsed && (
-                <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[9px] font-bold h-4 w-4 flex items-center justify-center rounded-full shadow-sm ring-2 ring-background">
-                  {nodeDatum.children.length}
-                </div>
-              )}
-            </div>
-          </foreignObject>
-        </g>
-      );
-    };
-
-    return (
-      <div ref={containerRef} style={{ width: '100%', height: '100%' }} className="border border-border/50 rounded-md bg-muted/5 relative overflow-hidden cursor-move">
-        <Tree
-          data={treeData}
-          orientation="vertical"
-          pathFunc="step"
-          renderCustomNodeElement={renderCustomNodeElement}
-          translate={translate}
-          zoomable={true}
-          collapsible={true}
-          initialDepth={1}
-          nodeSize={{ x: 180, y: 120 }}
-          separation={{ siblings: 1.1, nonSiblings: 1.3 }}
-          enableLegacyTransitions={true}
-          transitionDuration={300}
-        />
-      </div>
-    );
-  };
 
   return (
     <div className="flex flex-col h-[calc(100vh-4.5rem)] lg:h-[calc(100vh-5.5rem)] animate-fade-in -mt-2 lg:-mt-4 pb-0">
       <div className="flex items-center justify-between gap-3 border-b border-border/50 pb-2 shrink-0">
-        {/* LEFT ALIGNED BUTTONS */}
+        {/* LEFT ALIGNED BUTTONS (View modes) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
+          {/* View Buttons */}
+          <div className="flex items-center p-0.5 rounded-md bg-muted border border-border/50">
+            <Button
+              variant={viewMode === 'list_modern' ? 'default' : 'ghost'}
+              size="sm"
+              className={cn("h-7 px-2.5 text-[11px] font-medium transition-colors", viewMode === 'list_modern' && "shadow-md")}
+              onClick={() => handleViewModeChange('list_modern')}
+            >
+              <List className="h-3 w-3 mr-1.5" />
+              Moderne
+            </Button>
+            <Button
+              variant={viewMode === 'list_excel' ? 'default' : 'ghost'}
+              size="sm"
+              className={cn("h-7 px-2.5 text-[11px] font-medium transition-colors", viewMode === 'list_excel' && "shadow-md")}
+              onClick={() => handleViewModeChange('list_excel')}
+            >
+              <LayoutGrid className="h-3 w-3 mr-1.5" />
+              Tableur
+            </Button>
+            <Button
+              variant={viewMode === 'list_compact' ? 'default' : 'ghost'}
+              size="sm"
+              className={cn("h-7 px-2.5 text-[11px] font-medium transition-colors", viewMode === 'list_compact' && "shadow-md")}
+              onClick={() => handleViewModeChange('list_compact')}
+            >
+              <AlignJustify className="h-3 w-3 mr-1.5" />
+              Compact
+            </Button>
+          </div>
+        </div>
+
+        {/* RIGHT ALIGNED BUTTONS (Actions) */}
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
           {/* Filter Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-7 text-[11px] px-2.5 shadow-sm bg-background">
-                <Filter className="h-3 w-3 mr-1.5" />
-                {filterClass === 'all' ? 'Toutes les classes' : `Classe ${filterClass}`}
-                <ChevronDown className="h-3 w-3 ml-1" />
+              <Button variant="outline" size="sm" className="h-7 w-7 p-0 shadow-sm bg-background relative" title={filterClass === 'all' ? 'Toutes les classes' : `Classe ${filterClass}`}>
+                <Filter className="h-3.5 w-3.5" />
+                {filterClass !== 'all' && (
+                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-primary" />
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-background border-border/50 shadow-md rounded-lg">
@@ -661,19 +668,115 @@ export default function PlanComptablePage() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Import */}
-          <Button variant="outline" size="sm" className="h-7 text-[11px] px-2.5 shadow-sm bg-background" onClick={() => toast.info('Import CSV en cours...')}>
-            <Upload className="h-3 w-3 mr-1.5" />
-            Importer
-          </Button>
+          {/* Configuration d'affichage */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-7 w-7 p-0 shadow-sm bg-background" title="Configuration de l'affichage">
+                <Settings className="h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-64 p-4 bg-background border border-border/50 shadow-md rounded-lg flex flex-col gap-4 z-50">
+              <div className="flex flex-col gap-1 border-b pb-2">
+                <h4 className="font-semibold text-xs text-foreground">Options d'affichage</h4>
+                <p className="text-[10px] text-muted-foreground">Personnalisez les colonnes et éléments affichés.</p>
+              </div>
+              
+              <div className="flex flex-col gap-3">
+                {/* Switch pour masquer les parents */}
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="pref-hide-parents" className="text-[11px] font-medium cursor-pointer text-muted-foreground hover:text-foreground">
+                    6 chiffres uniquement
+                  </Label>
+                  <Switch
+                    id="pref-hide-parents"
+                    checked={!!preferences.hideParents}
+                    onCheckedChange={handleToggleHideParents}
+                    className="scale-75 data-[state=checked]:bg-primary"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2 pt-2 border-t">
+                  <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Colonnes à afficher</span>
+                  
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="col-compte" className="text-[11px] font-medium cursor-pointer text-muted-foreground hover:text-foreground">Compte</Label>
+                    <Switch
+                      id="col-compte"
+                      checked={preferences.showCompte !== false}
+                      onCheckedChange={(checked) => handleTogglePreference('showCompte', checked)}
+                      className="scale-75 data-[state=checked]:bg-primary"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="col-intitule" className="text-[11px] font-medium cursor-pointer text-muted-foreground hover:text-foreground">Intitulé</Label>
+                    <Switch
+                      id="col-intitule"
+                      checked={preferences.showIntitule !== false}
+                      onCheckedChange={(checked) => handleTogglePreference('showIntitule', checked)}
+                      className="scale-75 data-[state=checked]:bg-primary"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="col-code-afs" className="text-[11px] font-medium cursor-pointer text-muted-foreground hover:text-foreground">Code AFS/EF</Label>
+                    <Switch
+                      id="col-code-afs"
+                      checked={preferences.showCodeAfs !== false}
+                      onCheckedChange={(checked) => handleTogglePreference('showCodeAfs', checked)}
+                      className="scale-75 data-[state=checked]:bg-primary"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="col-nature" className="text-[11px] font-medium cursor-pointer text-muted-foreground hover:text-foreground">Nature</Label>
+                    <Switch
+                      id="col-nature"
+                      checked={preferences.showNature !== false}
+                      onCheckedChange={(checked) => handleTogglePreference('showNature', checked)}
+                      className="scale-75 data-[state=checked]:bg-primary"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="col-details" className="text-[11px] font-medium cursor-pointer text-muted-foreground hover:text-foreground">Détails</Label>
+                    <Switch
+                      id="col-details"
+                      checked={preferences.showDetails !== false}
+                      onCheckedChange={(checked) => handleTogglePreference('showDetails', checked)}
+                      className="scale-75 data-[state=checked]:bg-primary"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="col-debit" className="text-[11px] font-medium cursor-pointer text-muted-foreground hover:text-foreground">Débit</Label>
+                    <Switch
+                      id="col-debit"
+                      checked={preferences.showDebit !== false}
+                      onCheckedChange={(checked) => handleTogglePreference('showDebit', checked)}
+                      className="scale-75 data-[state=checked]:bg-primary"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="col-credit" className="text-[11px] font-medium cursor-pointer text-muted-foreground hover:text-foreground">Crédit</Label>
+                    <Switch
+                      id="col-credit"
+                      checked={preferences.showCredit !== false}
+                      onCheckedChange={(checked) => handleTogglePreference('showCredit', checked)}
+                      className="scale-75 data-[state=checked]:bg-primary"
+                    />
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
 
           {/* Export Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-7 text-[11px] px-2.5 shadow-sm bg-background">
-                <Download className="h-3 w-3 mr-1.5" />
-                Exporter
-                <ChevronDown className="h-3 w-3 ml-1" />
+              <Button variant="outline" size="sm" className="h-7 w-7 p-0 shadow-sm bg-background" title="Exporter">
+                <Download className="h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40 bg-background border-border/50 shadow-md rounded-lg">
@@ -687,50 +790,14 @@ export default function PlanComptablePage() {
           </DropdownMenu>
 
           {/* Stats */}
-          <Button variant="outline" size="sm" className="h-7 text-[11px] px-2.5 shadow-sm bg-background border-primary/20 text-primary hover:bg-primary/10" onClick={() => setStatsDialogOpen(true)}>
-            <PieChart className="h-3 w-3 mr-1.5" />
-            Statistiques
+          <Button variant="outline" size="sm" className="h-7 w-7 p-0 shadow-sm bg-background border-primary/20 text-primary hover:bg-primary/10" onClick={() => setStatsDialogOpen(true)} title="Statistiques">
+            <PieChart className="h-3.5 w-3.5" />
           </Button>
 
           {/* Nouveau */}
-          <Button size="sm" className="h-7 text-[11px] px-3 font-semibold shadow-sm bg-primary hover:bg-primary/90" onClick={openCreate}>
-            <Plus className="h-3.5 w-3.5 mr-1" />
-            Nouveau
+          <Button size="sm" className="h-7 w-7 p-0 shadow-sm bg-primary hover:bg-primary/90 ml-1" onClick={openCreate} title="Nouveau compte auxiliaire">
+            <Plus className="h-4 w-4" />
           </Button>
-        </div>
-
-        {/* RIGHT ALIGNED BUTTONS */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
-          {/* View Buttons */}
-          <div className="flex items-center p-0.5 rounded-md bg-muted border border-border/50">
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              className={cn("h-7 px-2.5 text-[11px] font-medium transition-colors", viewMode === 'list' && "shadow-md")}
-              onClick={() => setViewMode('list')}
-            >
-              <List className="h-3 w-3 mr-1.5" />
-              Liste
-            </Button>
-            <Button
-              variant={viewMode === 'orgchart' ? 'default' : 'ghost'}
-              size="sm"
-              className={cn("h-7 px-2.5 text-[11px] font-medium transition-colors", viewMode === 'orgchart' && "shadow-md")}
-              onClick={() => setViewMode('orgchart')}
-            >
-              <Network className="h-3 w-3 mr-1.5" />
-              Arbre
-            </Button>
-            <Button
-              variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-              size="sm"
-              className={cn("h-7 px-2.5 text-[11px] font-medium transition-colors", viewMode === 'kanban' && "shadow-md")}
-              onClick={() => setViewMode('kanban')}
-            >
-              <LayoutGrid className="h-3 w-3 mr-1.5" />
-              Cartes
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -739,58 +806,76 @@ export default function PlanComptablePage() {
           <div className="flex items-center gap-2 px-1">
             <h2 className="text-sm font-bold text-foreground/80">Comptes <Badge variant="secondary" className="ml-1 font-mono text-[10px] bg-muted">{filteredTree.length}</Badge></h2>
           </div>
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher (N°, libellé)..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 h-8 text-xs bg-background border-border/50 shadow-sm"
-            />
-            {search && (
-              <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 hover:bg-transparent" onClick={() => { setSearch(''); setFilterClass('all'); }}>
-                <X className="h-3.5 w-3.5 text-muted-foreground" />
-              </Button>
-            )}
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher (N°, libellé)..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8 h-8 text-xs bg-background border-border/50 shadow-sm"
+              />
+              {search && (
+                <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 hover:bg-transparent" onClick={() => { setSearch(''); setFilterClass('all'); }}>
+                  <X className="h-3.5 w-3.5 text-muted-foreground" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
-        {viewMode === 'list' ? (
-          <>
-            <div className="flex items-center px-4 py-1.5 bg-muted/30 border-b border-border/50 text-[10px] font-bold text-muted-foreground uppercase tracking-wider shrink-0">
-              <div className="flex-1 min-w-0 flex items-center gap-3">
-                <span className="w-5 shrink-0" />
-                <span className="w-5 shrink-0" />
-                <span className="w-24 shrink-0">Compte</span>
-                <span>Libellé</span>
+        {viewMode.startsWith('list') && (
+          <CardContent className="p-0 flex-1 overflow-auto custom-scrollbar relative flex flex-col">
+            <div className="w-fit min-w-full flex flex-col min-h-max">
+              <div 
+                className={cn(
+                  "sticky top-0 z-20 grid items-stretch bg-muted/90 backdrop-blur-md border-b text-[10px] font-bold text-foreground/90 uppercase tracking-wider shrink-0 min-w-full w-full",
+                  viewMode === 'list_excel' ? 'py-0 px-0 border-t border-l border-r border-b-2 border-slate-300 dark:border-slate-600 bg-muted' : 'py-1.5 px-4 border-border/50'
+                )}
+                style={{ gridTemplateColumns: gridTemplate }}
+              >
+                {!preferences.hideParents && <div className={cn("w-full shrink-0 flex items-center", viewMode === 'list_excel' && "border-r border-slate-300 dark:border-slate-600 px-2 py-1 min-h-[24px]")}>Structure</div>}
+                {preferences.showCompte !== false && (
+                  <div className={cn("w-full shrink-0 flex items-center", viewMode === 'list_excel' ? "border-r border-slate-300 dark:border-slate-600 px-2 py-1 min-h-[24px]" : "pr-2")}>Compte</div>
+                )}
+                {preferences.showCodeAfs !== false && <div className={cn("w-full shrink-0 flex items-center", viewMode === 'list_excel' && "border-r border-slate-300 dark:border-slate-600 px-2 py-1 min-h-[24px]")}>Code AFS/EF</div>}
+                {preferences.showIntitule !== false && (
+                  <div className={cn("w-full shrink-0 min-w-0 flex items-center", viewMode === 'list_excel' ? "border-r border-slate-300 dark:border-slate-600 px-2 py-1 min-h-[24px]" : "pr-2")}>Intitulé</div>
+                )}
+                {preferences.showNature !== false && <div className={cn("w-full shrink-0 flex items-center", viewMode === 'list_excel' && "border-r border-slate-300 dark:border-slate-600 px-2 py-1 min-h-[24px]")}>Nature</div>}
+                {preferences.showDetails !== false && <div className={cn("w-full shrink-0 flex items-center", viewMode === 'list_excel' && "border-r border-slate-300 dark:border-slate-600 px-2 py-1 min-h-[24px]")}>Détails</div>}
+                {preferences.showDebit !== false && <div className={cn("w-full shrink-0 flex items-center justify-end", viewMode === 'list_excel' && "border-r border-slate-300 dark:border-slate-600 px-2 py-1 min-h-[24px]")}>Débit</div>}
+                {preferences.showCredit !== false && <div className={cn("w-full shrink-0 flex items-center justify-end", viewMode === 'list_excel' && "px-2 py-1 min-h-[24px]")}>Crédit</div>}
               </div>
-              <div className="w-24 shrink-0">Nature</div>
-              <div className="w-32 shrink-0">Détails</div>
-              <div className="w-28 text-right shrink-0">Débit</div>
-              <div className="w-28 text-right shrink-0">Crédit</div>
-              <div className="w-16 shrink-0 text-right pr-2">Actions</div>
-            </div>
 
-            <CardContent className="p-0 flex-1 overflow-y-auto custom-scrollbar">
-              <div className="flex flex-col">
-                {filteredTree.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <BookOpen className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                    <p className="text-sm font-medium">Aucun compte trouvé pour « {search} »</p>
+              <div className="flex flex-col w-full flex-1">
+                {loading ? (
+                  <div className="flex flex-col w-full">
+                    {Array.from({ length: 15 }).map((_, i) => (
+                      <div key={i} className={cn("grid items-center min-w-full w-full gap-2", viewMode === 'list_compact' ? 'py-1 px-2' : 'py-2 px-4', "border-b border-border/30")} style={{ gridTemplateColumns: gridTemplate }}>
+                        {!preferences.hideParents && <div className="h-4 w-12 bg-muted/60 rounded animate-pulse" />}
+                        {preferences.showCompte !== false && <div className="h-4 w-20 bg-muted/60 rounded animate-pulse" />}
+                        {preferences.showCodeAfs !== false && <div className="h-4 w-16 bg-muted/60 rounded animate-pulse" />}
+                        {preferences.showIntitule !== false && <div className="h-4 w-full max-w-[200px] bg-muted/60 rounded animate-pulse" />}
+                        {preferences.showNature !== false && <div className="h-4 w-16 bg-muted/60 rounded animate-pulse" />}
+                        {preferences.showDetails !== false && <div className="h-4 w-16 bg-muted/60 rounded animate-pulse" />}
+                        {preferences.showDebit !== false && <div className="h-4 w-20 bg-muted/60 rounded animate-pulse justify-self-end" />}
+                        {preferences.showCredit !== false && <div className="h-4 w-20 bg-muted/60 rounded animate-pulse justify-self-end" />}
+                      </div>
+                    ))}
+                  </div>
+                ) : filteredTree.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground flex flex-col items-center justify-center h-full">
+                    <BookOpen className="h-10 w-10 mb-3 opacity-30" />
+                    <p className="text-sm font-medium">
+                      Aucun compte trouvé {search ? `pour « ${search} »` : (filterClass !== 'all' ? `pour la classe ${filterClass}` : '')}
+                    </p>
                   </div>
                 ) : (
                   filteredTree.map((node, index) => renderTreeNode(node, 0, index === filteredTree.length - 1, []))
                 )}
               </div>
-            </CardContent>
-          </>
-        ) : viewMode === 'orgchart' ? (
-          <CardContent className="p-0 flex-1 min-h-0">
-            {renderOrgChart()}
-          </CardContent>
-        ) : (
-          <CardContent className="p-0 flex-1 overflow-y-auto custom-scrollbar">
-            {renderKanbanView()}
+            </div>
           </CardContent>
         )}
       </Card>
@@ -802,16 +887,7 @@ export default function PlanComptablePage() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="numero">Numero de compte</Label>
-              <Input
-                id="numero"
-                placeholder="ex: 401-DANGOTE"
-                value={form.numero}
-                onChange={(e) => setForm({ ...form, numero: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="libelle">Libelle</Label>
+              <Label htmlFor="libelle">Libellé</Label>
               <Input
                 id="libelle"
                 placeholder="ex: Dangote Cement Zambia"
@@ -820,29 +896,30 @@ export default function PlanComptablePage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="parent">Compte</Label>
+              <Label htmlFor="parent">Compte parent (Général)</Label>
               <Select 
                 value={form.parent} 
                 onValueChange={(v) => {
-                  setForm({ ...form, parent: v });
                   if (!editingCompte) {
-                    const prefix = v === '411100' ? '4111' : (v === '401100' ? '401' : null);
-                    if (prefix) {
-                      const auxAccounts = rawComptes.filter(c => c.type === 'auxiliaire' && c.numero.startsWith(prefix));
-                      let nextNum = `${prefix}${'1'.padStart(Math.max(6 - prefix.length, 2), '0')}`;
-                      if (auxAccounts.length > 0) {
-                        const maxAcc = auxAccounts.reduce((max, c) => c.numero > max.numero ? c : max, auxAccounts[0]);
-                        const suffix = maxAcc.numero.substring(prefix.length);
-                        const nextSuffix = (parseInt(suffix) + 1).toString().padStart(Math.max(6 - prefix.length, 2), '0');
-                        nextNum = `${prefix}${nextSuffix}`;
-                      }
-                      setForm(prev => ({ ...prev, numero: nextNum, parent: v }));
+                    const prefix = v === '411100' ? '4111' : (v === '401100' ? '401' : v.substring(0, 3));
+                    const auxAccounts = rawComptes.filter(c => c.type === 'auxiliaire' && c.numero.startsWith(prefix) && /^\d+$/.test(c.numero));
+                    let nextNum = `${prefix}${'1'.padStart(Math.max(6 - prefix.length, 2), '0')}`;
+                    if (auxAccounts.length > 0) {
+                      const maxAcc = auxAccounts.reduce((max, c) => parseInt(c.numero) > parseInt(max.numero) ? c : max, auxAccounts[0]);
+                      const suffix = maxAcc.numero.substring(prefix.length);
+                      const nextSuffix = (parseInt(suffix) + 1).toString().padStart(Math.max(6 - prefix.length, 2), '0');
+                      nextNum = `${prefix}${nextSuffix}`;
                     }
+                    const parentAcc = rawComptes.find(c => c.numero === v);
+                    const afs = parentAcc?.code_poste_etats_financiers || '';
+                    setForm(prev => ({ ...prev, numero: nextNum, parent: v, code_poste_etats_financiers: afs }));
+                  } else {
+                    setForm(prev => ({ ...prev, parent: v }));
                   }
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selectionner un compte" />
+                  <SelectValue placeholder="Sélectionner un compte parent" />
                 </SelectTrigger>
                 <SelectContent>
                   {rawComptes.filter((c) => c.numero === '411100' || c.numero === '401100').map((c) => (
@@ -853,10 +930,34 @@ export default function PlanComptablePage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="numero">Numéro de compte</Label>
+                <Input
+                  id="numero"
+                  placeholder="Auto-généré"
+                  value={form.numero}
+                  onChange={(e) => setForm({ ...form, numero: e.target.value })}
+                  disabled
+                  className="bg-muted/50 font-mono"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="code_poste_etats_financiers">Code AFS/EF</Label>
+                <Input
+                  id="code_poste_etats_financiers"
+                  placeholder="Hérité"
+                  value={form.code_poste_etats_financiers}
+                  onChange={(e) => setForm({ ...form, code_poste_etats_financiers: e.target.value })}
+                  disabled
+                  className="bg-muted/50"
+                />
+              </div>
+            </div>
             <div className="flex items-center justify-between rounded-lg border border-border p-3">
               <div>
                 <Label htmlFor="lettrable" className="cursor-pointer">Compte lettrable</Label>
-                <p className="text-xs text-muted-foreground mt-0.5">Autorise le lettrage des ecritures</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Autorise le lettrage des écritures</p>
               </div>
               <Switch
                 id="lettrable"

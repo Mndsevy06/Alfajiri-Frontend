@@ -30,7 +30,8 @@ import {
   Printer,
   Layers,
   Smartphone,
-  Camera
+  Camera,
+  Info
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -177,7 +178,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
         ];
         
         setJournaux(jData.length > 0 ? jData : DEFAULT_JOURNAUX);
-        setPlanComptable(pData);
+        setPlanComptable(pData.filter((c: any) => c.numero && c.numero.length === 6));
         setSavedBrouillards(eData);
         setTiers(tData);
       } catch (e) {
@@ -329,17 +330,37 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
   const [editingLigneId, setEditingLigneId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Field-level error state for visual highlights
+  const [nlLibelleError, setNlLibelleError] = useState(false);
+  const [nlDebitErrors, setNlDebitErrors] = useState<Set<string>>(new Set());
+  const [nlCreditErrors, setNlCreditErrors] = useState<Set<string>>(new Set());
+
   // helpers debit lines
-  const updateDebitLine = (id: string, patch: Partial<NlEntry>) =>
+  const updateDebitLine = (id: string, patch: Partial<NlEntry>) => {
     setNlDebitLines(prev => prev.map(l => l.id === id ? { ...l, ...patch } : l));
+    // Clear error on change
+    if (patch.compte || patch.montant || patch.tiersAux) {
+      setNlDebitErrors(prev => { const next = new Set(prev); next.delete(id); return next; });
+    }
+  };
   const addDebitLine = () => setNlDebitLines(prev => [...prev, makeEntry()]);
-  const removeDebitLine = (id: string) => setNlDebitLines(prev => prev.filter(l => l.id !== id));
+  const removeDebitLine = (id: string) => {
+    setNlDebitLines(prev => prev.filter(l => l.id !== id));
+    setNlDebitErrors(prev => { const next = new Set(prev); next.delete(id); return next; });
+  };
 
   // helpers credit lines
-  const updateCreditLine = (id: string, patch: Partial<NlEntry>) =>
+  const updateCreditLine = (id: string, patch: Partial<NlEntry>) => {
     setNlCreditLines(prev => prev.map(l => l.id === id ? { ...l, ...patch } : l));
+    if (patch.compte || patch.montant || patch.tiersAux) {
+      setNlCreditErrors(prev => { const next = new Set(prev); next.delete(id); return next; });
+    }
+  };
   const addCreditLine = () => setNlCreditLines(prev => [...prev, makeEntry()]);
-  const removeCreditLine = (id: string) => setNlCreditLines(prev => prev.filter(l => l.id !== id));
+  const removeCreditLine = (id: string) => {
+    setNlCreditLines(prev => prev.filter(l => l.id !== id));
+    setNlCreditErrors(prev => { const next = new Set(prev); next.delete(id); return next; });
+  };
 
   const resetNlForm = () => {
     setNlLibelle('');
@@ -347,6 +368,9 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
     setNlDebitLines([makeEntry()]);
     setNlCreditLines([makeEntry()]);
     setEditingLigneId(null);
+    setNlLibelleError(false);
+    setNlDebitErrors(new Set());
+    setNlCreditErrors(new Set());
     if (fileRef.current) fileRef.current.value = '';
   };
 
@@ -382,28 +406,189 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
   };
 
   const handleAddLigne = () => {
+    // Reset all field errors before validation
+    setNlLibelleError(false);
+    setNlDebitErrors(new Set());
+    setNlCreditErrors(new Set());
+
     const validDebit = nlDebitLines.filter(l => l.compte && parseFloat(l.montant || '0') > 0);
     const validCredit = nlCreditLines.filter(l => l.compte && parseFloat(l.montant || '0') > 0);
 
-    if (validDebit.length === 0 && validCredit.length === 0) {
-      toast.error('Ajoutez au moins un compte avec un montant');
+    let hasError = false;
+
+    // ── R8 : En-tête obligatoire avant saisie ──────────────────────────────
+    if (!libelle || libelle.trim() === '') {
+      toast.error('Configuration requise (OHADA)', {
+        description: 'Veuillez configurer l\'en-tête de l\'écriture (libellé du journal) avant d\'ajouter des lignes. Cliquez sur l\'icône ⚙️.',
+      });
       return;
     }
 
-    const today = new Date().toISOString().split('T')[0];
+    // ── R4 : Libellé de ligne obligatoire ──────────────────────────────────
+    if (!nlLibelle || nlLibelle.trim() === '') {
+      setNlLibelleError(true);
+      toast.error('Libellé obligatoire (OHADA)', {
+        description: 'Chaque écriture doit comporter un libellé décrivant l\'opération.',
+      });
+      hasError = true;
+    }
+
+    // ── R1 : Au moins une ligne au Débit ET une ligne au Crédit ────────────
+    if (validDebit.length === 0 || validCredit.length === 0) {
+      if (validDebit.length === 0) {
+        const errorIds = new Set(nlDebitLines.map(l => l.id));
+        setNlDebitErrors(errorIds);
+      }
+      if (validCredit.length === 0) {
+        const errorIds = new Set(nlCreditLines.map(l => l.id));
+        setNlCreditErrors(errorIds);
+      }
+      toast.error('Partie double non respectée (OHADA)', {
+        description: 'Une écriture doit obligatoirement comporter au moins une ligne au Débit ET une ligne au Crédit.',
+      });
+      return;
+    }
+
+    if (hasError) return;
+
+    // ── R7 : Pas de montant nul ou négatif ─────────────────────────────────
+    const negDebitIds = nlDebitLines.filter(l => l.compte && parseFloat(l.montant || '0') <= 0).map(l => l.id);
+    const negCreditIds = nlCreditLines.filter(l => l.compte && parseFloat(l.montant || '0') <= 0).map(l => l.id);
+    if (negDebitIds.length > 0 || negCreditIds.length > 0) {
+      if (negDebitIds.length > 0) setNlDebitErrors(new Set(negDebitIds));
+      if (negCreditIds.length > 0) setNlCreditErrors(new Set(negCreditIds));
+      toast.error('Montant invalide (OHADA)', {
+        description: 'Aucune ligne ne peut avoir un montant nul ou négatif.',
+      });
+      return;
+    }
+
+    // ── R2 : Pas de compensation — même compte au Débit ET au Crédit ───────
+    const debitComptes = new Set(validDebit.map(l => l.compte));
+    const creditComptes = new Set(validCredit.map(l => l.compte));
+    const compensations = Array.from(debitComptes).filter(c => creditComptes.has(c));
+    if (compensations.length > 0) {
+      // Highlight the offending lines
+      setNlDebitErrors(new Set(validDebit.filter(l => compensations.includes(l.compte)).map(l => l.id)));
+      setNlCreditErrors(new Set(validCredit.filter(l => compensations.includes(l.compte)).map(l => l.id)));
+      toast.error('Compensation interdite (OHADA)', {
+        description: `Le compte ${compensations[0]} ne peut pas figurer à la fois au Débit et au Crédit dans la même écriture.`,
+      });
+      return;
+    }
+
+    // ── R3 : Pas de doublon dans le même sens ──────────────────────────────
+    const debitComptesArr = validDebit.map(l => l.compte);
+    const creditComptesArr = validCredit.map(l => l.compte);
+    const dupDebitComptes = debitComptesArr.filter((c, i) => debitComptesArr.indexOf(c) !== i);
+    const dupCreditComptes = creditComptesArr.filter((c, i) => creditComptesArr.indexOf(c) !== i);
+    if (dupDebitComptes.length > 0 || dupCreditComptes.length > 0) {
+      if (dupDebitComptes.length > 0)
+        setNlDebitErrors(new Set(validDebit.filter(l => dupDebitComptes.includes(l.compte)).map(l => l.id)));
+      if (dupCreditComptes.length > 0)
+        setNlCreditErrors(new Set(validCredit.filter(l => dupCreditComptes.includes(l.compte)).map(l => l.id)));
+      toast.error('Doublon de compte détecté (OHADA)', {
+        description: 'Un même compte ne peut pas apparaître deux fois dans le même sens (Débit ou Crédit). Regroupez les montants.',
+      });
+      return;
+    }
+
+    // ── R5 : Tiers auxiliaire obligatoire pour comptes requiert_auxiliaire ──
+    const allEntries = [
+      ...validDebit.map(l => ({ ...l, side: 'debit' as const })),
+      ...validCredit.map(l => ({ ...l, side: 'credit' as const })),
+    ];
+    const missingTiersDebit = new Set<string>();
+    const missingTiersCredit = new Set<string>();
+    for (const entry of allEntries) {
+      const compteInfo = PLAN_COMPTABLE.find(c => c.numero === entry.compte);
+      if (compteInfo?.requiert_auxiliaire && (!entry.tiersAux || entry.tiersAux.trim() === '')) {
+        if (entry.side === 'debit') missingTiersDebit.add(entry.id);
+        else missingTiersCredit.add(entry.id);
+      }
+    }
+    if (missingTiersDebit.size > 0 || missingTiersCredit.size > 0) {
+      if (missingTiersDebit.size > 0) setNlDebitErrors(missingTiersDebit);
+      if (missingTiersCredit.size > 0) setNlCreditErrors(missingTiersCredit);
+      const offending = allEntries.find(e =>
+        missingTiersDebit.has(e.id) || missingTiersCredit.has(e.id)
+      );
+      const compteInfo = PLAN_COMPTABLE.find(c => c.numero === offending?.compte);
+      toast.error('Tiers auxiliaire obligatoire (OHADA)', {
+        description: `Le compte ${offending?.compte} (${compteInfo?.libelle}) est un compte de tiers et nécessite un auxiliaire.`,
+      });
+      return;
+    }
+
+    // ── R9 : Cohérence journal / classe de compte ───────────────────────────
+    const journalInfo = JOURNAUX.find(j => j.code === journal);
+    if (journalInfo) {
+      const isBankOrCash = journalInfo.type === 'banque' || journalInfo.type === 'caisse';
+      if (isBankOrCash) {
+        // Journal trésorerie doit avoir au moins un compte classe 5 (trésorerie)
+        const allComptes = [...validDebit, ...validCredit].map(l => l.compte);
+        const hasTreasuryAccount = allComptes.some(c => c.startsWith('5'));
+        if (!hasTreasuryAccount) {
+          toast.error('Incohérence journal/compte (OHADA)', {
+            description: `Le journal ${journalInfo.libelle} (${journalInfo.type}) doit comporter au moins un compte de classe 5 (Trésorerie).`,
+          });
+          return;
+        }
+      }
+      if (journalInfo.type === 'achats') {
+        // Journal Achats doit avoir au moins un compte fournisseur (classe 4)
+        const allComptes = [...validDebit, ...validCredit].map(l => l.compte);
+        const hasSupplierAccount = allComptes.some(c => c.startsWith('40'));
+        if (!hasSupplierAccount) {
+          toast.warning('Suggestion journal/compte (OHADA)', {
+            description: `Le journal Achats utilise habituellement un compte fournisseur (classe 401). Vérifiez votre saisie.`,
+          });
+          // Warning seulement, on ne bloque pas
+        }
+      }
+      if (journalInfo.type === 'ventes') {
+        const allComptes = [...validDebit, ...validCredit].map(l => l.compte);
+        const hasClientAccount = allComptes.some(c => c.startsWith('41'));
+        if (!hasClientAccount) {
+          toast.warning('Suggestion journal/compte (OHADA)', {
+            description: `Le journal Ventes utilise habituellement un compte client (classe 411). Vérifiez votre saisie.`,
+          });
+        }
+      }
+    }
+
+    // ── R6 : Validation de la date ─────────────────────────────────────────
+    const entryDate = new Date(date);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const twoYearsAgo = new Date();
+    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+    if (entryDate > today) {
+      toast.error('Date invalide (OHADA)', {
+        description: 'La date de l\'écriture ne peut pas être dans le futur. Corrigez la date en en-tête.',
+      });
+      return;
+    }
+    if (entryDate < twoYearsAgo) {
+      toast.error('Date suspecte (OHADA)', {
+        description: 'La date de l\'écriture est antérieure de plus de 2 ans. Vérifiez la date en en-tête.',
+      });
+      return;
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0];
     const newLignes: any[] = [
       ...validDebit.map(l => {
         const info = PLAN_COMPTABLE.find(c => c.numero === l.compte);
-        return { id: Math.random().toString(36).slice(2), date: today, compte: l.compte, libelleCompte: info?.libelle || '', libelle: nlLibelle || info?.libelle || '', debit: parseFloat(l.montant), credit: 0, fichier: nlFichier, centre_cout: l.centreCout || null, tiers_auxiliaire: l.tiersAux || null };
+        return { id: Math.random().toString(36).slice(2), date: date || todayStr, compte: l.compte, libelleCompte: info?.libelle || '', libelle: nlLibelle || info?.libelle || '', debit: parseFloat(l.montant), credit: 0, fichier: nlFichier, centre_cout: l.centreCout || null, tiers_auxiliaire: l.tiersAux || null };
       }),
       ...validCredit.map(l => {
         const info = PLAN_COMPTABLE.find(c => c.numero === l.compte);
-        return { id: Math.random().toString(36).slice(2), date: today, compte: l.compte, libelleCompte: info?.libelle || '', libelle: nlLibelle || info?.libelle || '', debit: 0, credit: parseFloat(l.montant), fichier: nlFichier, centre_cout: l.centreCout || null, tiers_auxiliaire: l.tiersAux || null };
+        return { id: Math.random().toString(36).slice(2), date: date || todayStr, compte: l.compte, libelleCompte: info?.libelle || '', libelle: nlLibelle || info?.libelle || '', debit: 0, credit: parseFloat(l.montant), fichier: nlFichier, centre_cout: l.centreCout || null, tiers_auxiliaire: l.tiersAux || null };
       }),
     ];
 
     if (editingLigneId) {
-      // En mode édition : remplace la ligne existante par la première entrée valide
       const replacement = newLignes[0];
       if (replacement) {
         replacement.id = editingLigneId;
@@ -757,22 +942,34 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
           </Popover>
 
           {/* Bouton Nouvelle Ligne (Icône seule) */}
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-8 w-8 rounded-lg shadow-sm hover:bg-accent group" 
+            title="Nouvelle Ligne" 
+            onClick={(e) => {
+              if (!journal || !date || !libelle) {
+                toast.error("En-tête incomplet", { description: "Veuillez d'abord configurer le Journal, la Date et le Libellé (icône ⚙️) avant d'ajouter des lignes." });
+                return;
+              }
+              resetNlForm();
+              setOpenNewLine(true);
+            }}
+          >
+            <Plus className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+          </Button>
+
           <Dialog open={openNewLine} onOpenChange={(open) => {
             if (!open) { resetNlForm(); }
             setOpenNewLine(open);
           }}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg shadow-sm hover:bg-accent group" title="Nouvelle Ligne" onClick={() => resetNlForm()}>
-                <Plus className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-              </Button>
-            </DialogTrigger>
             <DialogContent className="sm:max-w-[620px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-base">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
                     {editingLigneId ? <PencilLine className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
                   </span>
-                  {editingLigneId ? "Modifier la ligne" : "Nouvelle écriture comptable"}
+                  {editingLigneId ? "Modifier la ligne" : "Nouvelle opération comptable"}
                 </DialogTitle>
                 <DialogDescription className="text-xs">
                   Renseignez le libellé, puis ajoutez autant de comptes que nécessaire au débit et au crédit.
@@ -781,15 +978,27 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
 
               <div className="flex flex-col gap-4 py-2">
 
+                {/* Alerte si en-tête non configuré */}
+                {!libelle && (
+                  <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400">
+                    <span className="text-base leading-none mt-0.5">⚠️</span>
+                    <div className="text-xs">
+                      <span className="font-semibold">En-tête non configuré</span> — Cliquez sur l'icône <span className="font-mono bg-amber-500/20 px-1 rounded">⚙️</span> pour définir le journal, la date et le libellé avant de saisir.
+                    </div>
+                  </div>
+                )}
+
                 {/* 1. Libellé + Pièce Justificative — EN HAUT */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate block" title="Libellé de l'écriture">Libellé de l'écriture</Label>
+                    <Label className={cn("text-xs font-semibold uppercase tracking-wider truncate block", nlLibelleError ? "text-destructive" : "text-muted-foreground")} title="Libellé de l'écriture">
+                      Libellé de l'écriture {nlLibelleError && <span className="normal-case font-normal">— requis</span>}
+                    </Label>
                     <Input
                       placeholder="Ex: Facture fournisseur ABC..."
                       value={nlLibelle}
-                      onChange={(e) => setNlLibelle(e.target.value)}
-                      className="h-10"
+                      onChange={(e) => { setNlLibelle(e.target.value); setNlLibelleError(false); }}
+                      className={cn("h-10", nlLibelleError && "border-destructive focus-visible:ring-destructive/30")}
                       autoFocus
                     />
                   </div>
@@ -839,12 +1048,13 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
 
                     {nlDebitLines.map((entry) => {
                       const compteInfo = PLAN_COMPTABLE.find(c => c.numero === entry.compte);
+                      const hasDebitError = nlDebitErrors.has(entry.id);
                       return (
-                        <div key={entry.id} className="flex flex-col gap-1">
+                        <div key={entry.id} className={cn("flex flex-col gap-1 rounded-lg p-1.5 -m-1.5 transition-colors", hasDebitError && "bg-destructive/5 ring-1 ring-destructive/30")}>
                           <div className="flex items-center gap-1">
                             <Popover open={entry.openPopover} onOpenChange={(v) => updateDebitLine(entry.id, { openPopover: v })}>
                               <PopoverTrigger asChild>
-                                <Button variant="outline" size="sm" className={cn("flex-1 h-8 justify-between font-normal text-xs px-2 min-w-0 overflow-hidden", !entry.compte && "text-muted-foreground")}>
+                                <Button variant="outline" size="sm" className={cn("flex-1 h-8 justify-between font-normal text-xs px-2 min-w-0 overflow-hidden", !entry.compte && "text-muted-foreground", hasDebitError && "border-destructive/60")}>
                                   <span className="flex items-center gap-1.5 min-w-0 overflow-hidden">
                                     {entry.compte
                                       ? (() => { const s = PLAN_COMPTABLE.find(c => c.numero === entry.compte); return s
@@ -872,7 +1082,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
                           </div>
                           <Input type="number" placeholder="0.00" value={entry.montant}
                             onChange={e => updateDebitLine(entry.id, { montant: e.target.value })}
-                            className="h-8 text-sm font-bold text-right focus-visible:ring-blue-500/50" />
+                            className={cn("h-8 text-sm font-bold text-right focus-visible:ring-blue-500/50", hasDebitError && "border-destructive/60 focus-visible:ring-destructive/30")} />
                           {/* Champs conditionnels par ligne débit */}
                           {compteInfo?.analytique_obligatoire && (
                             <Select value={entry.centreCout || ''} onValueChange={v => updateDebitLine(entry.id, { centreCout: v })}>
@@ -890,7 +1100,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
                           {compteInfo?.requiert_auxiliaire && (
                             <div className="flex items-center gap-1">
                               <Select value={entry.tiersAux || ''} onValueChange={v => updateDebitLine(entry.id, { tiersAux: v })}>
-                                <SelectTrigger className="h-7 text-xs flex-1 border-blue-500/30">
+                                <SelectTrigger className={cn("h-7 text-xs flex-1 border-blue-500/30", hasDebitError && !entry.tiersAux && "border-destructive/60")}>
                                   <SelectValue placeholder="Tiers / Auxiliaire *" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -905,6 +1115,11 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
                             <div className="flex items-center gap-1 text-[10px] text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded px-2 py-1">
                               <span>💡</span><span>Compte TVA — pensez à la ligne TVA déductible</span>
                             </div>
+                          )}
+                          {hasDebitError && (
+                            <p className="text-[10px] text-destructive font-medium flex items-center gap-1">
+                              <span className="w-1 h-1 rounded-full bg-destructive inline-block" /> Corrigez cette ligne
+                            </p>
                           )}
                         </div>
                       );
@@ -930,12 +1145,13 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
 
                     {nlCreditLines.map((entry) => {
                       const compteInfo = PLAN_COMPTABLE.find(c => c.numero === entry.compte);
+                      const hasCreditError = nlCreditErrors.has(entry.id);
                       return (
-                        <div key={entry.id} className="flex flex-col gap-1">
+                        <div key={entry.id} className={cn("flex flex-col gap-1 rounded-lg p-1.5 -m-1.5 transition-colors", hasCreditError && "bg-destructive/5 ring-1 ring-destructive/30")}>
                           <div className="flex items-center gap-1">
                             <Popover open={entry.openPopover} onOpenChange={(v) => updateCreditLine(entry.id, { openPopover: v })}>
                               <PopoverTrigger asChild>
-                                <Button variant="outline" size="sm" className={cn("flex-1 h-8 justify-between font-normal text-xs px-2 min-w-0 overflow-hidden", !entry.compte && "text-muted-foreground")}>
+                                <Button variant="outline" size="sm" className={cn("flex-1 h-8 justify-between font-normal text-xs px-2 min-w-0 overflow-hidden", !entry.compte && "text-muted-foreground", hasCreditError && "border-destructive/60")}>
                                   <span className="flex items-center gap-1.5 min-w-0 overflow-hidden">
                                     {entry.compte
                                       ? (() => { const s = PLAN_COMPTABLE.find(c => c.numero === entry.compte); return s
@@ -963,7 +1179,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
                           </div>
                           <Input type="number" placeholder="0.00" value={entry.montant}
                             onChange={e => updateCreditLine(entry.id, { montant: e.target.value })}
-                            className="h-8 text-sm font-bold text-right focus-visible:ring-emerald-500/50" />
+                            className={cn("h-8 text-sm font-bold text-right focus-visible:ring-emerald-500/50", hasCreditError && "border-destructive/60 focus-visible:ring-destructive/30")} />
                           {/* Champs conditionnels par ligne crédit */}
                           {compteInfo?.analytique_obligatoire && (
                             <Select value={entry.centreCout || ''} onValueChange={v => updateCreditLine(entry.id, { centreCout: v })}>
@@ -981,7 +1197,7 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
                           {compteInfo?.requiert_auxiliaire && (
                             <div className="flex items-center gap-1">
                               <Select value={entry.tiersAux || ''} onValueChange={v => updateCreditLine(entry.id, { tiersAux: v })}>
-                                <SelectTrigger className="h-7 text-xs flex-1 border-emerald-500/30">
+                                <SelectTrigger className={cn("h-7 text-xs flex-1 border-emerald-500/30", hasCreditError && !entry.tiersAux && "border-destructive/60")}>
                                   <SelectValue placeholder="Tiers / Auxiliaire *" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -997,6 +1213,11 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
                               <span>💡</span><span>Compte TVA — pensez à la ligne TVA collectée</span>
                             </div>
                           )}
+                          {hasCreditError && (
+                            <p className="text-[10px] text-destructive font-medium flex items-center gap-1">
+                              <span className="w-1 h-1 rounded-full bg-destructive inline-block" /> Corrigez cette ligne
+                            </p>
+                          )}
                         </div>
                       );
                     })}
@@ -1008,23 +1229,151 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
                   </div>
                 </div>
 
-                {/* 3. Indicateur d'équilibre en temps réel */}
+                {/* 3. Indicateurs en temps réel : Équilibre + Règles OHADA */}
                 {(() => {
                   const dTotal = nlDebitLines.reduce((s,l)=>s+parseFloat(l.montant||'0'),0);
                   const cTotal = nlCreditLines.reduce((s,l)=>s+parseFloat(l.montant||'0'),0);
                   const ecart = Math.abs(dTotal - cTotal);
-                  const ok = ecart < 0.01 && dTotal > 0;
-                  if (dTotal === 0 && cTotal === 0) return null;
+                  const isBalanced = ecart < 0.01 && dTotal > 0;
+
+                  // Calcul des violations OHADA en temps réel
+                  const validD = nlDebitLines.filter(l => l.compte && parseFloat(l.montant||'0') > 0);
+                  const validC = nlCreditLines.filter(l => l.compte && parseFloat(l.montant||'0') > 0);
+                  const debitComptes = new Set(validD.map(l => l.compte));
+                  const creditComptes = new Set(validC.map(l => l.compte));
+                  const compensations = Array.from(debitComptes).filter(c => creditComptes.has(c));
+                  const dArr = validD.map(l => l.compte);
+                  const cArr = validC.map(l => l.compte);
+                  const hasDupD = dArr.length !== new Set(dArr).size;
+                  const hasDupC = cArr.length !== new Set(cArr).size;
+                  const missingLibelle = !nlLibelle || nlLibelle.trim() === '';
+                  const missingDebit = validD.length === 0 && (validC.length > 0 || dTotal > 0 || cTotal > 0);
+                  const missingCredit = validC.length === 0 && (validD.length > 0 || dTotal > 0 || cTotal > 0);
+                  const missingHeader = !libelle || libelle.trim() === '';
+
+                  // R5 : Tiers auxiliaire manquant — détection en temps réel
+                  const missingTiers = [...validD, ...validC].filter(l => {
+                    const info = PLAN_COMPTABLE.find(c => c.numero === l.compte);
+                    return info?.requiert_auxiliaire && (!l.tiersAux || l.tiersAux.trim() === '');
+                  });
+
+                  // R6 : Validation de la date en temps réel
+                  const entryDate = new Date(date);
+                  const nowDate = new Date();
+                  nowDate.setHours(23, 59, 59, 999);
+                  const twoYearsAgo = new Date();
+                  twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+                  const dateInFuture = date && entryDate > nowDate;
+                  const dateTooOld = date && entryDate < twoYearsAgo;
+
+                  const violations: string[] = [];
+                  if (missingHeader) violations.push('R8 — En-tête non configuré (libellé journal)');
+                  if (missingLibelle) violations.push('R4 — Libellé de ligne manquant');
+                  if (dateInFuture) violations.push('R6 — Date dans le futur');
+                  if (dateTooOld) violations.push('R6 — Date antérieure de plus de 2 ans');
+                  if (missingDebit) violations.push('R1 — Aucune ligne au Débit');
+                  if (missingCredit) violations.push('R1 — Aucune ligne au Crédit');
+                  if (compensations.length > 0) violations.push(`R2 — Compensation interdite sur compte ${compensations[0]}`);
+                  if (hasDupD) violations.push('R3 — Doublon de compte au Débit');
+                  if (hasDupC) violations.push('R3 — Doublon de compte au Crédit');
+                  if (missingTiers.length > 0) violations.push(`R5 — Tiers auxiliaire manquant (${missingTiers[0].compte})`);
+
+                  if (dTotal === 0 && cTotal === 0 && violations.length === 0) return null;
                   return (
-                    <div className={cn("flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium border transition-all",
-                      ok ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-amber-500/10 text-amber-600 border-amber-500/20")}>
-                      <div className="flex items-center gap-1.5">
-                        <Scale className="h-3.5 w-3.5" />
-                        <span>{ok ? "Écriture équilibrée ✓" : `Écart de ${ecart.toLocaleString('fr-FR',{minimumFractionDigits:2})}`}</span>
-                      </div>
-                      <span className="font-mono text-[11px]">
-                        D: {dTotal.toLocaleString('fr-FR',{minimumFractionDigits:2})} · C: {cTotal.toLocaleString('fr-FR',{minimumFractionDigits:2})}
-                      </span>
+                    <div className="flex flex-col gap-1.5">
+                      {/* Indicateur d'équilibre */}
+                      {(dTotal > 0 || cTotal > 0) && (
+                        <div className={cn("flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium border transition-all",
+                          isBalanced ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-amber-500/10 text-amber-600 border-amber-500/20")}>
+                          <div className="flex items-center gap-1.5">
+                            <Scale className="h-3.5 w-3.5" />
+                            <span>{isBalanced ? "Écriture équilibrée ✓" : `Écart de ${ecart.toLocaleString('fr-FR',{minimumFractionDigits:2})}`}</span>
+                          </div>
+                          <span className="font-mono text-[11px]">
+                            D: {dTotal.toLocaleString('fr-FR',{minimumFractionDigits:2})} · C: {cTotal.toLocaleString('fr-FR',{minimumFractionDigits:2})}
+                          </span>
+                        </div>
+                      )}
+                      {/* Violations OHADA en temps réel */}
+                      {violations.length > 0 && (
+                        <Dialog>
+                          <div className="flex flex-col gap-1 px-3 py-2 rounded-lg border border-rose-500/20 bg-rose-500/5 relative">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500">⚠ Violations OHADA détectées</span>
+                              <DialogTrigger asChild>
+                                <button type="button" className="text-rose-500 hover:text-rose-700 transition-colors" title="Règles OHADA">
+                                  <Info className="h-4 w-4" />
+                                </button>
+                              </DialogTrigger>
+                            </div>
+                            {violations.map((v, i) => (
+                              <span key={i} className="text-[10px] text-rose-600 flex items-center gap-1">
+                                <span className="w-1 h-1 rounded-full bg-rose-500 shrink-0 inline-block" />
+                                {v}
+                              </span>
+                            ))}
+                          </div>
+                          <DialogContent className="sm:max-w-[450px]">
+                            <DialogHeader>
+                              <DialogTitle className="flex items-center gap-2 text-rose-600">
+                                <Info className="h-5 w-5" />
+                                Règles de validation comptable
+                              </DialogTitle>
+                              <DialogDescription>
+                                Ces règles garantissent l'intégrité de vos écritures comptables.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="text-sm space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-2">
+                              <div className="space-y-1">
+                                <div className="font-semibold text-foreground flex items-center gap-1.5"><span className="text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">R-MIN</span> Minimum de lignes</div>
+                                <p className="text-muted-foreground text-xs">Une opération doit comporter au moins 2 lignes (au moins une au Débit et une au Crédit).</p>
+                              </div>
+                              <div className="space-y-1">
+                                <div className="font-semibold text-foreground flex items-center gap-1.5"><span className="text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">R1</span> Principe de la partie double</div>
+                                <p className="text-muted-foreground text-xs">Au moins une ligne au Débit et une au Crédit.</p>
+                              </div>
+                              <div className="space-y-1">
+                                <div className="font-semibold text-foreground flex items-center gap-1.5"><span className="text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">R2</span> Pas de compensation</div>
+                                <p className="text-muted-foreground text-xs">Un même compte ne peut pas se retrouver à la fois au Débit et au Crédit.</p>
+                              </div>
+                              <div className="space-y-1">
+                                <div className="font-semibold text-foreground flex items-center gap-1.5"><span className="text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">R3</span> Regroupement (Pas de doublons)</div>
+                                <p className="text-muted-foreground text-xs">Regroupez les montants d'un même compte s'ils sont dans le même sens (Débit ou Crédit).</p>
+                              </div>
+                              <div className="space-y-1">
+                                <div className="font-semibold text-foreground flex items-center gap-1.5"><span className="text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">R6</span> Équilibre obligatoire</div>
+                                <p className="text-muted-foreground text-xs">Le Total Débit doit être strictement égal au Total Crédit.</p>
+                              </div>
+                              <div className="space-y-1">
+                                <div className="font-semibold text-foreground flex items-center gap-1.5"><span className="text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">R7</span> Montants positifs</div>
+                                <p className="text-muted-foreground text-xs">Il est interdit de saisir des montants négatifs.</p>
+                              </div>
+                              
+                              <hr className="my-2 border-border/50" />
+                              
+                              <div className="space-y-1">
+                                <div className="font-semibold text-foreground">Comptes à 6 chiffres</div>
+                                <p className="text-muted-foreground text-xs">Seuls les comptes détaillés (6 caractères) sont affichés dans la liste de saisie.</p>
+                              </div>
+                              <div className="space-y-1">
+                                <div className="font-semibold text-foreground">Classe 4 (Tiers)</div>
+                                <p className="text-muted-foreground text-xs">Il est obligatoire de renseigner un tiers auxiliaire pour ces comptes.</p>
+                              </div>
+                              <div className="space-y-1">
+                                <div className="font-semibold text-foreground">Classe 6 & 7 (Analytique)</div>
+                                <p className="text-muted-foreground text-xs">Un centre de coût est requis pour les comptes de charges et de produits.</p>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                      {/* Message de validation — tout est OK */}
+                      {violations.length === 0 && isBalanced && (
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-emerald-600">
+                          <Check className="h-3.5 w-3.5 shrink-0" />
+                          <span className="text-[10px] font-semibold">Toutes les règles OHADA sont respectées. Prêt à enregistrer ✓</span>
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
@@ -1073,6 +1422,8 @@ function SaisieView({ setView, view }: { setView: (v: View) => void; view: View 
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+
 
           {/* Modale Configuration En-tête */}
           <Dialog open={openConfig} onOpenChange={setOpenConfig}>
@@ -1882,28 +2233,55 @@ function ValideView({ setView, view }: { setView: (v: View) => void; view: View 
     <div className="space-y-2">
       {/* Statistiques Section + Toggle Saisie/Journal à droite */}
       <div className="flex items-start gap-2">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 flex-1">
-        <Card className="p-4 border-y-0 border-r-0 border-l-4 border-l-primary bg-primary/5 shadow-sm rounded-xl">
-          <div className="text-2xl font-black text-primary font-mono truncate" title={totalPieces.toString()}>{totalPieces}</div>
-          <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1">Total Pièces</div>
+        <div className="grid grid-cols-4 gap-1 sm:gap-2 flex-1">
+        <Card className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Total Pièces</span>
+              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-primary truncate" title={totalPieces.toString()}>{totalPieces}</span>
+            </div>
+            <div className="p-1 sm:p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
+              <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+            </div>
+          </CardContent>
         </Card>
         
-        <Card className="p-4 border-y-0 border-r-0 border-l-4 border-l-chart-5 bg-chart-5/5 shadow-sm rounded-xl">
-          <div className="text-2xl font-black text-chart-5 font-mono truncate" title={formatCurrency(totalDebit)}>{formatCurrency(totalDebit)}</div>
-          <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1">Débits Validés</div>
+        <Card className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Débits Validés</span>
+              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-chart-5 truncate" title={formatCurrency(totalDebit)}>{formatCurrency(totalDebit)}</span>
+            </div>
+            <div className="p-1 sm:p-1.5 rounded-md bg-chart-5/10 text-chart-5 shrink-0">
+              <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4" />
+            </div>
+          </CardContent>
         </Card>
 
-        <Card className="p-4 border-y-0 border-r-0 border-l-4 border-l-destructive bg-destructive/5 shadow-sm rounded-xl">
-          <div className="text-2xl font-black text-destructive font-mono truncate" title={formatCurrency(totalCredit)}>{formatCurrency(totalCredit)}</div>
-          <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1">Crédits Validés</div>
+        <Card className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Crédits Validés</span>
+              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-destructive truncate" title={formatCurrency(totalCredit)}>{formatCurrency(totalCredit)}</span>
+            </div>
+            <div className="p-1 sm:p-1.5 rounded-md bg-destructive/10 text-destructive shrink-0">
+              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
+            </div>
+          </CardContent>
         </Card>
 
-        <Card className="p-4 border-y-0 border-r-0 border-l-4 border-l-success bg-success/5 shadow-sm rounded-xl">
-          <div className="text-2xl font-black text-success font-mono truncate" title="Ce mois">Ce mois</div>
-          <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1">Période</div>
+        <Card className="bg-[var(--bg-secondary)]/40 backdrop-blur-sm border-[var(--border-default)]/50 shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-1.5 sm:p-2.5 flex items-center justify-between gap-1 sm:gap-2 overflow-hidden">
+            <div className="flex flex-col overflow-hidden w-full">
+              <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-wider truncate">Période</span>
+              <span className="text-[10px] sm:text-base font-bold leading-none mt-0.5 sm:mt-1 text-success truncate" title="Ce mois">Ce mois</span>
+            </div>
+            <div className="p-1 sm:p-1.5 rounded-md bg-success/10 text-success shrink-0">
+              <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+            </div>
+          </CardContent>
         </Card>
         </div>
-
       </div>
 
       {/* Action Bar */}

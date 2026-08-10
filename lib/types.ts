@@ -71,6 +71,7 @@ export type CompteComptable = {
   };
   soldeDebit: number;
   soldeCredit: number;
+  code_poste_etats_financiers?: string;
 };
 
 export type LigneEcriture = {

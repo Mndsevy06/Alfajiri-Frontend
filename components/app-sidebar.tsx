@@ -38,16 +38,16 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Tableau de bord', icon: LayoutDashboard, group: 'Pilotage', requiredPermission: 'dashboard_read' },
   { href: '/plan-comptable', label: 'Plan Comptable', icon: BookOpen, group: 'Comptabilite', requiredPermission: 'compta_read' },
-  { href: '/tiers', label: 'Tiers & Contacts', icon: Contact, group: 'Comptabilite', requiredPermission: 'compta_read' },
+  { href: '/tiers', label: 'Tiers', icon: Contact, group: 'Comptabilite', requiredPermission: 'compta_read' },
   { href: '/saisie', label: 'Saisie Comptable', icon: PencilLine, group: 'Comptabilite', requiredPermission: 'saisie_create' },
   { href: '/restitutions', label: 'Restitutions', icon: BarChart3, group: 'Comptabilite', requiredPermission: 'restitutions_read' },
 
   { href: '/terrain', label: 'Saisie Terrain', icon: Smartphone, group: 'Operations', requiredPermission: 'terrain_read' },
 
   { href: '/etats-financiers', label: 'Etats Financiers OHADA', icon: FileText, group: 'Cloture', requiredPermission: 'etats_financiers_read' },
-  { href: '/utilisateurs', label: 'Utilisateurs', icon: Users, group: 'Systeme', requiredPermission: 'users_read' },
-  { href: '/notifications', label: 'Notifications', icon: ScrollText, group: 'Systeme', requiredPermission: 'dashboard_read' },
-  { href: '/parametres', label: 'Parametres', icon: Settings, group: 'Systeme', requiredPermission: 'settings_write' },
+  // { href: '/utilisateurs', label: 'Utilisateurs', icon: Users, group: 'Systeme', requiredPermission: 'users_read' },
+  // { href: '/notifications', label: 'Notifications', icon: ScrollText, group: 'Systeme', requiredPermission: 'dashboard_read' },
+  // { href: '/parametres', label: 'Parametres', icon: Settings, group: 'Systeme', requiredPermission: 'settings_write' },
 ];
 
 export function AppSidebar({ open, onToggle }: { open: boolean; onToggle: () => void }) {

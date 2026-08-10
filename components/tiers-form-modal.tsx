@@ -112,12 +112,25 @@ export function TiersFormModal({ open, onOpenChange, onSuccess, defaultType, all
 
   const loadComptes = async () => {
     try {
-      const data = await fetchWithAuth('/plan_comptable/comptes/');
-      // Filter for standard accounts that could be linked to tiers (usually 40, 41, 42, 43, 44, 46)
-      const filtered = data.filter((c: any) => c.numero.startsWith('4'));
+      const [comptesData, tiersData] = await Promise.all([
+        fetchWithAuth('/plan_comptable/comptes/'),
+        fetchWithAuth('/plan_comptable/tiers/')
+      ]);
+      const takenComptes = new Set(tiersData.map((t: any) => t.compte).filter(Boolean));
+      
+      const filtered = comptesData.filter((c: any) => {
+        if (!c.numero.startsWith('4')) return false;
+        // Only show auxiliary accounts
+        if (c.type !== 'auxiliaire') return false;
+        // Allow the currently assigned account when editing
+        if (editData && c.numero === editData.compte) return true;
+        // Exclude if already assigned to another tier
+        if (takenComptes.has(c.numero)) return false;
+        return true;
+      });
       setComptes(filtered);
     } catch (error) {
-      console.error('Failed to load comptes', error);
+      console.error('Failed to load comptes or tiers', error);
     }
   };
 
